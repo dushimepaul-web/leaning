@@ -30,6 +30,13 @@ class Dashboard extends MY_Controller {
         // Validations email
         $data['email_confirmed'] = $this->Model->count_email_confirmed();
         $data['email_not_confirmed'] = $data['total_inscriptions'] - $data['email_confirmed'];
+
+        // Statistiques emails envoyés
+        $data['email_total_sent'] = $this->Model->count_email_logs();
+        $data['email_success'] = $this->Model->count_email_logs('succès');
+        $data['email_failed'] = $this->Model->count_email_logs('échec');
+        $data['email_today'] = $this->Model->count_email_logs_today();
+        $data['email_month'] = $this->Model->count_email_logs_month();
         
         // Cours par catégorie
         $data['courses_by_category'] = $this->Model->get_courses_by_category();

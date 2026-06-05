@@ -43,9 +43,9 @@ class News_media extends MY_Controller {
         $rsp = $this->Model->create('news_media', $data);
 
         if ($rsp) {
-            $this->session->set_flashdata('sms', '<div class="alert alert-success mt-1">Content created successfully.</div>');
+            $this->session->set_flashdata('sms', '<div class="alert alert-success mt-1">Contenu créé avec succès.</div>');
         } else {
-            $this->session->set_flashdata('sms', '<div class="alert alert-danger mt-1">An unknown error, contact admin!</div>');
+            $this->session->set_flashdata('sms', '<div class="alert alert-danger mt-1">Erreur inconnue, contactez l\'administrateur.</div>');
         }
 
         redirect(base_url('news_media'));
@@ -71,9 +71,9 @@ class News_media extends MY_Controller {
         $rsp = $this->Model->update('news_media', ['uuid' => $uuid], $data);
 
         if ($rsp) {
-            $this->session->set_flashdata('sms', '<div class="alert alert-success mt-1">Content updated successfully.</div>');
+            $this->session->set_flashdata('sms', '<div class="alert alert-success mt-1">Contenu mis à jour avec succès.</div>');
         } else {
-            $this->session->set_flashdata('sms', '<div class="alert alert-danger mt-1">An unknown error, contact admin!</div>');
+            $this->session->set_flashdata('sms', '<div class="alert alert-danger mt-1">Erreur inconnue, contactez l\'administrateur.</div>');
         }
 
         redirect(base_url('news_media'));
@@ -86,9 +86,9 @@ class News_media extends MY_Controller {
         $rsp = $this->Model->delete('news_media', ['uuid' => $uuid]);
 
         if ($rsp) {
-            $this->session->set_flashdata('sms', '<div class="alert alert-success mt-1">Content deleted successfully.</div>');
+            $this->session->set_flashdata('sms', '<div class="alert alert-success mt-1">Contenu supprimé avec succès.</div>');
         } else {
-            $this->session->set_flashdata('sms', '<div class="alert alert-danger mt-1">An unknown error, contact admin!</div>');
+            $this->session->set_flashdata('sms', '<div class="alert alert-danger mt-1">Erreur inconnue, contactez l\'administrateur.</div>');
         }
 
         redirect(base_url('news_media'));

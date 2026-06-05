@@ -138,13 +138,38 @@
             </div>
         </div>
 
-        <!-- Taux de Conversion -->
+        <!-- Emails Envoyés -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-indigo shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-indigo text-uppercase mb-1">
+                                Emails Envoyés</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?= e($email_total_sent )?></div>
+                            <div class="mt-2 mb-0 text-muted text-xs">
+                                <span class="text-success mr-2">Succès: <?= e($email_success )?></span>
+                                <span class="text-danger">Échecs: <?= e($email_failed )?></span>
+                            </div>
+                            <div class="mt-1 mb-0 text-muted text-xs">
+                                <span>Aujourd'hui: <?= e($email_today )?> • Ce mois: <?= e($email_month )?></span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-mail-bulk fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Taux de Conversion -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-orange shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-orange text-uppercase mb-1">
                                 Taux de Conversion</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 <?= e($total_students > 0 ? round(($paid_inscriptions/$total_students)*100, 1) : 0 )?>%
@@ -163,7 +188,7 @@
 
         <!-- Revenue -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-orange shadow h-100 py-2">
+            <div class="card border-left-secondary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">

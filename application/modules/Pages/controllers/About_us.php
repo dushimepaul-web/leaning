@@ -41,12 +41,23 @@ class About_us extends MY_Controller {
 		$rsp=$this->Model->create('contact_us',$data);
 
 		if ($rsp) {
+			$this->load->library('Cpanel_email');
+			$msg_admin = "
+			<h2>Nouveau message de contact</h2>
+			<p><strong>Nom :</strong> $FullName</p>
+			<p><strong>Email :</strong> $Email</p>
+			<p><strong>Téléphone :</strong> $PhoneNumber</p>
+			<p><strong>Sujet :</strong> $Subject</p>
+			<p><strong>Message :</strong><br>" . nl2br($Message) . "</p>
+			";
+			$this->cpanel_email_lib->send_email('infos@cerfop.bi', 'Nouveau contact - ' . $Subject, $msg_admin);
+
 			$sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     Content created successfully.
+						     Contenu créé avec succès.
 						 </div>';
 		}else{
             $sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     <strong class="text-danger">Oups!</strong> An unknown error, contact admin!.
+						     <strong class="text-danger">Oups!</strong> Erreur inconnue, contactez l\'administrateur.
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);

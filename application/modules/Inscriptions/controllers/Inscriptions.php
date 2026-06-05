@@ -237,8 +237,26 @@ class Inscriptions extends MY_Controller {
         redirect(base_url('Inscriptions'));
     }
 
+    function MarkAsCompleted(){
+        $uuid = $this->input->post('uuid');
+        
+        $rsp = $this->Model->update('inscriptions', ['uuid' => $uuid], ['status_ended_course' => 1]);
+
+        if ($rsp) {
+            $this->load->library('Cpanel_email');
+            redirect(base_url("Certificate/send/$uuid"));
+            return;
+        } else {
+            $sms = '<div class="alert alert-danger fade show mt-1 message" role="alert">
+                    <strong>Oups!</strong> Une erreur est survenue, contactez l\'administrateur.
+                </div>';
+        }
+        
+        $this->session->set_flashdata('sms', $sms);
+        redirect(base_url('Inscriptions'));
+    }
+
    
-    
 
     // Fonction pour générer une facture
     function GenerateInvoice($uuid){

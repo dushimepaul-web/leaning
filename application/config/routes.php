@@ -60,4 +60,6 @@ $route['Admin'] = 'Admin/index';
 $route['Login'] = 'Admin/Login';
 $route['Logout'] = 'Admin/Logout';
 $route['Profile'] = 'Profile/Profile';
+$route['Certificate/(:any)'] = 'Pages/Certificate/index/$1';
+$route['Certificate/send/(:any)'] = 'Pages/Certificate/send/$1';
 

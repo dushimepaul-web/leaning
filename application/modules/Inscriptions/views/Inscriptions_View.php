@@ -377,22 +377,23 @@ php
                                     </div>
                                 </div>
 
-                                <!-- Modal Marquer comme Terminé -->
+                                <!-- Modal Marquer comme Terminé + Certificat -->
                                 <div class="modal fade" id="markEnded_<?= e($value['id_inscription'])?>" tabindex="-1">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
-                                            <form action="<?= base_url('Inscriptions/MarkAsEnded') ?>" method="POST">
+                                            <form action="<?= base_url('Inscriptions/MarkAsCompleted') ?>" method="POST">
                                                 <input type="hidden" name="uuid" value="<?= e($value['uuid'])?>">
                                                 <div class="modal-header">
                                                     <h5 class="modal-title">Marquer comme terminé</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p>Confirmez-vous que le cours est terminé pour cet étudiant?</p>
+                                                    <p>Confirmez-vous que le cours est terminé pour cet étudiant ?</p>
+                                                    <p class="text-success mb-0"><i class="bi bi-award"></i> Un certificat sera envoyé automatiquement.</p>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                    <button type="submit" class="btn btn-success">Marquer comme terminé</button>
+                                                    <button type="submit" class="btn btn-success">Terminer & envoyer le certificat</button>
                                                 </div>
                                             </form>
                                         </div>

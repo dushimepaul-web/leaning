@@ -35,6 +35,7 @@
                         <thead>
                             <tr>
                                 <th>#</th>
+                                <th>Image</th>
                                 <th>Nom du Cours</th>
                                 <th>Catégorie</th>
                                 <th>Enseignant</th>
@@ -48,6 +49,13 @@
                             <?php foreach ($courses as $value): ?>
                                 <tr>
                                     <td><?= e($i++)?></td>
+                                    <td>
+                                        <?php if (!empty($value['image'])): ?>
+                                            <img src="<?= base_url('attachments/Courses/' . $value['image']) ?>" alt="" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?= e($value['nom_course'])?></td>
                                     <td><?= e($value['nom_categories'])?></td>
                                     <td><?= e($value['nom_teacher'] . ' ' . $value['prenom_teacher'])?></td>
@@ -80,7 +88,7 @@
                                                 <h5 class="modal-title">Modifier le cours</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
-                                            <form action="<?= base_url('Courses/UpdateCourse') ?>" method="POST">
+                                            <form action="<?= base_url('Courses/UpdateCourse') ?>" method="POST" enctype="multipart/form-data">
                                                 <input type="hidden" name="uuid" value="<?= e($value['uuid'])?>">
                                                 <div class="modal-body">
                                                     <div class="row">
@@ -88,6 +96,15 @@
                                                             <div class="form-floating mb-3">
                                                                 <input type="text" class="form-control" name="nom_course" value="<?= e($value['nom_course'])?>" required>
                                                                 <label>Nom du cours</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Image du cours</label>
+                                                                <input type="file" class="form-control" name="image" accept="image/*">
+                                                                <?php if (!empty($value['image'])): ?>
+                                                                    <small class="text-muted">Actuelle: <img src="<?= base_url('attachments/Courses/' . $value['image']) ?>" style="height:30px;vertical-align:middle;"></small>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-4">
@@ -103,7 +120,6 @@
                                                                 <label>Catégorie</label>
                                                             </div>
                                                         </div>
-                                                    
                                                         <div class="col-md-4">
                                                             <div class="form-floating mb-3">
                                                                 <select class="form-control" name="id_teacher" required>
@@ -183,6 +199,7 @@
                         <tfoot>
                             <tr>
                                 <th>#</th>
+                                <th>Image</th>
                                 <th>Nom du Cours</th>
                                 <th>Catégorie</th>
                                 <th>Enseignant</th>
@@ -204,13 +221,19 @@
                         <h5 class="modal-title">Nouveau cours</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <form action="<?= base_url('Courses/CreateCourse') ?>" method="POST">
+                    <form action="<?= base_url('Courses/CreateCourse') ?>" method="POST" enctype="multipart/form-data">
                         <div class="modal-body">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-floating mb-3">
                                         <input type="text" class="form-control" name="nom_course" required>
                                         <label>Nom du cours</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Image du cours</label>
+                                        <input type="file" class="form-control" name="image" accept="image/*">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -223,8 +246,7 @@
                                         </select>
                                         <label>Catégorie</label>
                                     </div>
-                                
-                            </div>
+                                </div>
                                 <div class="col-md-4">
                                     <div class="form-floating mb-3">
                                         <select class="form-control" name="id_teacher" required>
@@ -235,9 +257,9 @@
                                         </select>
                                         <label>Enseignant</label>
                                     </div>
-                                    </div>
                                 </div>
-                                <div class="col-md-12">
+                            </div>
+                            <div class="col-md-12">
                                     <div class="form-floating mb-3">
                                         <textarea class="form-control ckeditor" name="description" style="height: 100px;" required></textarea>
                                         <label>Description</label>

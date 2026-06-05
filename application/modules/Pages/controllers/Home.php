@@ -48,6 +48,16 @@ class Home extends MY_Controller {
 
         $sms = [];
         if ($rsp) {
+            $this->load->library('Cpanel_email');
+            $site_name = $this->Model->get_setting('site_name', 'CERFOP');
+            $welcome_msg = "
+            <h2>Merci de votre inscription !</h2>
+            <p>Vous êtes désormais abonné à notre newsletter.</p>
+            <p>Vous recevrez nos actualités, offres et informations sur nos formations.</p>
+            <p>À bientôt,<br><strong>$site_name</strong></p>
+            ";
+            $this->cpanel_email_lib->send_email($email, 'Bienvenue à la newsletter - ' . $site_name, $welcome_msg);
+
             $sms['sms'] = '<div class="alert alert-success fade show mt-1 message" role="alert">
                              Email ajouté avec succès.
                          </div>';

@@ -90,20 +90,7 @@ class Inscriptions extends MY_Controller {
         $rsp = $this->Model->create('inscriptions', $inscription_data);
 
         if ($rsp) {
-        // 1. Configuration SMTP (depuis config.php)
-        $this->email->initialize([
-            'protocol'    => $this->config->item('smtp_protocol'),
-            'smtp_host'   => $this->config->item('smtp_host'),
-            'smtp_port'   => $this->config->item('smtp_port'),
-            'smtp_user'   => $this->config->item('smtp_user'),
-            'smtp_pass'   => $this->config->item('smtp_pass'),
-            'mailtype'    => $this->config->item('smtp_mailtype'),
-            'charset'     => $this->config->item('smtp_charset'),
-            'smtp_crypto' => $this->config->item('smtp_crypto'),
-            'newline'     => $this->config->item('smtp_newline'),
-        ]);
-
-        // 2. Récupération des informations détaillées (Cours + Dates + Modes)
+        // Récupération des informations détaillées (Cours + Dates + Modes)
         $sql = "
             SELECT c.nom_course, t.date_debut, t.date_defin, am.nom_attendance, mp.description
             FROM inscriptions i
@@ -117,7 +104,7 @@ class Inscriptions extends MY_Controller {
         $info = $this->Model->readQuery($sql, [$token]);
         $details = !empty($info) ? $info[0] : [];
         $logo_url = base_url('attachments/Other/' . $this->Model->get_setting('site_logo', 'logo.png'));
-        $confirmation_link = base_url("Inscriptions/confirm_email?token=$token");
+        $confirmation_link = base_url("Inscriptions/confirm_email/$token");
 
       $message = "
 <!DOCTYPE html>
@@ -206,21 +193,40 @@ class Inscriptions extends MY_Controller {
 </body>
 </html>";
 
-        $this->email->from($this->Model->get_setting('smtp_from_email', 'noreply@abelab.com'), $this->Model->get_setting('site_name', 'AbeLab'));
-        $this->email->to($email);
-        $this->email->subject('Validation de votre inscription - '.$details['nom_course']);
-        $this->email->message($message);
+        $this->load->library('Cpanel_email');
+        $subject = 'Validation de votre inscription - '.$details['nom_course'];
+        $result = $this->cpanel_email_lib->send_email($email, $subject, $message);
 
-            if($this->email->send()){
+            if($result['success']){
+                // Notification admin
+                $msg_admin = "
+                <h2>Nouvelle inscription</h2>
+                <p><strong>Étudiant :</strong> $fullname</p>
+                <p><strong>Email :</strong> $email</p>
+                <p><strong>Téléphone :</strong> $phone</p>
+                <p><strong>Formation :</strong> {$details['nom_course']}</p>
+                <p><strong>Période :</strong> " . date('d/m/Y', strtotime($details['date_debut'])) . " - " . date('d/m/Y', strtotime($details['date_defin'])) . "</p>
+                <p><strong>Mode :</strong> {$details['nom_attendance']}</p>
+                <p><strong>Paiement :</strong> {$details['description']}</p>
+                ";
+                $this->cpanel_email_lib->send_email('infos@cerfop.bi', 'Nouvelle inscription - ' . $details['nom_course'], $msg_admin);
+
                 $data = [
             'fullname'     => $fullname,
             'email'        => $email,
-            'course_name'  => $details['nom_course']
+            'course_name'  => $details['nom_course'],
+            'date_debut'   => $details['date_debut'],
+            'date_defin'   => $details['date_defin'],
+            'attendance'   => $details['nom_attendance'],
+            'payement'     => $details['description']
         ];
 
                 $this->load->view('Success_View', $data);
 
-            } 
+            } else {
+                $this->session->set_flashdata('error', 'L\'email de confirmation n\'a pas pu être envoyé. Contactez l\'administration.');
+                redirect('Pages/Inscriptions');
+            }
         } else {
             $this->session->set_flashdata('error', 'Une erreur est survenue lors de l’inscription.');
             redirect('Pages/Inscriptions');

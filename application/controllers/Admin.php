@@ -32,7 +32,7 @@ class Admin extends MY_Controller {
         
         $result=$this->Model->readOne('users',['idUser'=>$login['idUser']]); 
         if (!$result) {
-            $sms['sms']='<div id="message" class="alert alert-danger text-center"><strong>Oups!</strong> user not found.</div>';
+            $sms['sms']='<div id="message" class="alert alert-danger text-center"><strong>Oups!</strong> Utilisateur non trouvé.</div>';
             $this->session->set_flashdata($sms);
             redirect(base_url('Admin'));
             return;
@@ -57,14 +57,14 @@ class Admin extends MY_Controller {
       }else{
               // $this->attempt_time($username);
             $sms['sms']='<div id="message" class="alert alert-danger text-center">
-                                <strong>Oups!</strong> incorrect password/ you are account is not activated.
+                                <strong>Oups!</strong> Mot de passe incorrect ou compte non activé.
                             </div>';
             $this->session->set_flashdata($sms);
             redirect(base_url('Admin'));
       }
     }else{
           $sms['sms']='<div id="message" class="alert alert-danger text-center">
-                                <strong>Oups!</strong> incorrect username/ account has been desabled.
+                                <strong>Oups!</strong> Nom d\'utilisateur incorrect ou compte désactivé.
                             </div>';
         $this->session->set_flashdata($sms);
         redirect(base_url('Admin'));

@@ -35,8 +35,14 @@ class Courses extends MY_Controller {
         $id_teacher = $this->input->post('id_teacher');
         $description = $this->input->post('description');
 
+        $image = '';
+        if (!empty($_FILES['image']['name'])) {
+            $image = $this->upload_document($_FILES['image']['tmp_name'], $_FILES['image']['name']);
+        }
+
         $data = array(
             'nom_course' => $nom_course,
+            'image' => $image,
             'id_categorie' => $id_categorie,
             'id_teacher' => $id_teacher,
             'description' => $description,
@@ -73,6 +79,10 @@ class Courses extends MY_Controller {
             'id_teacher' => $id_teacher,
             'description' => $description
         );
+
+        if (!empty($_FILES['image']['name'])) {
+            $data['image'] = $this->upload_document($_FILES['image']['tmp_name'], $_FILES['image']['name']);
+        }
         
         $rsp = $this->Model->update('courses', ['uuid' => $uuid], $data);
 
@@ -105,5 +115,16 @@ class Courses extends MY_Controller {
         }
         $this->session->set_flashdata($sms);
         redirect(base_url('Courses'));
+    }
+
+    public function upload_document($tmp_name, $file_name) {
+        $folder = FCPATH . 'attachments/Courses/';
+        $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        $valid = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!in_array($ext, $valid)) return null;
+        if (!is_dir($folder)) mkdir($folder, 0777, true);
+        $name = date('YmdHis') . '_' . uniqid() . '.' . $ext;
+        move_uploaded_file($tmp_name, $folder . $name);
+        return $name;
     }
 }

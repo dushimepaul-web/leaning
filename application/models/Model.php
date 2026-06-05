@@ -378,6 +378,30 @@ public function countWhere($table, $where)
         return $this->db->where('email_confirmed', 1)->count_all_results('inscriptions');
     }
 
+    // Statistiques des emails envoyés
+    public function count_email_logs($status = null) {
+        if ($status) {
+            $this->db->where('status', $status);
+        }
+        return $this->db->count_all_results('email_logs');
+    }
+
+    public function count_email_logs_today($status = null) {
+        $this->db->where('DATE(sent_at)', date('Y-m-d'));
+        if ($status) {
+            $this->db->where('status', $status);
+        }
+        return $this->db->count_all_results('email_logs');
+    }
+
+    public function count_email_logs_month($status = null) {
+        $this->db->where('MONTH(sent_at)', date('m'));
+        $this->db->where('YEAR(sent_at)', date('Y'));
+        if ($status) {
+            $this->db->where('status', $status);
+        }
+        return $this->db->count_all_results('email_logs');
+    }
 
     // Cours par catégorie
     public function get_courses_by_category() {

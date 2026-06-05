@@ -10,43 +10,49 @@
 
 
 
-<div class="container-fluid course-container px-3 px-md-4 px-lg-5">
-    <div class="row justify-content-center">
+<div class="container-fluid course-container px-3 px-md-4 px-lg-5 py-4">
+    <div class="row justify-content-center g-4">
 
         <?php if (!empty($cours)) : ?>
             <?php foreach ($cours as $c) : ?>
 
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex justify-content-center">
-                    <div class="info-box-wrapper">
-                        
-                        <div class="elementor-image-box-img">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex">
+                    <div class="info-box-wrapper card border-0 shadow-sm rounded-4 overflow-hidden w-100 transition-hover">
+
+                        <div class="elementor-image-box-img" style="height: 200px; overflow: hidden;">
                             <a href="#">
-                                <img class="h-100 w-100" src="<?= base_url($this->Model->get_setting('default_course_image', 'assets/images/abelab.png')) ?>"
+                                <?php if (!empty($c['image'])): ?>
+                                <img class="w-100 h-100" src="<?= base_url('attachments/Courses/' . $c['image']) ?>"
+                                     style="object-fit: cover;"
                                      alt="<?= e($c['nom_course'] )?>">
+                                <?php else: ?>
+                                <div class="w-100 h-100 bg-light d-flex align-items-center justify-content-center text-muted">
+                                    <i class="fas fa-image fa-3x"></i>
+                                </div>
+                                <?php endif; ?>
                             </a>
                         </div>
 
-                        <div class="info-box-subtitle">
-                            <?= !empty($tc['date_debut']) && !empty($tc['date_defin'])
-                                ? (new DateTime($tc['date_debut']))->diff(new DateTime($tc['date_defin']))->days . ' jours'
-                                : 'Non spécifié'; ?> Training
-                        </div>
+                        <div class="card-body d-flex flex-column p-3 p-md-4">
+                            <span class="badge bg-primary bg-opacity-10 text-primary align-self-start mb-2 px-3 py-1">
+                                <i class="fas fa-clock me-1"></i> Formation
+                            </span>
 
-                        <h4 class="info-box-title"><?= e($c['nom_course'] )?></h4>
+                            <h4 class="info-box-title fw-bold h5 mt-2"><?= e($c['nom_course'] )?></h4>
 
-                        <div class="info-box-inner">
-                            <p class="text-ellipsis-3">
-                                <?= substr(strip_tags($c['description']), 0, 200) ?>...
-                                <a href="<?= base_url('Pages/Home/coursedetail/' . $c['uuid']) ?>">
-                                    <strong>Learn more</strong>
+                            <div class="info-box-inner flex-grow-1">
+                                <p class="text-muted small text-ellipsis-3 mb-0">
+                                    <?= substr(strip_tags($c['description']), 0, 200) ?>...
+                                </p>
+                            </div>
+
+                            <div class="mt-3 pt-3 border-top">
+                                <a href="<?= base_url('Pages/Home/coursedetail/' . $c['uuid']) ?>"
+                                   class="btn w-100"
+                                   style="background-color: #000099; color: white; border-radius: 50px;">
+                                    Register <i class="fas fa-arrow-right ms-1"></i>
                                 </a>
-                            </p>
-                        </div>
-
-                        <div class="wd-button-wrapper mt-auto">
-                            <a class="btn" style="background-color: #000099; color: white;" href="<?= base_url('Pages/Home/coursedetail/' . $c['uuid']) ?>">
-                                Register <span class="wd-btn-icon"><i class="fas fa-arrow-right"></i></span>
-                            </a>
+                            </div>
                         </div>
 
                     </div>
@@ -54,11 +60,25 @@
 
             <?php endforeach; ?>
         <?php else: ?>
-            <p class="text-center">Aucun cours trouvé.</p>
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Aucun cours trouvé.</p>
+            </div>
         <?php endif; ?>
 
     </div>
 </div>
+
+<style>
+.info-box-wrapper { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.info-box-wrapper:hover { transform: translateY(-4px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important; }
+.text-ellipsis-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
 
 
 <?php include VIEWPATH.'media/Footer.php'; ?>

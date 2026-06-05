@@ -46,11 +46,11 @@ class Testimony extends MY_Controller {
 
 		if ($rsp) {
 			$sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     Content created successfully.
+						     Contenu créé avec succès.
 						 </div>';
 		}else{
             $sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     <strong class="text-danger">Oups!</strong> An unknown error, contact admin!.
+						     <strong class="text-danger">Oups!</strong> Erreur inconnue, contactez l\'administrateur.
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);
@@ -82,11 +82,11 @@ class Testimony extends MY_Controller {
 
 		if ($rsp) {
 			$sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     Content updated successfully.
+						     Contenu mis à jour avec succès.
 						 </div>';
 		}else{
             $sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     <strong class="text-danger">Oups!</strong> An unknown error, contact admin!.
+						     <strong class="text-danger">Oups!</strong> Erreur inconnue, contactez l\'administrateur.
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);
@@ -100,11 +100,11 @@ class Testimony extends MY_Controller {
 
 		if ($rsp) {
 			$sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     Content deleted successfully.
+						     Contenu supprimé avec succès.
 						 </div>';
 		}else{
             $sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
-						     <strong class="text-danger">Oups!</strong> An unknown error, contact admin!.
+						     <strong class="text-danger">Oups!</strong> Erreur inconnue, contactez l\'administrateur.
 						 </div>';
 		}
 		$this->session->set_flashdata($sms);

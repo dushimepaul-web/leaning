@@ -39,9 +39,7 @@
 								<tr>
 									<td><?= e($i++)?></td>
                    <td><?= e($value['title'])?></td>
-									<td>
-                      <a href="javascript:void()" data-bs-toggle="modal" data-bs-target="#detail_<?=e($value['id_about_us'])?>">View detail</a>
-                       </td>
+									<td><?= substr(strip_tags($value['details']), 0, 100) ?>...</td>
 									<td>
 										<div class="dropdown">
 											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">Options</button>
@@ -69,9 +67,9 @@
                                                  <label class="form-label">Titre</label>
                                                <input type="text" class="form-control" value="<?=e($value['title'])?>" name="title" placeholder="Titre" required="">
                                             </div>
-													<div class="form-floating">
-														<textarea class="form-control ckeditor" name="details" id="floatingTextarea" style="height: 100px;" required><?= e($value['details'])?></textarea>
-														<label for="floatingTextarea">details</label>
+													<div class="mb-3">
+														<label class="form-label">Détails</label>
+														<textarea class="form-control ckeditor-about" name="details" id="ck_about_update_<?= $value['id_about_us'] ?>" style="height: 200px;" required><?= e($value['details'])?></textarea>
 													</div>
 												</div>
 												<div class="modal-footer">
@@ -93,7 +91,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
 </div>
 <div class="modal-body">
-  <?=e($value['details'])?>
+  <?= $value['details']?>
 </div>
 <div class="modal-footer">
   <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fermer</button> 
@@ -149,9 +147,9 @@
                     <label class="form-label">Titre</label>
                      <input type="text" class="form-control" name="title" placeholder="Titre" required="">
                        </div>
-							<div class="form-floating">
-								<textarea class="form-control ckeditor" name="details" id="floatingTextarea" style="height: 100px;" required></textarea>
-								<label for="floatingTextarea">details</label>
+							<div class="mb-3">
+								<label class="form-label">Détails</label>
+								<textarea class="form-control ckeditor-about" name="details" id="ck_about_add" style="height: 200px;" required></textarea>
 							</div>
 						</div>
 						<div class="modal-footer">
@@ -167,17 +165,29 @@
 </div>
 <!--end page wrapper -->
 
- 
- <!-- ========= CKEDITOR + UPLOAD ========= -->
-<script src="<?= base_url("assets/cdn/ckeditor/ckeditor.js") ?>"></script>
-
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
 <script>
-$(document).ready(function () {
-    $('.ckeditor').each(function () {
-        CKEDITOR.replace($(this).attr('name'), {
-            filebrowserUploadUrl: "<?php echo base_url('Carousel/uploadImage'); ?>",
-            filebrowserUploadMethod: "form"
-        });
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('shown.bs.modal', function (e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.querySelectorAll('textarea.ckeditor-about').forEach(function (el) {
+                if (!CKEDITOR.instances[el.id]) {
+                    CKEDITOR.replace(el.id, {
+                        filebrowserUploadUrl: "<?= base_url('Carousel/uploadImage') ?>",
+                        filebrowserUploadMethod: "form"
+                    });
+                }
+            });
+        }
+    });
+    document.addEventListener('hidden.bs.modal', function (e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.querySelectorAll('textarea.ckeditor-about').forEach(function (el) {
+                if (CKEDITOR.instances[el.id]) {
+                    CKEDITOR.instances[el.id].destroy();
+                }
+            });
+        }
     });
 });
 </script>

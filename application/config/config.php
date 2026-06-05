@@ -523,17 +523,4 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
-/*
-|--------------------------------------------------------------------------
-| SMTP Configuration
-|--------------------------------------------------------------------------
-*/
-$config['smtp_protocol']    = 'smtp';
-$config['smtp_host']       = 'smtp.gmail.com';
-$config['smtp_port']       = 587;
-$config['smtp_user']       = 'dushimeyesupaulin@gmail.com';
-$config['smtp_pass']       = 'pmhkniuvlqnwyblm';
-$config['smtp_crypto']     = 'tls';
-$config['smtp_mailtype']   = 'html';
-$config['smtp_charset']    = 'utf-8';
-$config['smtp_newline']    = "\r\n";
+

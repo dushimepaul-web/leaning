@@ -19,6 +19,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?=base_url()?>assets/cdn/fontawesome/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <!-- Plugins CSS -->
     <link href="<?=base_url()?>assets/admin/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet">

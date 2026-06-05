@@ -51,7 +51,7 @@ class Timetable extends MY_Controller {
         $rsp = $this->Model->create('timetable', $data);
 
         if ($rsp) {
-            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message">Content created successfully.</div>';
+            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message">Contenu créé avec succès.</div>';
         } else {
             $sms['sms'] = '<div class="alert alert-danger">Erreur inconnue.</div>';
         }
@@ -86,7 +86,7 @@ class Timetable extends MY_Controller {
         $rsp = $this->Model->update('timetable', ['uuid' => $uuid], $data);
 
         if ($rsp) {
-            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message">Content updated successfully.</div>';
+            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message">Contenu mis à jour avec succès.</div>';
         } else {
             $sms['sms'] = '<div class="alert alert-danger">Erreur inconnue.</div>';
         }
@@ -103,7 +103,7 @@ class Timetable extends MY_Controller {
         $rsp = $this->Model->delete('timetable', ['uuid' => $uuid]);
 
         if ($rsp) {
-            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message">Content deleted successfully.</div>';
+            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message">Contenu supprimé avec succès.</div>';
         } else {
             $sms['sms'] = '<div class="alert alert-danger">Erreur inconnue.</div>';
         }

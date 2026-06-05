@@ -28,6 +28,18 @@ class Contact_us extends MY_Controller {
             show_error($this->db->error()['message']); // Affiche une erreur si insertion échoue
         }
 
+        $name = $this->input->post('name', TRUE);
+        $email = $this->input->post('email', TRUE);
+
+        $this->load->library('Cpanel_email');
+        $msg_admin = "
+        <h2>Nouveau témoignage</h2>
+        <p><strong>Nom :</strong> $name</p>
+        <p><strong>Email :</strong> $email</p>
+        <p><strong>Message :</strong><br>" . nl2br($this->input->post('message', TRUE)) . "</p>
+        ";
+        $this->cpanel_email_lib->send_email('infos@cerfop.bi', 'Nouveau témoignage reçu', $msg_admin);
+
         $this->session->set_flashdata('success', 'Merci pour votre témoignage. Il sera publié après validation.');
         redirect(base_url('Pages/About_us/contact'));
     }

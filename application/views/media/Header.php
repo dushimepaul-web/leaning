@@ -14,6 +14,7 @@
 
     <link href="<?=base_url()?>assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?=base_url()?>assets/cdn/fontawesome/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Google Fonts -->
     <link href="<?=base_url()?>assets/cdn/fonts/roboto-condensed.css" rel="stylesheet">

@@ -37,7 +37,7 @@
 							<?php $i = 1; foreach ($mission as $value): ?>
 								<tr>
 									<td><?= e($i++)?></td>
-									<td><?= e($value['content'])?></td>
+									<td><?= substr(strip_tags($value['content']), 0, 100) ?>...</td>
 									<td>
 										<div class="dropdown">
 											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">Options</button>
@@ -61,10 +61,10 @@
 											<form action="<?= base_url('Mission/Update_mission') ?>" method="POST">
 												<input type="hidden" name="uuid" value="<?= e($value['uuid'])?>">
 												<div class="modal-body">
-													<div class="form-floating">
-														<textarea class="form-control" name="Description" id="floatingTextarea" style="height: 100px;" required><?= e($value['content'])?></textarea>
-														<label for="floatingTextarea">Description</label>
-													</div>
+												<div class="mb-3">
+													<label class="form-label">Description</label>
+													<textarea class="form-control ckeditor-mission" name="Description" id="ck_mission_update_<?= $value['id_mission'] ?>" style="height: 200px;" required><?= e($value['content'])?></textarea>
+												</div>
 												</div>
 												<div class="modal-footer">
 													<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fermer</button>
@@ -85,7 +85,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
 </div>
 <div class="modal-body">
-  <?=e($value['content'])?>
+  <?= $value['content']?>
 </div>
 <div class="modal-footer">
   <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fermer</button> 
@@ -137,9 +137,9 @@
 					</div>
 					<form action="<?= base_url('Mission/Creer_mission') ?>" method="POST">
 						<div class="modal-body">
-							<div class="form-floating">
-								<textarea class="form-control" name="Description" id="floatingTextarea" style="height: 100px;" required></textarea>
-								<label for="floatingTextarea">Description</label>
+							<div class="mb-3">
+								<label class="form-label">Description</label>
+								<textarea class="form-control ckeditor-mission" name="Description" id="ck_mission_add" style="height: 200px;" required></textarea>
 							</div>
 						</div>
 						<div class="modal-footer">
@@ -155,6 +155,31 @@
 </div>
 <!--end page wrapper -->
 
- 
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('shown.bs.modal', function (e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.querySelectorAll('textarea.ckeditor-mission').forEach(function (el) {
+                if (!CKEDITOR.instances[el.id]) {
+                    CKEDITOR.replace(el.id, {
+                        filebrowserUploadUrl: "<?= base_url('Carousel/uploadImage') ?>",
+                        filebrowserUploadMethod: "form"
+                    });
+                }
+            });
+        }
+    });
+    document.addEventListener('hidden.bs.modal', function (e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.querySelectorAll('textarea.ckeditor-mission').forEach(function (el) {
+                if (CKEDITOR.instances[el.id]) {
+                    CKEDITOR.instances[el.id].destroy();
+                }
+            });
+        }
+    });
+});
+</script>
 
 <?php include VIEWPATH.'includes/Footer.php'; ?>
