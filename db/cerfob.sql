@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : ven. 05 juin 2026 à 15:02
+-- Généré le : dim. 07 juin 2026 à 19:03
 -- Version du serveur : 9.1.0
 -- Version de PHP : 8.0.30
 
@@ -277,6 +277,37 @@ CREATE TABLE IF NOT EXISTS `inscriptions` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `institution_contents`
+--
+
+DROP TABLE IF EXISTS `institution_contents`;
+CREATE TABLE IF NOT EXISTS `institution_contents` (
+  `IdContent` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) DEFAULT NULL,
+  `Type` enum('VISION','MISSION','VALEUR','AXE_STRATEGIQUE','MODELE_PEDAGOGIQUE','PARTENARIAT_STRATEGIQUE') NOT NULL,
+  `Title` varchar(255) NOT NULL,
+  `Description` longtext NOT NULL,
+  `Status` enum('Active','Inactive') DEFAULT 'Active',
+  `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`IdContent`)
+) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Déchargement des données de la table `institution_contents`
+--
+
+INSERT INTO `institution_contents` (`IdContent`, `uuid`, `Type`, `Title`, `Description`, `Status`, `CreatedAt`, `UpdatedAt`) VALUES
+(1, NULL, 'VALEUR', 'Valeurs fondamentales', '<h3>Valeurs fondamentales</h3>\r\n<ul>\r\n<li><strong>Excellence</strong> : qualit&eacute; et rigueur dans toutes les formations et &eacute;tudes</li>\r\n<li><strong>Innovation</strong> : cr&eacute;ativit&eacute; et recherche de solutions nouvelles</li>\r\n<li><strong>Int&eacute;grit&eacute;</strong> : &eacute;thique, transparence et professionnalisme</li>\r\n<li><strong>Impact</strong> : r&eacute;sultats mesurables et pertinents</li>\r\n<li><strong>Adaptabilit&eacute;</strong> : formations et services ajust&eacute;s aux besoins des participants et organisations et aux standards de qualit&eacute;</li>\r\n<li><strong>Collaboration</strong> : synergies avec entreprises, institutions et experts</li>\r\n</ul>', 'Active', '2026-06-07 17:46:18', '2026-06-07 17:46:18'),
+(2, NULL, 'AXE_STRATEGIQUE', 'Axes strat&eacute;giques de formation', '\r\n<h3>Axes strat&eacute;giques de formation</h3>\r\n\r\n<h4>P&ocirc;le 1 : Leadership, Management &amp; Gouvernance</h4>\r\n<p><strong>Objectif</strong> : Contribuer au renforcement des comp&eacute;tences strat&eacute;giques des responsables d&rsquo;entreprises et d&rsquo;organisations sans but lucratif, et &agrave; l&rsquo;am&eacute;lioration de leur performance globale.</p>\r\n<ul>\r\n<li>Management et leadership transformationnel</li>\r\n<li>Gestion socio-&eacute;conomique des entreprises et organisations sans but lucratif</li>\r\n<li>Gestion des ressources humaines et performance organisationnelle : recrutement, int&eacute;gration et fid&eacute;lisation du personnel, gestion des comp&eacute;tences et d&eacute;veloppement des talents, &eacute;valuation de la performance individuelle et collective, motivation et engagement du personnel, culture organisationnelle et travail d&rsquo;&eacute;quipe, outils num&eacute;riques pour la GRH et tableaux de bord RH, conformit&eacute; l&eacute;gale et s&eacute;curit&eacute; au travail</li>\r\n<li>Pilotage strat&eacute;gique et planification</li>\r\n<li>&Eacute;laboration et suivi d&rsquo;un plan strat&eacute;gique</li>\r\n<li>D&eacute;veloppement et suivi d&rsquo;outils op&eacute;rationnels : manuels de proc&eacute;dures administratives, comptables et financi&egrave;res</li>\r\n</ul>\r\n\r\n<h4>P&ocirc;le 2 : Comp&eacute;tences Techniques &amp; M&eacute;tiers</h4>\r\n<ul>\r\n<li><strong>Data Analytics</strong> : Excel (D&eacute;butant &rarr; Avanc&eacute;), Tableau pour la visualisation des donn&eacute;es</li>\r\n<li><strong>SIG / GIS</strong> : analyse spatiale et cartographie</li>\r\n<li><strong>Comptabilit&eacute; num&eacute;rique</strong> : Entreprises avec Excel, Organisations sans but lucratif avec Excel, Entreprises avec QuickBooks, Organisations sans but lucratif avec QuickBooks</li>\r\n<li><strong>Suivi et &Eacute;valuation (S&amp;E) des projets</strong> : fondamentaux, collecte et analyse de donn&eacute;es, indicateurs, reporting</li>\r\n</ul>\r\n\r\n<h4>P&ocirc;le 3 : D&eacute;veloppement Personnel &amp; Soft Skills</h4>\r\n<ul>\r\n<li>Communication efficace</li>\r\n<li>Gestion du stress et intelligence &eacute;motionnelle</li>\r\n<li>Travail d&rsquo;&eacute;quipe et r&eacute;solution de conflits</li>\r\n</ul>\r\n\r\n<h4>P&ocirc;le 4 : Entrepreneuriat &amp; Innovation</h4>\r\n<ul>\r\n<li>Lancement et structuration d&rsquo;entreprise</li>\r\n<li>Cr&eacute;ation de business plan et marketing digital</li>\r\n<li>Finance entrepreneuriale : bilan de d&eacute;part, financement, rentabilit&eacute; et efficience</li>\r\n<li>Suivi et &Eacute;valuation des projets de d&eacute;veloppement</li>\r\n</ul>\r\n\r\n<h4>P&ocirc;le 5 : Recherche, Analyse &amp; Production de Connaissances</h4>\r\n<ul>\r\n<li>&Eacute;tudes de faisabilit&eacute; de projets et programmes</li>\r\n<li>&Eacute;valuation de projets : ex-ante, en cours et ex-post, indicateurs quantitatifs et qualitatifs</li>\r\n<li>Programmes de d&eacute;veloppement : conception, suivi, impact et recommandations</li>\r\n<li>&Eacute;tudes de G&eacute;nie Civil : conception, planification, analyses techniques et suivi de chantier</li>\r\n<li>Analyses socio-&eacute;conomiques : mesure de l&rsquo;impact des projets et programmes sur les communaut&eacute;s et les organisations</li>\r\n</ul>\r\n\r\n<h3>Mod&egrave;le p&eacute;dagogique</h3>\r\n<ul>\r\n<li>Approche pratique : ateliers, &eacute;tudes de cas et simulations</li>\r\n<li>Formation modulable : d&eacute;butant, interm&eacute;diaire, avanc&eacute;</li>\r\n<li>Apprentissage par comp&eacute;tences (APC) et &eacute;valuation continue</li>\r\n<li>Certifications professionnelles et accompagnement post-formation</li>\r\n</ul>', 'Active', '2026-06-07 17:52:12', '2026-06-07 17:52:12'),
+(3, NULL, 'MISSION', 'Mission', '<p><strong>Mission</strong></p>\r\n\r\n<p>D&eacute;velopper des comp&eacute;tences techniques avanc&eacute;es et des capacit&eacute;s de pilotage strat&eacute;gique <strong>chez les apprenants</strong>, afin qu&rsquo;ils puissent :</p>\r\n\r\n<ul>\r\n  <li><strong>Prendre des d&eacute;cisions bas&eacute;es sur des donn&eacute;es fiables et pertinentes</strong>, pour r&eacute;soudre les probl&egrave;mes et atteindre les objectifs de leurs organisations.</li>\r\n  <li><strong>Suivre et mesurer la performance</strong> en temps r&eacute;el &agrave; l&rsquo;aide de tableaux de bord interactifs, pour assurer la redevabilit&eacute; et l&rsquo;efficacit&eacute; des actions.</li>\r\n  <li><strong>Optimiser les processus op&eacute;rationnels</strong> de leurs structures afin d&rsquo;am&eacute;liorer la performance globale.</li>\r\n  <li><strong>&Eacute;valuer et piloter des projets et programmes</strong> afin de maximiser leur impact et leur apprentissage, tout en utilisant efficacement les ressources disponibles.</li>\r\n</ul>\r\n', 'Active', '2026-06-07 18:08:49', '2026-06-07 18:08:49'),
+(4, 'bb5f77d4-b76f-435c-8779-f8aec9cb1dea', 'VISION', 'Vision', '<p>&Ecirc;tre un centre de r&eacute;f&eacute;rence en d&eacute;veloppement des comp&eacute;tences, recherche appliqu&eacute;e et innovation professionnelle, capable de transformer individus, organisations et communaut&eacute;s gr&acirc;ce &agrave; une formation moderne et orient&eacute;e r&eacute;sultats, tout en produisant des &eacute;tudes et analyses de haute qualit&eacute; pour soutenir le d&eacute;veloppement.</p>\r\n', 'Active', '2026-06-07 18:59:52', '2026-06-07 18:59:52'),
+(5, 'd751bdc8-b9d8-4164-a7f5-7da92e19a65f', 'PARTENARIAT_STRATEGIQUE', 'Partenariats stratégiques', '<ul>\r\n <li>Universit&eacute;s et &eacute;coles techniques</li>\r\n <li>Institutions publiques</li>\r\n <li>Entreprises et experts certifi&eacute;s</li>\r\n  <li>Organisations sans but lucratif, telles que les ONG locales et internationales</li>\r\n</ul>\r\n', 'Active', '2026-06-07 19:01:14', '2026-06-07 19:02:26'),
+(6, 'bd165885-c25b-4582-b793-bca3e981fccd', 'MODELE_PEDAGOGIQUE', 'Modèle pédagogique', '<ul>\r\n <li>Approche pratique : ateliers, &eacute;tudes de cas et simulations</li>\r\n  <li>Formation modulable : d&eacute;butant, interm&eacute;diaire, avanc&eacute;</li>\r\n <li>Apprentissage par comp&eacute;tences (APC) et &eacute;valuation continue</li>\r\n <li>Certifications professionnelles et accompagnement post-formation</li>\r\n</ul>\r\n', 'Active', '2026-06-07 19:02:08', '2026-06-07 19:02:08');
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `join_us`
 --
 
@@ -440,7 +471,7 @@ INSERT INTO `settings` (`IdSetting`, `uuid`, `KeyValue`, `TitlePage`, `Value`, `
 (22, '2d8dfe8e-6032-11f1-b822-9c7bef735b1f', 'error_server', 'Erreur Serveur', 'Une erreur interne est survenue, contactez l\'administrateur.', 0),
 (24, '2d8dffd6-6032-11f1-b822-9c7bef735b1f', 'site_description', 'description dans le footer', 'créativité est au cœur de l\'innovation. AbeLab est votre laboratoire de formation dédié aux technologies.', 0),
 (25, 'b2310716-462f-430a-a8c7-f0ff5ab326dd', 'login_cover', 'Image couverture connexion', 'assets/admin/images/login-images/login-cover.svg', 1),
-(26, '2892aa82-864c-4c83-8e84-b8a62b131982', 'site_og_image', 'Image partage réseaux (OG)', 'assets/admin/images/og-image.jpg', 1),
+(26, '2892aa82-864c-4c83-8e84-b8a62b131982', 'site_hero_image', 'hero image', 'assets/images/good.png', 1),
 (27, '57db3656-1ad6-43da-9486-e4d150da5697', 'site_twitter_image', 'Image partage Twitter', 'assets/admin/images/twitter-image.jpg', 1),
 (28, '5ff00e84-08f3-4746-84b4-bc3e2acfc4b6', 'default_avatar', 'Avatar par défaut', 'assets/admin/images/user.png', 1),
 (29, '56d8e196-0c80-431a-a810-80aee1b3d522', 'default_course_image', 'Image cours par défaut', 'assets/images/abelab.png', 1);

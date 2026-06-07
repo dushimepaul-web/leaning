@@ -9,13 +9,12 @@ class About_us extends MY_Controller {
         //$this->not_logged_in();
     }
 
-    
+    // Page publique
 	public function index()
-	{   
-        
-		$data['about_us'] = $this->Model->read('about_us', null, 'id_about_us');
-		$data['vision']=$this->Model->read('vision',null,'id_vision');
-		$data['mission']=$this->Model->read('mission',null,'id_mission');
+	{
+		$data['about_us'] = $this->Model->read('institution_contents', ['Type'=>'ABOUT_US', 'Status'=>'Active'], 'IdContent');
+		$data['vision'] = $this->Model->read('institution_contents', ['Type'=>'VISION', 'Status'=>'Active'], 'IdContent');
+		$data['mission'] = $this->Model->read('institution_contents', ['Type'=>'MISSION', 'Status'=>'Active'], 'IdContent');
 		$this->load->view('about_us_View',$data);
 	}
 
@@ -23,14 +22,14 @@ class About_us extends MY_Controller {
 		$data['contact'] = $this->Model->read('contact_us', null, 'IdContact');
 		$this->load->view('Contact_us_View',$data);
 	}
-     
+
    function Createcontactus(){
 		$FullName=$this->input->post('FullName');
 		$Email=$this->input->post('Email');
 		$Subject=$this->input->post('Subject');
 		$Message=$this->input->post('Message');
 		$PhoneNumber=$this->input->post('PhoneNumber');
-		
+
 
 		$data=array('FullName'=>$FullName,
 	                'Email'=>$Email,
@@ -64,5 +63,46 @@ class About_us extends MY_Controller {
 		redirect(base_url('Pages/About_us/contact'));
 	}
 
+	// Pages publiques génériques
+   public function Valeurs(){
+		$data['contents'] = $this->Model->read('institution_contents', ['Type'=>'VALEUR', 'Status'=>'Active'], 'IdContent');
+		$data['title'] = 'Nos Valeurs';
+		$this->load->view('generique_View',$data);
+	}
+
+	public function Axe_stategique(){
+		$data['contents'] = $this->Model->read('institution_contents', ['Type'=>'AXE_STRATEGIQUE', 'Status'=>'Active'], 'IdContent');
+		$data['title'] = 'Axes Stratégiques';
+		$this->load->view('generique_View',$data);
+	}
+
+	public function Modele_pedagogique(){
+		$data['contents'] = $this->Model->read('institution_contents', ['Type'=>'MODELE_PEDAGOGIQUE', 'Status'=>'Active'], 'IdContent');
+		$data['title'] = 'Modèle Pédagogique';
+		$this->load->view('generique_View',$data);
+	}
+
+	public function Partenariat_stategiques(){
+		$data['contents'] = $this->Model->read('institution_contents', ['Type'=>'PARTENARIAT_STRATEGIQUE', 'Status'=>'Active'], 'IdContent');
+		$data['title'] = 'Partenariats Stratégiques';
+		$this->load->view('generique_View',$data);
+	}
+
+	// ADMINISTRATION - Gestion des contenus institutionnels
+	public function manage(){
+		$type = $this->input->get('type');
+		$data['type'] = $type ?: 'VISION';
+		$data['contents'] = $this->Model->read('institution_contents', ['Type'=>$data['type']], 'IdContent');
+		$data['types'] = ['ABOUT_US'=>'À Propos', 'VISION'=>'Vision', 'MISSION'=>'Mission', 'VALEUR'=>'Valeurs', 'AXE_STRATEGIQUE'=>'Axes Stratégiques', 'MODELE_PEDAGOGIQUE'=>'Modèle Pédagogique', 'PARTENARIAT_STRATEGIQUE'=>'Partenariats Stratégiques'];
+		$this->load->view('admin/manage_contents_View',$data);
+	}
+
+
+
+
+
+
+
 }
+
 

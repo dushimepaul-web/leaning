@@ -15,32 +15,50 @@ class About_us extends MY_Controller {
         }
     }
 
-    
+    // Afficher tous les contenus (pour l'admin)
 	public function index()
 	{
-		$data['about_us']=$this->Model->read('about_us',null,'id_about_us');
-		$this->load->view('about_us_view',$data);
+		// Récupérer tous les contenus de la table institution_contents
+		$data['about_us'] = $this->Model->read('institution_contents', null, 'IdContent');
+		
+		// Vérifier si des données ont été récupérées
+		if($data['about_us'] === null) {
+			$data['about_us'] = array(); // Initialiser à un tableau vide si null
+		}
+		
+		// Debug: Afficher le nombre d'enregistrements trouvés (optionnel)
+		// echo "Nombre de contenus trouvés : " . count($data['about_us']);
+		
+		$this->load->view('about_us_view', $data);
 	}
 
-
+    // Créer un contenu
 	function Creer_about_us(){
-        $title=$this->input->post('title');
-		$details=$this->input->post('details');
-		
-
+        $type = $this->input->post('type');
+        $title = $this->input->post('title');
+		$description = $this->input->post('details');
+        $status = $this->input->post('status') ? $this->input->post('status') : 'Active';
         
-		$data=array('title'=>$title,
-        'details'=>$details);
+        // Si le type n'est pas spécifié, le définir par défaut
+        if(empty($type)) {
+            $type = 'VALEUR';
+        }
+        
+		$data = array(
+            'Type' => $type,
+            'Title' => $title,
+            'Description' => $description,
+            'Status' => $status
+        );
 
-	               
-		$rsp=$this->Model->create('about_us',$data);
+		$rsp = $this->Model->create('institution_contents', $data);
 
 		if ($rsp) {
-			$sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
+			$sms['sms'] = '<div class="alert alert-background fade show mt-1 message" role="alert">
 						     Contenu créé avec succès.
 						 </div>';
-		}else{
-            $sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
+		} else {
+            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message" role="alert">
 						     <strong class="text-danger">Oups!</strong> Erreur inconnue, contactez l\'administrateur.
 						 </div>';
 		}
@@ -48,28 +66,29 @@ class About_us extends MY_Controller {
 		redirect(base_url('about_us'));
 	}
 
-
-
+    // Mettre à jour un contenu
 	function Update_about_us(){
-		$uuid=$this->input->post('uuid');
-        $title=$this->input->post('title');
-        $details=$this->input->post('details');
+		$id_content = $this->input->post('uuid');
+        $type = $this->input->post('type');
+        $title = $this->input->post('title');
+        $description = $this->input->post('details');
+        $status = $this->input->post('status');
 		
-		
+		$data = array(
+            'Type' => $type,
+            'Title' => $title,
+            'Description' => $description,
+            'Status' => $status
+        );
 
-       
-		$data=array(
-        'title'=>$title,
-        'details'=>$details,
-	               );
-		$rsp=$this->Model->update('about_us',['uuid'=>$uuid],$data);
+		$rsp = $this->Model->update('institution_contents', ['IdContent' => $id_content], $data);
 
 		if ($rsp) {
-			$sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
+			$sms['sms'] = '<div class="alert alert-background fade show mt-1 message" role="alert">
 						     Contenu mis à jour avec succès.
 						 </div>';
-		}else{
-            $sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
+		} else {
+            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message" role="alert">
 						     <strong class="text-danger">Oups!</strong> Erreur inconnue, contactez l\'administrateur.
 						 </div>';
 		}
@@ -77,19 +96,18 @@ class About_us extends MY_Controller {
 		redirect(base_url('about_us'));
 	}
 
-
-	
-
+    // Supprimer un contenu
 	function Supprimer_about_us(){
-		$uuid=$this->input->post('uuid');
-		$rsp=$this->Model->delete('about_us',['uuid'=>$uuid]);
+		$id_content = $this->input->post('uuid');
+        
+		$rsp = $this->Model->delete('institution_contents', ['IdContent' => $id_content]);
 
 		if ($rsp) {
-			$sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
+			$sms['sms'] = '<div class="alert alert-background fade show mt-1 message" role="alert">
 						     Contenu supprimé avec succès.
 						 </div>';
-		}else{
-            $sms['sms']='<div class="alert alert-background fade show mt-1 message" role="alert">
+		} else {
+            $sms['sms'] = '<div class="alert alert-background fade show mt-1 message" role="alert">
 						     <strong class="text-danger">Oups!</strong> Erreur inconnue, contactez l\'administrateur.
 						 </div>';
 		}
@@ -97,3 +115,4 @@ class About_us extends MY_Controller {
 		redirect(base_url('about_us'));
 	}
 }
+?>

@@ -632,6 +632,10 @@ function switchTab(tabId, btn) {
             </a>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="<?= base_url('Pages/About_us')?>">About Abelab</a></li>
+                <li><a class="dropdown-item" href="<?= base_url('Pages/About_us/Valeurs')?>">Valeurs fondamentales</a></li>
+                <li><a class="dropdown-item" href="<?= base_url('Pages/About_us/Axe_stategique')?>">Axes stratégiques de formation</a></li>
+                <li><a class="dropdown-item" href="<?= base_url('Pages/About_us/Modele_pedagogique')?>">Modèle pédagogique</a></li>
+                <li><a class="dropdown-item" href="<?= base_url('Pages/About_us/Partenariat_stategiques')?>">Partenariats stratégiques</a></li>
                 <li><a class="dropdown-item" href="<?= base_url('Pages/About_us/contact')?>">Contact us</a></li>
             </ul>
         </li>

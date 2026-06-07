@@ -17,9 +17,9 @@
 
     <?php foreach ($about_us as $about) { ?>
     <p class="about-us-link mb-1 text-center" style="color: #ff9900; font-weight: 600;">About Us</p>
-    <h2 class="company-name text-center fw-bold mb-4"><?= e($about['title'])?></h2>
+    <h2 class="company-name text-center fw-bold mb-4"><?= e($about['Title'])?></h2>
 
-    <div class="company-description ck-content"><?= $about['details']?>
+    <div class="company-description ck-content"><?= $about['Description']?>
     </div>
     <?php }; ?>
 </div>
@@ -42,15 +42,14 @@
 
       <!-- Mission -->
       <?php foreach ($mission as $m) { ?>
-        
-     
+
       <div class="col-lg-6">
           <div class="mv-card h-100">
             <div class="mv-icon">
               <i class="fas fa-bullseye"></i>
             </div>
             <h3>Notre Mission</h3>
-            <div class="ck-content"><?= $m['content']?></div>
+            <div class="ck-content"><?= $m['Description']?></div>
           </div>
       </div>
 <?php  } ?>
@@ -64,7 +63,7 @@
               <i class="fas fa-eye"></i>
             </div>
             <h3>Notre Vision</h3>
-            <div class="ck-content"><?= $v['content']?></div>
+            <div class="ck-content"><?= $v['Description']?></div>
           </div>
       </div>
 
