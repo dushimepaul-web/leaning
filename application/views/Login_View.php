@@ -1,130 +1,117 @@
-
 <!doctype html>
-<html lang="en" data-bs-theme="light">
+<html lang="fr" data-theme="light">
 <head>
-<!-- Required meta tags -->
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<!--favicon-->
-<link rel="icon" href="<?= base_url('attachments/Other/' . $this->Model->get_setting('site_favicon', 'assets/admin/images/favicon-32x32.png')) ?>" type="image/png">
-<!--plugins-->
-<link href="<?=base_url()?>assets/admin/plugins/simplebar/css/simplebar.css" rel="stylesheet">
-<link href="<?=base_url()?>assets/admin/plugins/perfect-scrollbar/css/perfect-scrollbar.css" rel="stylesheet">
-<link href="<?=base_url()?>assets/admin/plugins/metismenu/css/metisMenu.min.css" rel="stylesheet">
-<!-- loader-->
-<link href="<?=base_url()?>assets/admin/css/pace.min.css" rel="stylesheet">
-<script src="<?=base_url()?>assets/admin/js/pace.min.js"></script>
-<!-- Bootstrap CSS -->
-<link href="<?=base_url()?>assets/admin/css/bootstrap.min.css" rel="stylesheet">
-<link href="<?=base_url()?>assets/admin/css/bootstrap-extended.css" rel="stylesheet">
-<link href="<?=base_url()?>assets/cdn/fonts/roboto.css" rel="stylesheet">
-<link href="<?=base_url()?>assets/admin/sass/app.css" rel="stylesheet">
-<link rel="stylesheet" href="<?=base_url()?>assets/admin/sass/dark-theme.css">
-<link href="<?=base_url()?>assets/admin/css/icons.css" rel="stylesheet">
-<title><?= e($this->Model->get_setting('site_name', 'AbeLab')) ?></title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion - <?= $this->Model->get_setting('nom_ecole', 'VIP School') ?></title>
+  <?php $fav = $this->Model->get_setting('favicon_ecole', 'assets/images/favicon.png'); ?>
+  <link rel="icon" type="image/png" href="<?= base_url($fav) ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/remixicon.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/lib/bootstrap.min.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/style.css') ?>">
 </head>
-
-<body class="">
-<!--wrapper-->
-<div class="wrapper">
-<div class="section-authentication-cover">
-<div class="">
-<div class="row g-0">
-
-	<div class="col-12 col-xl-7 col-xxl-8 auth-cover-left align-items-center justify-content-center d-none d-xl-flex">
-
-        <div class="card shadow-none bg-transparent shadow-none rounded-0 mb-0" style="">
-			<div class="card-body">
-                 <img src="<?= base_url($this->Model->get_setting('login_cover', 'assets/admin/images/login-images/login-cover.svg')) ?>" class="img-fluid auth-img-cover-login" style="max-height: 500px;" width="600" alt=""/>
-			</div>
-		</div>
-		
-	</div>
-
-	<div class="col-12 col-xl-5 col-xxl-4 auth-cover-right align-items-center justify-content-center">
-		<div class="card rounded-0 m-3 shadow-none bg-transparent mb-0">
-			<div class="card-body p-sm-5">
-				<div class="">
-					<div class="mb-3 text-center">
-						<img src="<?= base_url('attachments/Other/' . $this->Model->get_setting('site_logo', 'logo.png')) ?>" width="60" alt="">
-					</div>
-					<div class="text-center mb-4">
-						<h5 class=""><?= e($this->Model->get_setting('site_name', 'AbeLab')) ?></h5>
-						<p class="mb-0">Please log in to your account</p>
-					</div>
-					<?php if (!empty($this->session->flashdata('sms'))) {
-                            echo $this->session->flashdata('sms');
-                        } ?>
-					<div class="form-body">
-						<form class="row g-3" action="<?=base_url('Admin/do_login')?>" method="POST">
-							<div class="col-12">
-								<label for="inputEmailAddress" class="form-label">Email</label>
-								<input type="text" class="form-control" id="inputEmailAddress" name="Username" placeholder="jhon@example.com">
-							</div>
-							<div class="col-12">
-								<label for="inputChoosePassword" class="form-label">Password</label>
-								<div class="input-group" id="show_hide_password">
-									<input type="password" class="form-control border-end-0" id="inputChoosePassword"  name="password" placeholder="Enter Password" > <a href="javascript:;" class="input-group-text bg-transparent"><i class="bx bx-hide"></i></a>
-								</div>
-							</div>
-							<div class="col-md-6">
-								<div class="form-check form-switch">
-									<input class="form-check-input" type="checkbox" id="flexSwitchCheckChecked">
-									<label class="form-check-label" for="flexSwitchCheckChecked">Remember Me</label>
-								</div>
-							</div>
-							<div class="col-md-6 text-end">	<a href="auth-cover-forgot-password.html">Forgot Password ?</a>
-							</div>
-							<div class="col-12">
-								<div class="d-grid">
-									<button type="submit" class="btn btn-primary">Sign in</button>
-								</div>
-							</div>
-							<div class="col-12">
-								<div class="text-center">
-									<p class="mb-0">Don't have an account yet? <a href="javascript:;">Contact Admin</a>
-									</p>
-								</div>
-							</div>
-						</form>
-					</div>
-
-				</div>
-			</div>
-		</div>
-	</div>
-
-</div>
-<!--end row-->
-</div>
-</div>
-</div>
-<!--end wrapper-->
-<!-- Bootstrap JS -->
-<script src="<?=base_url()?>assets/admin/js/bootstrap.bundle.min.js"></script>
-<!--plugins-->
-<script src="<?=base_url()?>assets/admin/js/jquery.min.js"></script>
-<script src="<?=base_url()?>assets/admin/plugins/simplebar/js/simplebar.min.js"></script>
-<script src="<?=base_url()?>assets/admin/plugins/metismenu/js/metisMenu.min.js"></script>
-<script src="<?=base_url()?>assets/admin/plugins/perfect-scrollbar/js/perfect-scrollbar.js"></script>
-<!--Password show & hide js -->
-<script>
-$(document).ready(function () {
-$("#show_hide_password a").on('click', function (event) {
-event.preventDefault();
-if ($('#show_hide_password input').attr("type") == "text") {
-	$('#show_hide_password input').attr('type', 'password');
-	$('#show_hide_password i').addClass("bx-hide");
-	$('#show_hide_password i').removeClass("bx-show");
-} else if ($('#show_hide_password input').attr("type") == "password") {
-	$('#show_hide_password input').attr('type', 'text');
-	$('#show_hide_password i').removeClass("bx-hide");
-	$('#show_hide_password i').addClass("bx-show");
-}
-});
-});
-</script>
-<!--app JS-->
-<script src="<?=base_url()?>assets/admin/js/app.js"></script>
+<body>
+  <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300"></div>
+  <div class="d-lg-flex bg-white" style="min-height:100vh;">
+    <div class="w-50 d-lg-flex d-none overflow-hidden">
+      <img src="<?= base_url('assets/images/thumbs/login-img.png') ?>" alt="Login Image" class="w-100 h-100 object-fit-cover">
+    </div>
+    <div class="lg-w-50 px-24 py-32 d-flex justify-content-center align-items-center">
+      <div class="max-w-540-px mx-auto w-100">
+        <a href="<?= base_url() ?>">
+          <?php $logo = $this->Model->get_setting('logo_ecole', 'assets/images/logo.png'); ?>
+          <img src="<?= base_url($logo) ?>" alt="Logo">
+        </a>
+        <div class="mt-32 mb-32">
+          <h1 class="h6 fw-bold text-primary-light mb-8">Bienvenue !</h1>
+          <p class="text-sm text-secondary-light mb-0">Connectez-vous a votre compte pour continuer</p>
+        </div>
+        <?php if (!empty($this->session->flashdata('sms'))) echo $this->session->flashdata('sms'); ?>
+        <form action="<?= base_url('Admin/do_login') ?>" method="POST" class="d-flex flex-column gap-32 submit-form">
+          <div class="d-flex flex-column gap-16">
+            <div>
+              <label for="email" class="text-sm fw-semibold text-primary-light d-inline-block mb-8">
+                Adresse Email
+                <span class="text-danger-600">*</span>
+              </label>
+              <input type="email" id="email" name="email" class="email-field form-control" placeholder="Entrez votre email" required>
+            </div>
+            <div>
+              <label for="password" class="text-sm fw-semibold text-primary-light d-inline-block mb-8">
+                Mot de passe
+                <span class="text-danger-600">*</span>
+              </label>
+              <div class="position-relative">
+                <input type="password" id="password" name="password" class="password-field form-control" placeholder="Entrez votre mot de passe" required>
+                <button type="button"
+                  class="toggle-password btn p-0 border-0 bg-transparent position-absolute end-0 top-50 translate-middle-y me-16 text-secondary-light cursor-pointer ri-eye-line"
+                  data-toggle="#password" aria-label="Afficher/Masquer le mot de passe">
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between gap-2">
+            <div class="form-check style-check d-flex align-items-center">
+              <input class="form-check-input border border-neutral-400" type="checkbox" id="remember">
+              <label class="form-check-label" for="remember">Se souvenir de moi</label>
+            </div>
+            <a href="<?= base_url('Admin/forgot_password') ?>" class="text-primary-600 fw-medium text-decoration-underline">Mot de passe oublie ?</a>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary-600 text-sm btn-sm px-12 py-16 w-100 radius-8">Se connecter</button>
+          </div>
+          <div class="text-center text-sm text-secondary-light">ou connectez-vous en tant que</div>
+          <div class="d-grid sm-grid-cols-3 grid-cols-2 gap-16">
+            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-success text-white py-10 px-8">
+              <span class="d-flex"><img src="<?= base_url('assets/images/icons/sheild-icon.png') ?>" alt="Icon"></span>
+              <span>Super Admin</span>
+            </a>
+            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-info-600 text-white py-10 px-8">
+              <span class="d-flex"><img src="<?= base_url('assets/images/icons/dashboard-icon.png') ?>" alt="Icon"></span>
+              <span>Admin</span>
+            </a>
+            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-warning-600 text-white py-10 px-8">
+              <span class="d-flex"><img src="<?= base_url('assets/images/icons/student-icon.png') ?>" alt="Icon"></span>
+              <span>Eleve</span>
+            </a>
+            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-purple-600 text-white py-10 px-8">
+              <span class="d-flex"><img src="<?= base_url('assets/images/icons/teacher-icon.png') ?>" alt="Icon"></span>
+              <span>Enseignant</span>
+            </a>
+            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-primary-600 text-white py-10 px-8">
+              <span class="d-flex"><img src="<?= base_url('assets/images/icons/guardian-icon.png') ?>" alt="Icon"></span>
+              <span>Parent</span>
+            </a>
+            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-pink text-white py-10 px-8">
+              <span class="d-flex"><img src="<?= base_url('assets/images/icons/library-icon.png') ?>" alt="Icon"></span>
+              <span>Bibliothecaire</span>
+            </a>
+          </div>
+        </form>
+        <div class="mt-32 text-center text-sm">
+          Vous n'avez pas de compte ?
+          <a href="<?= base_url('Admin/register') ?>" class="text-primary-600 fw-semibold text-decoration-underline">Creer un compte</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="<?= base_url('assets/js/lib/jquery-3.7.1.min.js') ?>"></script>
+  <script src="<?= base_url('assets/js/lib/bootstrap.bundle.min.js') ?>"></script>
+  <script>
+    $(document).ready(function() {
+      setTimeout(function() { $('#message').fadeOut('slow'); }, 3000);
+      $('.toggle-password').on('click', function() {
+        const target = $($(this).data('toggle'));
+        const icon = $(this);
+        if (target.attr('type') === 'password') {
+          target.attr('type', 'text');
+          icon.removeClass('ri-eye-line').addClass('ri-eye-off-line');
+        } else {
+          target.attr('type', 'password');
+          icon.removeClass('ri-eye-off-line').addClass('ri-eye-line');
+        }
+      });
+    });
+  </script>
 </body>
 </html>

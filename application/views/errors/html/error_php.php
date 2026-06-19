@@ -1,33 +1,23 @@
-<?php
-defined('BASEPATH') OR exit('No direct script access allowed');
-?>
-
-<div style="border:1px solid #990000;padding-left:20px;margin:0 0 10px 0;">
-
-<h4>A PHP Error was encountered</h4>
-
-<p>Severity: <?php echo $severity; ?></p>
-<p>Message:  <?php echo $message; ?></p>
-<p>Filename: <?php echo $filepath; ?></p>
-<p>Line Number: <?php echo $line; ?></p>
-
-<?php if (defined('SHOW_DEBUG_BACKTRACE') && SHOW_DEBUG_BACKTRACE === TRUE): ?>
-
-	<p>Backtrace:</p>
-	<?php foreach (debug_backtrace() as $error): ?>
-
-		<?php if (isset($error['file']) && strpos($error['file'], realpath(BASEPATH)) !== 0): ?>
-
-			<p style="margin-left:10px">
-			File: <?php echo $error['file'] ?><br />
-			Line: <?php echo $error['line'] ?><br />
-			Function: <?php echo $error['function'] ?>
-			</p>
-
-		<?php endif ?>
-
-	<?php endforeach ?>
-
-<?php endif ?>
-
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erreur PHP</title>
+<link href="<?= base_url('assets/css/lib/bootstrap.min.css') ?>" rel="stylesheet">
+<link href="<?= base_url('assets/css/remixicon.css') ?>" rel="stylesheet">
+<link href="<?= base_url('assets/css/style.css') ?>" rel="stylesheet">
+</head>
+<body>
+<div class="min-vh-100 d-flex align-items-center justify-content-center">
+  <div class="text-center">
+    <h1 class="display-1 fw-bold text-danger">Erreur</h1>
+    <h4 class="mb-3">Une erreur PHP s'est produite</h4>
+    <p class="text-secondary-light mb-4">Veuillez contacter l'administrateur du site.</p>
+    <a href="<?= base_url('Admin') ?>" class="btn btn-primary">
+      <i class="ri-home-4-line me-1"></i> Retour à l'accueil
+    </a>
+  </div>
 </div>
+</body>
+</html>

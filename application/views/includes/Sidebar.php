@@ -1,283 +1,547 @@
-﻿<!--sidebar wrapper -->
-<div class="sidebar-wrapper" data-simplebar="true">
-<div class="sidebar-header">
-<div>
-<img src="<?= base_url('attachments/Other/' . $this->Model->get_setting('site_logo', 'logo.png')) ?>" class="logo-icon" alt="logo icon">
+﻿  
+  <!-- User Info end -->
+  <div class="sidebar-menu-area">
+    <ul class="sidebar-menu" id="sidebar-menu">
+      <li>
+        <a href="<?=base_url('Dashboard')?>">
+          <i class="ri-home-4-line"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="<?=base_url('Parents/MesEnfants')?>">
+          <i class="ri-group-line"></i>
+          <span>Mes enfants</span>
+        </a>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-graduation-cap-line"></i>
+          <span>Étudiants</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Etudiants')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Étudiants
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Etudiants/Inscriptions')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Inscriptions
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <a href="<?=base_url('Enseignants')?>">
+          <i class="ri-user-follow-line"></i>
+          <span>Enseignants</span>
+        </a>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-list-view"></i>
+          <span>Classes</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Classes/Sections')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Sections
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Classes/Matieres')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Matières
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Enseignants/Programmes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Programmes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Classes/Enseignements')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Enseignements
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Classes/Periodes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Périodes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Classes/Annees')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Années scolaires
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-money-dollar-circle-line"></i>
+          <span>Scolarité</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Types_frais')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Types de frais
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Paiements')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Paiements
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Recus')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Reçus
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Echeances')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Échéances
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Paiement_recus')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Reçus de paiement
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Toilettes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Matériels de toilettes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Materiels')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Matériels scolaires
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-stack-line"></i>
+          <span>Produits</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Produits/Stock')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Stock
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <a href="<?=base_url('Uniformes')?>">
+          <i class="ri-shirt-line"></i>
+          <span>Uniformes</span>
+        </a>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-shopping-cart-line"></i>
+          <span>Commandes</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Commandes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Commandes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Commande_details')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Détails commandes
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <a href="<?=base_url('Absences')?>">
+          <i class="ri-user-unfollow-line"></i>
+          <span>Absences</span>
+        </a>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-file-edit-line"></i>
+          <span>Notes</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Notes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Saisie notes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Evaluations')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Évaluations
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Fiches')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Fiches de points
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Notes/Bulletins')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Bulletins
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-time-line"></i>
+          <span>Horaires</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Horaires')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Emploi du temps
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Creneaux')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Créneaux
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Disponibilites')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Disponibilités
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <a href="<?=base_url('Evenements')?>">
+          <i class="ri-calendar-check-line"></i>
+          <span>Événements</span>
+        </a>
+      </li>
+      <li>
+        <a href="<?=base_url('Bibliotheque')?>">
+          <i class="ri-book-shelf-line"></i>
+          <span>Bibliothèque</span>
+        </a>
+      </li>
+      <li>
+        <a href="<?=base_url('Certificats')?>">
+          <i class="ri-award-line"></i>
+          <span>Certificats</span>
+        </a>
+      </li>
+      <li>
+        <a href="<?=base_url('Comptabilite')?>">
+          <i class="ri-calculator-line"></i>
+          <span>Comptabilité</span>
+        </a>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-user-heart-line"></i>
+          <span>Employés</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Employes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Employés
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Paie')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Paie
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Paie_contrat')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Contrats
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Paie_bulletin')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Bulletins paie
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Paie_bulletin_detail')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Détails bulletins
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Paie_rubrique')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Rubriques
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <a href="<?=base_url('Rapports')?>">
+          <i class="ri-bar-chart-line"></i>
+          <span>Rapports</span>
+        </a>
+      </li>
+      <li>
+        <a href="<?=base_url('Messages')?>">
+          <i class="ri-message-line"></i>
+          <span>Messages</span>
+        </a>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-shield-user-line"></i>
+          <span>Administration</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Parametres')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Paramètres
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Utilisateurs')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Utilisateurs
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Administration/Roles')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Rôles
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Administration/Permissions')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Permissions
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Administration/Menus')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Menus
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Utilisateurs/Audit')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Journal d'audit
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Administration/Operations')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Opérations groupées
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Administration/Sauvegardes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Sauvegardes
+            </a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</aside>
+<main class="dashboard-main">
+  <div class="navbar-header shadow-1">
+  <div class="row align-items-center justify-content-between">
+    <div class="col-auto">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+        <button type="button" class="sidebar-mobile-toggle" aria-label="Sidebar Mobile Toggler Button">
+          <iconify-icon icon="heroicons:bars-3-solid" class="icon"></iconify-icon>
+        </button>
+        <form class="navbar-search">
+          <input type="text" class="bg-transparent" name="search" placeholder="Search">
+          <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
+        </form>
+      </div>
+    </div>
+    <div class="col-auto">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <button type="button" data-theme-toggle
+          class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center" aria-label="Dark & Light Mode Button"></button>
+        <div class="dropdown d-inline-block">
+          <button
+            class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
+            type="button" data-bs-toggle="dropdown" aria-label="Language Change Button">
+            <img src="<?=base_url()?>assets/images/flags/flag1.png" alt="image" class="w-24 h-24 object-fit-cover rounded-circle">
+          </button>
+          <div class="dropdown-menu to-top dropdown-menu-sm">
+            <div
+              class="py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
+              <div>
+                <h6 class="text-lg text-primary-light fw-semibold mb-0">Choose Your Language</h6>
+              </div>
+            </div>
+
+            <div class="max-h-400-px overflow-y-auto scroll-sm pe-8">
+              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="english">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag1.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">English</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="english">
+              </div>
+
+              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="japan">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag2.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">Japan</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="japan">
+              </div>
+
+              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="france">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag3.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">France</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="france">
+              </div>
+
+              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="germany">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag4.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">Germany</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="germany">
+              </div>
+
+              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="korea">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag5.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">South Korea</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="korea">
+              </div>
+
+              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="bangladesh">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag6.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">Bangladesh</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="bangladesh">
+              </div>
+
+              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="india">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag7.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">India</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="india">
+              </div>
+              <div class="form-check style-check d-flex align-items-center justify-content-between">
+                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="canada">
+                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                    <img src="<?=base_url()?>assets/images/flags/flag8.png" alt="Image"
+                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
+                    <span class="text-md fw-semibold mb-0">Canada</span>
+                  </span>
+                </label>
+                <input class="form-check-input" type="radio" name="crypto" id="canada">
+              </div>
+            </div>
+          </div>
+        </div><!-- Language dropdown end -->
+
+        <div class="dropdown">
+          <button
+            class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative"
+            type="button" data-bs-toggle="dropdown" aria-label="Notification Button">
+            <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
+            <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
+          </button>
+          <div class="dropdown-menu to-top dropdown-menu-lg p-0">
+            <div
+              class="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
+              <div>
+                <h6 class="text-lg text-primary-light fw-semibold mb-0">Notifications</h6>
+              </div>
+              <span
+                class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
+            </div>
+
+            <div class="max-h-400-px overflow-y-auto scroll-sm pe-4">
+              <a href="javascript:void(0)"
+                class="px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between">
+                <div class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
+                  <span
+                    class="w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                    <iconify-icon icon="bitcoin-icons:verify-outline" class="icon text-xxl"></iconify-icon>
+                  </span>
+                  <div>
+                    <h6 class="text-md fw-semibold mb-4">Bienvenue</h6>
+                    <p class="mb-0 text-sm text-secondary-light text-w-200-px">Aucune notification pour le moment.</p>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div class="text-center py-12 px-16">
+              <a href="javascript:void(0)" class="text-primary-600 fw-semibold text-md hover-underline">Voir toutes les notifications</a>
+            </div>
+
+          </div>
+        </div><!-- Notification dropdown end -->
+
+      </div>
+    </div>
+  </div>
 </div>
-<div>
-<h4 class="logo-text"><?= e($this->Model->get_setting('site_name', 'AbeLab')) ?></h4>
-</div>
-<div class="mobile-toggle-icon ms-auto"><i class='bx bx-x'></i>
-</div>
-</div>
-<!--navigation-->
-<ul class="metismenu" id="menu">
-
-
-<li>
-<a href="javascript:;" class="has-arrow">
-	<div class="parent-icon"><i class='bx bx-home-alt'></i>
-	</div>
-	<div class="menu-title">Tableau de bord</div>
-</a>
-<ul>
-	<li> <a href="<?=base_url('Dashboard')?>"><i class='bx bx-radio-circle'></i>Tableau de bord</a>
-	</li>
-</ul>
-</li>
-
-
-
-
-<!-- À propos -->
-<li class="menu-label">À propos</li>
-        <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class="bx bx-info-circle"></i></div>
-                <div class="menu-title">À propos</div>
-            </a>
-            <ul>
-                <li><a href="<?=base_url('About_us')?>"><i class='bx bx-radio-circle'></i>About Us</a></li>
-                <li><a href="<?=base_url('Mission')?>"><i class='bx bx-radio-circle'></i>Mission</a></li>
-                <li><a href="<?=base_url('Vision')?>"><i class='bx bx-radio-circle'></i>Vision</a></li>
-            </ul>
-        </li>   
-		
-		
-		<!-- Cours / Classes -->
-        <li class="menu-label">Cours & Classes</li>
-        <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class='bx bx-book'></i></div>
-                <div class="menu-title">Cours</div>
-            </a>
-            <ul>
-            	<li><a href="<?=base_url('Attendace_course_mode')?>"><i class='bx  bx-radio-circle'></i>Mode de présence</a></li>
-            	<li><a href="<?=base_url('Categories')?>"><i class='bx bx-radio-circle'></i>Categorie</a></li>
-                <li><a href="<?=base_url('Courses')?>"><i class='bx bx-radio-circle'></i>Courses</a></li>
-                <li><a href="<?=base_url('Timetable')?>"><i class='bx bx-radio-circle'></i>Timetable</a></li>
-                <li><a href="<?=base_url('Timetable_courses')?>"><i class='bx bx-radio-circle'></i>Timetable Courses</a></li>
-            </ul>
-        </li>
-
-        <!-- Étudiants -->
-        <li class="menu-label">Étudiants</li>
-        <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class='bx bx-user'></i></div>
-                <div class="menu-title">Gestion Étudiants</div>
-            </a>
-            <ul>
-                <li><a href="<?=base_url('Students')?>"><i class='bx bx-radio-circle'></i>Students</a></li>
-                <li><a href="<?=base_url('Inscriptions')?>"><i class='bx bx-radio-circle'></i>Inscriptions</a></li>
-            </ul>
-        </li>
-
-        <!-- Enseignants -->
-        <li class="menu-label">Enseignants</li>
-        <li>
-            <a href="<?=base_url('Teachers')?>">
-                <div class="parent-icon"><i class='bx bx-chalkboard'></i></div>
-                <div class="menu-title">Teachers</div>
-            </a>
-        </li>
-
-        <!-- Paiement / Modes -->
-        <li class="menu-label">Paiement</li>
-        <li>
-            <a href="<?=base_url('Mode_payement')?>">
-                <div class="parent-icon"><i class='bx bx-credit-card'></i></div>
-                <div class="menu-title">Modes de Paiement</div>
-            </a>
-        </li>
-
-        <!-- Médias & News -->
-        <li class="menu-label">Médias & News</li>
-        <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class='bx bx-image'></i></div>
-                <div class="menu-title">Médias</div>
-            </a>
-            <ul>
-                <li><a href="<?=base_url('News_media')?>"><i class='bx bx-radio-circle'></i>News Media</a></li>
-                
-                <li><a href="<?=base_url('galleries/Galleries')?>"><i class='bx bx-radio-circle'></i>Gallery</a></li>
-                <li><a href="<?=base_url('Carousel')?>"><i class='bx bx-radio-circle'></i>Carousels</a></li>
-                <li><a href="<?=base_url('Parteners')?>"><i class='bx bx-radio-circle'></i>Parteners</a></li>
-                <li><a href="<?=base_url('testimony')?>"><i class='bx bx-radio-circle'></i>Temoignages</a></li><li><a href="<?=base_url('Newsletter')?>"><i class='bx bx-radio-circle'></i>Newsletters</a></li>
-                <li><a href="<?=base_url('Events')?>"><i class='bx bx-radio-circle'></i>Evenements</a></li>
-                <li><a href="<?=base_url('Join_us')?>"><i class='bx bx-radio-circle'></i>Why jois us</a></li>
-            </ul>
-        </li>
-
-        <!-- Contact -->
-        <li class="menu-label">Contact</li>
-        <li>
-            <a href="<?=base_url('Contact_us')?>">
-                <div class="parent-icon"><i class='bx bx-envelope'></i></div>
-                <div class="menu-title">Messages</div>
-            </a>
-        </li>
-
-        <!-- Paramètres -->
-        <li class="menu-label">Paramètres</li>
-        <li>
-            <a href="<?=base_url('Settings')?>">
-                <div class="parent-icon"><i class='bx bx-cog'></i></div>
-                <div class="menu-title">Settings</div>
-            </a>
-        </li>
-
-        <!-- Utilisateurs & Rôles -->
-        <li class="menu-label">Administration</li>
-        <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class='bx bx-shield'></i></div>
-                <div class="menu-title">Utilisateurs</div>
-            </a>
-            <ul>
-                <li><a href="<?=base_url('Users')?>"><i class='bx bx-radio-circle'></i>Users</a></li>
-                <li><a href="<?=base_url('groups')?>"><i class='bx bx-radio-circle'></i>Groupes</a></li>
-            </ul>
-        </li>
-
-        <!-- Profil -->
-        <li class="menu-label">Compte</li>
-        <li>
-            <a href="<?=base_url('Profile')?>">
-                <div class="parent-icon"><i class='bx bx-user-circle'></i></div>
-                <div class="menu-title">Mon Profil</div>
-            </a>
-        </li>
-
-</ul>
-<!--end navigation-->
-</div>
-<!--end sidebar wrapper -->
-
-
-
-
-<!--start header -->
-<header>
-<div class="topbar">
-<nav class="navbar navbar-expand gap-2 align-items-center">
-<div class="mobile-toggle-menu d-flex"><i class='bx bx-menu'></i>
-</div>
-
-  <div class="top-menu ms-auto">
-	<ul class="navbar-nav align-items-center gap-1">
-		<li class="nav-item mobile-search-icon d-flex d-lg-none" data-bs-toggle="modal" data-bs-target="#SearchModal">
-			<a class="nav-link" href="avascript:;"><i class='bx bx-search'></i>
-			</a>
-		</li>
-
-		<li class="nav-item dark-mode d-none d-sm-flex">
-			<a class="nav-link dark-mode-icon" href="javascript:;"><i class='bx bx-moon'></i>
-			</a>
-		</li>
-
-		
-
-         <!-- don't remove -->
-		<li class="nav-item dropdown dropdown-app">
-			<div class="dropdown-menu dropdown-menu-end p-0">
-				<div class="app-container p-2 my-2">
-				  <div class="row gx-0 gy-2 row-cols-3 justify-content-center p-2">
-
-				  </div>
-
-				</div>
-			</div>
-		</li>
-
-
-
-
-
-
-		<li class="nav-item dropdown dropdown-large">
-			<a class="nav-link dropdown-toggle dropdown-toggle-nocaret position-relative" href="#" data-bs-toggle="dropdown"><span class="alert-count">0</span>
-				<i class='bx bx-bell'></i>
-			</a>
-			<div class="dropdown-menu dropdown-menu-end">
-				<a href="javascript:;">
-					<div class="msg-header">
-						<p class="msg-header-title">Notification</p>
-						<p class="msg-header-badge">0 New</p>
-					</div>
-				</a>
-				<div class="header-notifications-list">
-					
-				</div>
-				<a href="javascript:;">
-					<div class="text-center msg-footer">
-						<button class="btn btn-primary w-100">Voir tous les Notifications</button>
-					</div>
-				</a>
-			</div>
-		</li>
-
-
-
-        <!-- don't remove -->
-		<li class="nav-item dropdown dropdown-large">
-			<div class="dropdown-menu dropdown-menu-end">
-				<div class="header-message-list">
-
-				</div>
-				<a href="javascript:;">
-					<div class="text-center msg-footer">
-						<div class="d-flex align-items-center justify-content-between mb-3">
-							<h5 class="mb-0">Total</h5>
-							<h5 class="mb-0 ms-auto">$489.00</h5>
-						</div>
-						<button class="btn btn-primary w-100">Voir</button>
-					</div>
-				</a>
-			</div>
-		</li>
-	</ul>
-</div>
-
-<?php 
-$group=$this->Model->readOne('groups',['uuid'=>$this->session->userdata('uuidGroup')]); 
-$group_name = $group ? $group['group_name'] : '';
- ?>
-<div class="user-box dropdown px-3">
-	<a class="d-flex align-items-center nav-link dropdown-toggle gap-3 dropdown-toggle-nocaret" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-		<?php $avatar = $this->Model->readOne('users', ['uuid' => $this->session->userdata('uuid')])['image'] ?? ''; ?>
-<img src="<?= base_url($avatar ? 'attachments/Users/' . $avatar : $this->Model->get_setting('default_avatar', 'assets/admin/images/user.png')) ?>" class="user-img" alt="user avatar" style="object-fit:cover;width:40px;height:40px;border-radius:50%;">
-		<div class="user-info">
-			<p class="user-name mb-0"><?= e($this->session->userdata('user')) ?></p>
-			<p class="designattion mb-0"><?= e($group_name) ?></p>
-		</div>
-	</a>
-	<ul class="dropdown-menu dropdown-menu-end">
-		<li><a class="dropdown-item d-flex align-items-center" href="<?=base_url('Profile')?>"><i class="bx bx-user fs-5"></i><span>Profil</span></a>
-		</li>
-		<li><a class="dropdown-item d-flex align-items-center" href="<?=base_url('Settings')?>"><i class="bx bx-cog fs-5"></i><span>Paramètre</span></a>
-		</li>
-		<li><a class="dropdown-item d-flex align-items-center" href="<?=base_url('Dashboard')?>"><i class="bx bx-home-circle fs-5"></i><span>Tableau de bord</span></a>
-		</li>
-		<li>
-			<div class="dropdown-divider mb-0"></div>
-		</li>
-		<li><a class="dropdown-item d-flex align-items-center" href="<?=base_url('Logout')?>"><i class="bx bx-log-out-circle"></i><span>Déconnexion</span></a>
-		</li>
-	</ul>
-</div>
-</nav>
-</div>
-</header>
-<!--end header -->
-
-
-
-
-
-
-
-   
-
-        
+  <div class="dashboard-main-body">

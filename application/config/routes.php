@@ -1,65 +1,452 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/*
-| -------------------------------------------------------------------------
-| URI ROUTING
-| -------------------------------------------------------------------------
-| This file lets you re-map URI requests to specific controller functions.
-|
-| Typically there is a one-to-one relationship between a URL string
-| and its corresponding controller class/method. The segments in a
-| URL normally follow this pattern:
-|
-|	example.com/class/method/id/
-|
-| In some instances, however, you may want to remap this relationship
-| so that a different class/function is called than the one
-| corresponding to the URL.
-|
-| Please see the user guide for complete details:
-|
-|	https://codeigniter.com/user_guide/general/routing.html
-|
-| -------------------------------------------------------------------------
-| RESERVED ROUTES
-| -------------------------------------------------------------------------
-|
-| There are three reserved routes:
-|
-|	$route['default_controller'] = 'welcome';
-|
-| This route indicates which controller class should be loaded if the
-| URI contains no data. In the above example, the "welcome" class
-| would be loaded.
-|
-|	$route['404_override'] = 'errors/page_missing';
-|
-| This route will tell the Router which controller/method to use if those
-| provided in the URL cannot be matched to a valid route.
-|
-|	$route['translate_uri_dashes'] = FALSE;
-|
-| This is not exactly a route, but allows you to automatically route
-| controller and method names that contain dashes. '-' isn't a valid
-| class or method name character, so it requires translation.
-| When you set this option to TRUE, it will replace ALL dashes in the
-| controller and method URI segments.
-|
-| Examples:	my-controller/index	-> my_controller/index
-|		my-controller/my-method	-> my_controller/my_method
-*/
-
-$route['default_controller'] = 'Pages/Home';
-$route['404_override'] = 'Pages/Home';
+$route['default_controller'] = 'Admin';
+$route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
+// Redirection pour /index -> Admin
+$route['index'] = 'Admin/index';
 
-$route['Dashboard'] = 'Dashboard/Dashboard';
+// Auth
 $route['Admin'] = 'Admin/index';
-$route['Login'] = 'Admin/Login';
+$route['Admin/Login'] = 'Admin/Login';
+$route['Admin/do_login'] = 'Admin/do_login';
+$route['Admin/register'] = 'Admin/register';
+$route['Admin/do_register'] = 'Admin/do_register';
+$route['Admin/forgot_password'] = 'Admin/forgot_password';
+$route['Admin/do_forgot_password'] = 'Admin/do_forgot_password';
+$route['Admin/verify_otp'] = 'Admin/verify_otp';
+$route['Admin/do_verify_otp'] = 'Admin/do_verify_otp';
+$route['Admin/reset_password'] = 'Admin/reset_password';
+$route['Admin/do_reset_password'] = 'Admin/do_reset_password';
 $route['Logout'] = 'Admin/Logout';
-$route['Profile'] = 'Profile/Profile';
-$route['Certificate/(:any)'] = 'Pages/Certificate/index/$1';
-$route['Certificate/send/(:any)'] = 'Pages/Certificate/send/$1';
 
+// Dashboard
+$route['Dashboard'] = 'Dashboard/Dashboard/index';
+
+// API Routes - Utilisateurs & Roles
+$route['api/utilisateurs'] = 'Utilisateurs/Utilisateurs/api_list';
+$route['api/utilisateurs/create'] = 'Utilisateurs/Utilisateurs/api_create';
+$route['api/utilisateurs/(:any)'] = 'Utilisateurs/Utilisateurs/api_get/$1';
+$route['api/utilisateurs/(:any)/update'] = 'Utilisateurs/Utilisateurs/api_update/$1';
+$route['api/utilisateurs/(:any)/delete'] = 'Utilisateurs/Utilisateurs/api_delete/$1';
+$route['api/roles'] = 'Utilisateurs/Roles/api_list';
+$route['api/roles/create'] = 'Utilisateurs/Roles/api_create';
+$route['api/roles/(:any)'] = 'Utilisateurs/Roles/api_get/$1';
+$route['api/roles/(:any)/update'] = 'Utilisateurs/Roles/api_update/$1';
+$route['api/roles/(:any)/delete'] = 'Utilisateurs/Roles/api_delete/$1';
+
+// API - Etudiants
+$route['api/etudiants'] = 'Etudiants/Etudiants/api_list';
+$route['api/etudiants/create'] = 'Etudiants/Etudiants/api_create';
+$route['api/etudiants/(:any)'] = 'Etudiants/Etudiants/api_get/$1';
+$route['api/etudiants/(:any)/update'] = 'Etudiants/Etudiants/api_update/$1';
+$route['api/etudiants/(:any)/delete'] = 'Etudiants/Etudiants/api_delete/$1';
+$route['api/etudiants/upload_photo'] = 'Etudiants/Etudiants/api_upload_photo';
+
+// API - Inscriptions
+$route['api/inscriptions'] = 'Etudiants/Inscriptions/api_list';
+$route['api/inscriptions/create'] = 'Etudiants/Inscriptions/api_create';
+$route['api/inscriptions/(:any)'] = 'Etudiants/Inscriptions/api_get/$1';
+$route['api/inscriptions/(:any)/update'] = 'Etudiants/Inscriptions/api_update/$1';
+$route['api/inscriptions/(:any)/delete'] = 'Etudiants/Inscriptions/api_delete/$1';
+
+// API - Enseignants
+$route['api/enseignants'] = 'Enseignants/Enseignants/api_list';
+$route['api/enseignants/create'] = 'Enseignants/Enseignants/api_create';
+$route['api/enseignants/(:any)'] = 'Enseignants/Enseignants/api_get/$1';
+$route['api/enseignants/(:any)/update'] = 'Enseignants/Enseignants/api_update/$1';
+$route['api/enseignants/(:any)/delete'] = 'Enseignants/Enseignants/api_delete/$1';
+$route['api/enseignants/upload_photo'] = 'Enseignants/Enseignants/api_upload_photo';
+
+// API - Classes
+$route['api/classes'] = 'Classes/Classes/api_list';
+$route['api/classes/create'] = 'Classes/Classes/api_create';
+$route['api/classes/(:any)'] = 'Classes/Classes/api_get/$1';
+$route['api/classes/(:any)/update'] = 'Classes/Classes/api_update/$1';
+$route['api/classes/(:any)/delete'] = 'Classes/Classes/api_delete/$1';
+$route['api/sections'] = 'Classes/Sections/api_list';
+$route['api/sections/create'] = 'Classes/Sections/api_create';
+$route['api/sections/(:any)'] = 'Classes/Sections/api_get/$1';
+$route['api/sections/(:any)/update'] = 'Classes/Sections/api_update/$1';
+$route['api/sections/(:any)/delete'] = 'Classes/Sections/api_delete/$1';
+$route['api/matieres'] = 'Classes/Matieres/api_list';
+$route['api/matieres/create'] = 'Classes/Matieres/api_create';
+$route['api/matieres/(:any)'] = 'Classes/Matieres/api_get/$1';
+$route['api/matieres/(:any)/update'] = 'Classes/Matieres/api_update/$1';
+$route['api/matieres/(:any)/delete'] = 'Classes/Matieres/api_delete/$1';
+
+$route['api/periodes'] = 'Classes/Periodes/api_list';
+$route['api/periodes/create'] = 'Classes/Periodes/api_create';
+$route['api/periodes/(:any)'] = 'Classes/Periodes/api_get/$1';
+$route['api/periodes/(:any)/update'] = 'Classes/Periodes/api_update/$1';
+$route['api/periodes/(:any)/delete'] = 'Classes/Periodes/api_delete/$1';
+$route['api/periodes/(:any)/activate'] = 'Classes/Periodes/api_activate/$1';
+$route['api/periodes/(:any)/deactivate'] = 'Classes/Periodes/api_deactivate/$1';
+$route['api/periodes/(:any)/active'] = 'Classes/Periodes/api_set_active/$1';
+
+$route['api/enseignements'] = 'Classes/Enseignements/api_list';
+$route['api/enseignements/create'] = 'Classes/Enseignements/api_create';
+$route['api/enseignements/(:any)'] = 'Classes/Enseignements/api_get/$1';
+$route['api/enseignements/(:any)/update'] = 'Classes/Enseignements/api_update/$1';
+$route['api/enseignements/(:any)/delete'] = 'Classes/Enseignements/api_delete/$1';
+
+// API - Frais & Paiements
+$route['api/frais'] = 'Frais/Frais/api_list';
+$route['api/frais/create'] = 'Frais/Frais/api_create';
+$route['api/frais/(:any)'] = 'Frais/Frais/api_get/$1';
+$route['api/frais/(:any)/update'] = 'Frais/Frais/api_update/$1';
+$route['api/frais/(:any)/delete'] = 'Frais/Frais/api_delete/$1';
+$route['api/frais/types'] = 'Frais/Frais/api_types';
+$route['api/paiements'] = 'Frais/Frais/api_paiements';
+$route['api/paiements/create'] = 'Frais/Frais/api_create_paiement';
+
+// API - Notes & Evaluations
+$route['api/notes'] = 'Notes/Notes/api_list';
+$route['api/notes/create'] = 'Notes/Notes/api_create';
+$route['api/notes/batch'] = 'Notes/Notes/api_batch';
+$route['api/notes/students_by_classe/(:any)'] = 'Notes/Notes/api_students_by_classe/$1';
+$route['api/notes/evaluations_by_classe/(:any)'] = 'Notes/Notes/api_evaluations_by_classe/$1';
+$route['api/notes/grille/(:any)/(:any)'] = 'Notes/Notes/api_grille_notes/$1/$2';
+$route['api/notes/matieres_by_classe/(:any)'] = 'Notes/Notes/api_matieres_by_classe/$1';
+$route['api/notes/classes_summary'] = 'Notes/Notes/api_classes_summary';
+$route['api/notes/(:any)/delete'] = 'Notes/Notes/api_delete/$1';
+$route['api/evaluations'] = 'Notes/Evaluations/api_list';
+$route['api/evaluations/create'] = 'Notes/Evaluations/api_create';
+$route['api/evaluations/(:any)/update'] = 'Notes/Evaluations/api_update/$1';
+$route['api/evaluations/(:any)/delete'] = 'Notes/Evaluations/api_delete/$1';
+
+// API - Bulletins
+$route['api/bulletins'] = 'Notes/Bulletins/api_list';
+$route['api/bulletins/create'] = 'Notes/Bulletins/api_create';
+$route['api/bulletins/generer'] = 'Notes/Bulletins/api_generer';
+$route['api/bulletins/(:any)/detail'] = 'Notes/Bulletins/api_detail/$1';
+$route['api/bulletins/(:any)/update'] = 'Notes/Bulletins/api_update/$1';
+$route['api/bulletins/(:any)/delete'] = 'Notes/Bulletins/api_delete/$1';
+
+// Fiches de points
+$route['Fiches'] = 'Notes/Fiches/index';
+$route['Evaluations'] = 'Notes/Evaluations/index';
+$route['api/fiches/fiche'] = 'Notes/Fiches/api_fiche';
+$route['api/fiches/fiche_par_cours/(:any)'] = 'Notes/Fiches/api_fiche_par_cours/$1';
+$route['api/fiches/fiche_par_cours'] = 'Notes/Fiches/api_fiche_par_cours';
+
+// API - Produits
+$route['api/produits'] = 'Produits/Produits/api_list';
+$route['api/produits/create'] = 'Produits/Produits/api_create';
+$route['api/produits/(:any)'] = 'Produits/Produits/api_get/$1';
+$route['api/produits/(:any)/update'] = 'Produits/Produits/api_update/$1';
+$route['api/produits/(:any)/delete'] = 'Produits/Produits/api_delete/$1';
+
+// API - Absences
+$route['api/absences'] = 'Absences/Absences/api_list';
+$route['api/absences/create'] = 'Absences/Absences/api_create';
+$route['api/absences/(:any)/update'] = 'Absences/Absences/api_update/$1';
+$route['api/absences/(:any)/delete'] = 'Absences/Absences/api_delete/$1';
+
+// API - Horaires
+$route['api/horaires'] = 'Horaires/Horaires/api_list';
+$route['api/horaires/create'] = 'Horaires/Horaires/api_create';
+$route['api/horaires/generer'] = 'Horaires/Horaires/api_generer';
+$route['api/horaires/generations'] = 'Horaires/Horaires/api_generations';
+$route['api/horaires/(:any)/update'] = 'Horaires/Horaires/api_update/$1';
+$route['api/horaires/(:any)/delete'] = 'Horaires/Horaires/api_delete/$1';
+$route['api/horaires/matieres/(:any)'] = 'Horaires/Horaires/api_matieres_by_classe/$1';
+$route['api/horaires/enseignant/(:any)/(:any)'] = 'Horaires/Horaires/api_enseignant_by_classe_matiere/$1/$2';
+
+// API - Bibliotheque
+$route['api/bibliotheque'] = 'Bibliotheque/Bibliotheque/api_list';
+$route['api/bibliotheque/create'] = 'Bibliotheque/Bibliotheque/api_create';
+$route['api/bibliotheque/(:any)/update'] = 'Bibliotheque/Bibliotheque/api_update/$1';
+$route['api/bibliotheque/(:any)/delete'] = 'Bibliotheque/Bibliotheque/api_delete/$1';
+
+// API - Certificats
+$route['api/certificats'] = 'Certificats/Certificats/api_list';
+$route['api/certificats/create'] = 'Certificats/Certificats/api_create';
+$route['api/certificats/(:any)/update'] = 'Certificats/Certificats/api_update/$1';
+$route['api/certificats/(:any)/delete'] = 'Certificats/Certificats/api_delete/$1';
+
+// API - Parametres
+$route['api/parametres'] = 'Parametres/Parametres/api_list';
+$route['api/parametres/update'] = 'Parametres/Parametres/api_update';
+$route['api/parametres/upload_logo'] = 'Parametres/Parametres/api_upload_logo';
+$route['api/parametres/upload_favicon'] = 'Parametres/Parametres/api_upload_favicon';
+$route['api/email/test'] = 'Parametres/Parametres/api_test_email';
+
+
+// API - Evenements
+$route['api/evenements'] = 'Evenements/Evenements/api_list';
+$route['api/evenements/create'] = 'Evenements/Evenements/api_create';
+$route['api/evenements/(:any)/update'] = 'Evenements/Evenements/api_update/$1';
+$route['api/evenements/(:any)/delete'] = 'Evenements/Evenements/api_delete/$1';
+
+// API - Comptabilite
+$route['api/comptabilite'] = 'Comptabilite/Comptabilite/api_list';
+$route['api/comptabilite/plans'] = 'Comptabilite/Comptabilite/api_plans';
+$route['api/comptabilite/create'] = 'Comptabilite/Comptabilite/api_create';
+$route['api/comptabilite/(:any)/update'] = 'Comptabilite/Comptabilite/api_update/$1';
+$route['api/comptabilite/(:any)/delete'] = 'Comptabilite/Comptabilite/api_delete/$1';
+
+// API - Employes & Departements
+$route['api/employes'] = 'Employes/Employes/api_list';
+$route['api/employes/create'] = 'Employes/Employes/api_create';
+$route['api/employes/(:any)'] = 'Employes/Employes/api_get/$1';
+$route['api/employes/(:any)/update'] = 'Employes/Employes/api_update/$1';
+$route['api/employes/(:any)/delete'] = 'Employes/Employes/api_delete/$1';
+$route['api/departements'] = 'Employes/Departements/api_list';
+$route['api/departements/create'] = 'Employes/Departements/api_create';
+$route['api/departements/(:any)/delete'] = 'Employes/Departements/api_delete/$1';
+
+// API - Paie
+$route['api/paie/contrats'] = 'Paie/Paie/api_contrats';
+$route['api/paie/bulletins'] = 'Paie/Paie/api_bulletins';
+$route['api/paie/contrats/create'] = 'Paie/Paie/api_create_contrat';
+$route['api/paie/bulletins/create'] = 'Paie/Paie/api_create_bulletin';
+
+// API - Paiements (dedicated module)
+$route['api/paiements_data'] = 'Paiements/Paiements/api_list';
+$route['api/paiements_data/create'] = 'Paiements/Paiements/api_create';
+$route['api/paiements_data/(:any)/update'] = 'Paiements/Paiements/api_update/$1';
+$route['api/paiements_data/(:any)/delete'] = 'Paiements/Paiements/api_delete/$1';
+$route['api/paiements_data/(:any)'] = 'Paiements/Paiements/api_get/$1';
+
+// API - Reçus
+$route['api/recus'] = 'Recu/Recu/api_list';
+$route['api/recus/create'] = 'Recu/Recu/api_create';
+$route['api/recus/(:any)/update'] = 'Recu/Recu/api_update/$1';
+$route['api/recus/(:any)/delete'] = 'Recu/Recu/api_delete/$1';
+$route['api/recus/(:any)'] = 'Recu/Recu/api_get/$1';
+$route['api/recus/(:any)/imprimer'] = 'Recu/Recu/imprimer/$1';
+
+// API - Échéances
+$route['api/echeances'] = 'Echeance/Echeance/api_list';
+$route['api/echeances/create'] = 'Echeance/Echeance/api_create';
+$route['api/echeances/(:any)/update'] = 'Echeance/Echeance/api_update/$1';
+$route['api/echeances/(:any)/delete'] = 'Echeance/Echeance/api_delete/$1';
+$route['api/echeances/(:any)'] = 'Echeance/Echeance/api_get/$1';
+
+// API - Types de frais
+$route['api/types_frais'] = 'Type_frais/Type_frais/api_list';
+$route['api/types_frais/create'] = 'Type_frais/Type_frais/api_create';
+$route['api/types_frais/(:any)/update'] = 'Type_frais/Type_frais/api_update/$1';
+$route['api/types_frais/(:any)/delete'] = 'Type_frais/Type_frais/api_delete/$1';
+$route['api/types_frais/(:any)'] = 'Type_frais/Type_frais/api_get/$1';
+
+// API - Détails commandes
+$route['api/commandes_details'] = 'Commande_detail/Commande_detail/api_list';
+$route['api/commandes_details/create'] = 'Commande_detail/Commande_detail/api_create';
+$route['api/commandes_details/(:any)/update'] = 'Commande_detail/Commande_detail/api_update/$1';
+$route['api/commandes_details/(:any)/delete'] = 'Commande_detail/Commande_detail/api_delete/$1';
+$route['api/commandes_details/(:any)'] = 'Commande_detail/Commande_detail/api_get/$1';
+
+// API - Reçus de paiement
+$route['api/paiements_recus'] = 'Paiement_recu/Paiement_recu/api_list';
+$route['api/paiements_recus/create'] = 'Paiement_recu/Paiement_recu/api_create';
+$route['api/paiements_recus/(:any)/delete'] = 'Paiement_recu/Paiement_recu/api_delete/$1';
+
+// API - Paie Bulletin Details
+$route['api/paie_bulletins_details'] = 'Paie_bulletin_detail/Paie_bulletin_detail/api_list';
+$route['api/paie_bulletins_details/create'] = 'Paie_bulletin_detail/Paie_bulletin_detail/api_create';
+$route['api/paie_bulletins_details/(:any)/delete'] = 'Paie_bulletin_detail/Paie_bulletin_detail/api_delete/$1';
+
+// API - Paie Contrats
+$route['api/paie_contrats'] = 'Paie_contrat/Paie_contrat/api_list';
+$route['api/paie_contrats/create'] = 'Paie_contrat/Paie_contrat/api_create';
+$route['api/paie_contrats/(:any)/update'] = 'Paie_contrat/Paie_contrat/api_update/$1';
+$route['api/paie_contrats/(:any)/delete'] = 'Paie_contrat/Paie_contrat/api_delete/$1';
+$route['api/paie_contrats/(:any)'] = 'Paie_contrat/Paie_contrat/api_get/$1';
+
+// API - Paie Bulletins (dedicated module)
+$route['api/paie_bulletins'] = 'Paie_bulletin/Paie_bulletin/api_list';
+$route['api/paie_bulletins/create'] = 'Paie_bulletin/Paie_bulletin/api_create';
+$route['api/paie_bulletins/(:any)/update'] = 'Paie_bulletin/Paie_bulletin/api_update/$1';
+$route['api/paie_bulletins/(:any)/delete'] = 'Paie_bulletin/Paie_bulletin/api_delete/$1';
+$route['api/paie_bulletins/(:any)'] = 'Paie_bulletin/Paie_bulletin/api_get/$1';
+
+// API - Paie Rubriques
+$route['api/paie_rubriques'] = 'Paie_rubrique/Paie_rubrique/api_list';
+$route['api/paie_rubriques/create'] = 'Paie_rubrique/Paie_rubrique/api_create';
+$route['api/paie_rubriques/(:any)/update'] = 'Paie_rubrique/Paie_rubrique/api_update/$1';
+$route['api/paie_rubriques/(:any)/delete'] = 'Paie_rubrique/Paie_rubrique/api_delete/$1';
+$route['api/paie_rubriques/(:any)'] = 'Paie_rubrique/Paie_rubrique/api_get/$1';
+
+// API - Uniformes
+$route['api/uniformes'] = 'Uniformes/Uniformes/api_list';
+$route['api/uniformes/create'] = 'Uniformes/Uniformes/api_create';
+$route['api/uniformes/(:any)'] = 'Uniformes/Uniformes/api_get/$1';
+$route['api/uniformes/(:any)/update'] = 'Uniformes/Uniformes/api_update/$1';
+$route['api/uniformes/(:any)/delete'] = 'Uniformes/Uniformes/api_delete/$1';
+
+// API - Commandes
+$route['api/commandes'] = 'Commandes/Commandes/api_list';
+$route['api/commandes/create'] = 'Commandes/Commandes/api_create';
+$route['api/commandes/(:any)'] = 'Commandes/Commandes/api_get/$1';
+$route['api/commandes/(:any)/update'] = 'Commandes/Commandes/api_update/$1';
+$route['api/commandes/(:any)/delete'] = 'Commandes/Commandes/api_delete/$1';
+
+// API - Assurances
+$route['api/assurances'] = 'Assurances/Assurances/api_list';
+$route['api/assurances/create'] = 'Assurances/Assurances/api_create';
+$route['api/assurances/(:any)'] = 'Assurances/Assurances/api_get/$1';
+$route['api/assurances/(:any)/update'] = 'Assurances/Assurances/api_update/$1';
+$route['api/assurances/(:any)/delete'] = 'Assurances/Assurances/api_delete/$1';
+
+// API - Toilettes
+$route['api/toilettes'] = 'Toilettes/Toilettes/api_list';
+$route['api/toilettes/create'] = 'Toilettes/Toilettes/api_create';
+$route['api/toilettes/(:any)'] = 'Toilettes/Toilettes/api_get/$1';
+$route['api/toilettes/(:any)/update'] = 'Toilettes/Toilettes/api_update/$1';
+$route['api/toilettes/(:any)/delete'] = 'Toilettes/Toilettes/api_delete/$1';
+
+// API - Matériels Scolaires
+$route['api/materiels'] = 'Materiels/Materiels/api_list';
+$route['api/materiels/create'] = 'Materiels/Materiels/api_create';
+$route['api/materiels/initialiser'] = 'Materiels/Materiels/api_initialiser';
+$route['api/materiels/(:any)'] = 'Materiels/Materiels/api_get/$1';
+$route['api/materiels/(:any)/update'] = 'Materiels/Materiels/api_update/$1';
+$route['api/materiels/(:any)/delete'] = 'Materiels/Materiels/api_delete/$1';
+
+// API - Creneaux
+$route['api/creneaux'] = 'Creneaux/Creneaux/api_list';
+$route['api/creneaux/create'] = 'Creneaux/Creneaux/api_create';
+$route['api/creneaux/(:any)'] = 'Creneaux/Creneaux/api_get/$1';
+$route['api/creneaux/(:any)/update'] = 'Creneaux/Creneaux/api_update/$1';
+$route['api/creneaux/(:any)/delete'] = 'Creneaux/Creneaux/api_delete/$1';
+
+// API - Disponibilites
+$route['api/disponibilites'] = 'Disponibilites/Disponibilites/api_list';
+$route['api/disponibilites/create'] = 'Disponibilites/Disponibilites/api_create';
+$route['api/disponibilites/(:any)'] = 'Disponibilites/Disponibilites/api_get/$1';
+$route['api/disponibilites/(:any)/update'] = 'Disponibilites/Disponibilites/api_update/$1';
+$route['api/disponibilites/(:any)/delete'] = 'Disponibilites/Disponibilites/api_delete/$1';
+
+// API - Messages
+$route['api/messages'] = 'Messages/Messages/api_list';
+$route['api/messages/create'] = 'Messages/Messages/api_create';
+
+// API - Audit
+$route['api/audit'] = 'Utilisateurs/Audit/api_list';
+
+// API - Notifications
+$route['api/notifications'] = 'Notifications/Notifications/api_list';
+$route['api/notifications/(:any)/read'] = 'Notifications/Notifications/api_mark_read/$1';
+
+// API - Matieres_classes (Programmes)
+$route['api/matieres_classes'] = 'Enseignants/Programmes/api_list';
+$route['api/matieres_classes/create'] = 'Enseignants/Programmes/api_create';
+$route['api/matieres_classes/(:any)'] = 'Enseignants/Programmes/api_get/$1';
+$route['api/matieres_classes/(:any)/update'] = 'Enseignants/Programmes/api_update/$1';
+$route['api/matieres_classes/(:any)/delete'] = 'Enseignants/Programmes/api_delete/$1';
+
+// API - Annees
+$route['api/annees'] = 'Classes/Annees/api_list';
+$route['api/annees/create'] = 'Classes/Annees/api_create';
+$route['api/annees/(:any)'] = 'Classes/Annees/api_get/$1';
+$route['api/annees/(:any)/update'] = 'Classes/Annees/api_update/$1';
+$route['api/annees/(:any)/delete'] = 'Classes/Annees/api_delete/$1';
+$route['api/annees/(:any)/activate'] = 'Classes/Annees/api_activate/$1';
+$route['api/annees/(:any)/deactivate'] = 'Classes/Annees/api_deactivate/$1';
+$route['api/annees/(:any)/active'] = 'Classes/Annees/api_set_active/$1';
+
+// Module pages
+$route['Utilisateurs'] = 'Utilisateurs/Utilisateurs/index';
+$route['Etudiants'] = 'Etudiants/Etudiants/index';
+$route['Etudiants/add'] = 'Etudiants/Etudiants/add';
+$route['Etudiants/edit/(:any)'] = 'Etudiants/Etudiants/edit/$1';
+$route['Etudiants/details/(:any)'] = 'Etudiants/Etudiants/details/$1';
+$route['Enseignants'] = 'Enseignants/Enseignants/index';
+$route['Enseignants/add'] = 'Enseignants/Enseignants/add';
+$route['Enseignants/edit/(:any)'] = 'Enseignants/Enseignants/edit/$1';
+$route['Enseignants/details/(:any)'] = 'Enseignants/Enseignants/details/$1';
+$route['Enseignants/timetable/(:any)'] = 'Enseignants/Enseignants/timetable/$1';
+$route['Enseignants/Programmes'] = 'Enseignants/Programmes/index';
+$route['Classes'] = 'Classes/Classes/index';
+$route['Frais'] = 'Frais/Frais/index';
+$route['Notes'] = 'Notes/Notes/index';
+$route['Produits'] = 'Produits/Produits/index';
+$route['Absences'] = 'Absences/Absences/index';
+$route['Horaires'] = 'Horaires/Horaires/index';
+$route['Bibliotheque'] = 'Bibliotheque/Bibliotheque/index';
+$route['Certificats'] = 'Certificats/Certificats/index';
+$route['Evenements'] = 'Evenements/Evenements/index';
+$route['Comptabilite'] = 'Comptabilite/Comptabilite/index';
+$route['Employes'] = 'Employes/Employes/index';
+$route['Paie'] = 'Paie/Paie/index';
+$route['Uniformes'] = 'Uniformes/Uniformes/index';
+$route['Parametres'] = 'Parametres/Parametres/index';
+$route['Messages'] = 'Messages/Messages/index';
+$route['Commandes'] = 'Commandes/Commandes/index';
+$route['Rapports'] = 'Rapports/Rapports/index';
+$route['Assurances'] = 'Assurances/Assurances/index';
+$route['Creneaux'] = 'Creneaux/Creneaux/index';
+$route['Disponibilites'] = 'Disponibilites/Disponibilites/index';
+
+// Modules ajoutés (friend's modules)
+$route['Paie_contrat'] = 'Paie_contrat/Paie_contrat/index';
+$route['Paie_bulletin'] = 'Paie_bulletin/Paie_bulletin/index';
+$route['Paie_bulletin_detail'] = 'Paie_bulletin_detail/Paie_bulletin_detail/index';
+$route['Paie_rubrique'] = 'Paie_rubrique/Paie_rubrique/index';
+$route['Paiements'] = 'Paiements/Paiements/index';
+$route['Recus'] = 'Recu/Recu/index';
+$route['Echeances'] = 'Echeance/Echeance/index';
+$route['Types_frais'] = 'Type_frais/Type_frais/index';
+$route['Commande_details'] = 'Commande_detail/Commande_detail/index';
+$route['Paiement_recus'] = 'Paiement_recu/Paiement_recu/index';
+$route['Recus/imprimer/(:any)'] = 'Recu/Recu/imprimer/$1';
+$route['Toilettes'] = 'Toilettes/Toilettes/index';
+$route['Materiels'] = 'Materiels/Materiels/index';
+
+// Sub-module pages for sidebar route_map
+$route['Etudiants/Inscriptions'] = 'Etudiants/Inscriptions/index';
+$route['Classes/Sections'] = 'Classes/Sections/index';
+$route['Classes/Periodes'] = 'Classes/Periodes/index';
+$route['Classes/Matieres'] = 'Classes/Matieres/index';
+$route['Classes/Enseignements'] = 'Classes/Enseignements/index';
+$route['Classes/Annees'] = 'Classes/Annees/index';
+$route['Frais/Paiements'] = 'Frais/Frais/index';
+$route['Frais/Recus'] = 'Frais/Frais/index';
+$route['Frais/Echeances'] = 'Frais/Frais/index';
+$route['Notes/Bulletins'] = 'Notes/Bulletins/index';
+$route['Classes/Matieres_classes'] = 'Enseignants/Programmes/index';
+$route['Produits/Stock'] = 'Produits/Produits/index';
+$route['Utilisateurs/Audit'] = 'Utilisateurs/Audit/index';
+$route['Parents/MesEnfants'] = 'Parents/MesEnfants/index';
+
+// Administration module
+$route['Administration'] = 'Administration/Administration/index';
+$route['Administration/Roles'] = 'Administration/Roles/index';
+$route['Administration/Permissions'] = 'Administration/Permissions/index';
+$route['Administration/Menus'] = 'Administration/Menus/index';
+$route['Administration/Sauvegardes'] = 'Administration/Sauvegardes/index';
+$route['Administration/Operations'] = 'Administration/Operations/index';
+
+// API - Menus
+$route['api/menus/all'] = 'Administration/Roles/api_menus';
+$route['api/menus'] = 'Administration/Menus/api_list';
+$route['api/menus/create'] = 'Administration/Menus/api_create';
+$route['api/menus/(:any)'] = 'Administration/Menus/api_get/$1';
+$route['api/menus/(:any)/update'] = 'Administration/Menus/api_update/$1';
+$route['api/menus/(:any)/delete'] = 'Administration/Menus/api_delete/$1';
+
+// API - Role permissions
+$route['api/roles/(:any)/permissions'] = 'Utilisateurs/Roles/api_permissions_update/$1';
+
+// API - Sauvegardes
+$route['api/sauvegardes/create'] = 'Administration/Sauvegardes/api_create';
+$route['api/sauvegardes/list'] = 'Administration/Sauvegardes/api_list';
+$route['api/sauvegardes/download/(:any)'] = 'Administration/Sauvegardes/api_download/$1';
+$route['api/sauvegardes/delete/(:any)'] = 'Administration/Sauvegardes/api_delete/$1';
+
+// API - Operations groupées
+$route['api/operations/tables'] = 'Administration/Operations/api_tables';
+$route['api/operations/export/(:any)'] = 'Administration/Operations/api_export/$1';
+$route['api/operations/preview/(:any)'] = 'Administration/Operations/api_preview/$1';
+$route['api/operations/import-preview'] = 'Administration/Operations/api_import_preview';
+$route['api/operations/import'] = 'Administration/Operations/api_import';
+
+// Profile
+$route['Profile'] = 'Profile/index';
+$route['api/profile/update'] = 'Profile/api_update';
+$route['api/profile/change_password'] = 'Profile/api_change_password';
+$route['api/profile/upload_photo'] = 'Profile/api_upload_photo';
