@@ -250,6 +250,7 @@
 </div>
 
 <script src="<?= base_url() ?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 let anneesData = [];
 let periodesData = [];

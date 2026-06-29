@@ -43,7 +43,7 @@ class Paiements_model extends Model
         return $this->db->get()->row_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $required = ['id_etudiant', 'id_frais', 'montant', 'id_annee'];
         foreach ($required as $field) {
@@ -69,15 +69,15 @@ class Paiements_model extends Model
         return ['success' => false, 'message' => 'Erreur insertion paiement'];
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         return $this->db->update('paiements', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 
     public function get_stats($id_annee = null)

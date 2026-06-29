@@ -36,7 +36,7 @@ class Enseignants_model extends Model
         return $this->db->get()->row_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $required = ['nom', 'prenom', 'email', 'id_departement'];
         foreach ($required as $field) {
@@ -53,16 +53,16 @@ class Enseignants_model extends Model
         return ['success' => false, 'message' => 'Erreur insertion'];
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         $data['modifie_le'] = date('Y-m-d H:i:s');
         return $this->db->update('enseignants', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 
     // Programmes

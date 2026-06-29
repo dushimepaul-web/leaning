@@ -51,7 +51,7 @@ class Etudiants_model extends Model
         return $this->db->get()->row_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $required = ['nom', 'prenom', 'date_naissance', 'sexe', 'id_classe', 'id_section', 'id_annee'];
         foreach ($required as $field) {
@@ -85,19 +85,19 @@ class Etudiants_model extends Model
         return ['success' => false, 'message' => 'Erreur insertion étudiant'];
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         $data['modifie_le'] = date('Y-m-d H:i:s');
         return $this->db->update('etudiants', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 
-    public function count($filters = [])
+    public function count_records($filters = [])
     {
         $this->db->where('deleted_at', null);
         if (!empty($filters['id_classe'])) $this->db->where('id_classe', $filters['id_classe']);
@@ -159,6 +159,6 @@ class Etudiants_model extends Model
 
     public function delete_inscription($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 }

@@ -17,7 +17,7 @@ class Stock_Mouvements_model extends Model
         return $this->db->get()->result_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $data['uuid'] = generate_uuid();
         $data['date_mouvement'] = $data['date_mouvement'] ?? date('Y-m-d H:i:s');

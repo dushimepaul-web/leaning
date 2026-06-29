@@ -36,7 +36,7 @@
       </div>
     </div>
   </div>
-</div>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 async function loadTables() {
   const res = await API.operations.tables();
@@ -71,4 +71,4 @@ async function previewTable() {
 
 loadTables();
 </script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
+

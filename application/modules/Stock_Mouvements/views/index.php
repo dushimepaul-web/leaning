@@ -203,6 +203,7 @@
 </div>
 
 <script src="<?= base_url() ?>assets/js/api.js"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 var BASE_URL = '<?= base_url() ?>';
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });

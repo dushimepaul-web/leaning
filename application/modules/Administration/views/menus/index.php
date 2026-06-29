@@ -56,6 +56,7 @@
     </div>
   </div>
 </div>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 async function loadTable() {
   const res = await API.menus.list();

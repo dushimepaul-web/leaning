@@ -53,4 +53,16 @@ class Sections extends MY_Controller {
         else $this->json_error('Erreur lors de la suppression');
     }
 
+    public function api_activate($id) {
+        if ($this->Model->update('sections', ['uuid' => $id], ['actif' => 1]))
+            $this->json_success(null, 'Section activée');
+        else $this->json_error('Erreur');
+    }
+
+    public function api_deactivate($id) {
+        if ($this->Model->update('sections', ['uuid' => $id], ['actif' => 0]))
+            $this->json_success(null, 'Section désactivée');
+        else $this->json_error('Erreur');
+    }
+
 }

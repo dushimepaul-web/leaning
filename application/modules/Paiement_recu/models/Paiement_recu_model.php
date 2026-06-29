@@ -11,7 +11,7 @@ class Paiement_recu_model extends Model
         return $this->db->get('paiements_recus')->result_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $data['uuid'] = generate_uuid();
         return $this->db->insert('paiements_recus', $data) ? ['success' => true] : ['success' => false];

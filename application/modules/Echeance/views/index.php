@@ -90,6 +90,7 @@
 <script id="etudiants_data" type="application/json"><?= json_encode($etudiants) ?></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js?v=<?= filemtime(FCPATH.'assets/js/autocomplete.js') ?>"></script>
 <script src="<?= base_url() ?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editUuid = null;

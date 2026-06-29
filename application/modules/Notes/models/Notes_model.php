@@ -37,7 +37,7 @@ class Notes_model extends Model
         return $this->db->get()->row_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $required = ['id_etudiant', 'id_evaluation', 'note'];
         foreach ($required as $field) {
@@ -78,7 +78,7 @@ class Notes_model extends Model
     {
         $results = ['success' => 0, 'errors' => []];
         foreach ($notes_data as $data) {
-            $result = $this->create($data);
+            $result = $this->create_record($data);
             if ($result['success']) {
                 $results['success']++;
             } else {
@@ -88,16 +88,16 @@ class Notes_model extends Model
         return $results;
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         $data['modifie_le'] = date('Y-m-d H:i:s');
         return $this->db->update('notes', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 
     // Bulletins

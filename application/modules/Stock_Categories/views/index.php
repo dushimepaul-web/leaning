@@ -107,6 +107,7 @@
 </div>
 
 <script src="<?= base_url() ?>assets/js/api.js"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editingId = null;

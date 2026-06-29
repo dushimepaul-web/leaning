@@ -169,6 +169,7 @@
 <script src="<?= base_url() ?>assets/js/api.js"></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js"></script>
 <script id="id_etudiant_data" type="application/json"><?= json_encode($etudiants) ?></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 
 

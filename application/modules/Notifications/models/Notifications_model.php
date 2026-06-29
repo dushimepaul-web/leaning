@@ -25,7 +25,7 @@ class Notifications_model extends Model
         return $this->db->get('notifications')->result_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $data['uuid'] = generate_uuid();
         $data['cree_le'] = date('Y-m-d H:i:s');
@@ -46,7 +46,7 @@ class Notifications_model extends Model
         return $this->db->update('notifications', ['lu' => 1, 'date_lecture' => date('Y-m-d H:i:s')]);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
         $this->db->where('uuid', $id);
         return $this->db->update('notifications', ['deleted_at' => date('Y-m-d H:i:s')]);

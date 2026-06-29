@@ -18,13 +18,13 @@ class Disponibilites_model extends Model
         return $this->db->get()->result_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $data['uuid'] = generate_uuid();
         return $this->db->insert('disponibilites_enseignants', $data) ? ['success' => true] : ['success' => false];
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
         $this->db->where('uuid', $id);
         return $this->db->update('disponibilites_enseignants', ['deleted_at' => date('Y-m-d H:i:s')]);

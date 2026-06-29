@@ -37,7 +37,7 @@ class Frais_model extends Model
         return $this->db->get()->row_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $required = ['id_type_frais', 'id_classe', 'id_annee', 'montant'];
         foreach ($required as $field) {
@@ -56,16 +56,16 @@ class Frais_model extends Model
         return ['success' => false, 'message' => 'Erreur insertion frais'];
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         $data['modifie_le'] = date('Y-m-d H:i:s');
         return $this->db->update('frais', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 
     public function get_echeances($id_frais)

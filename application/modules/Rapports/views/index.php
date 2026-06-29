@@ -104,6 +104,7 @@
 </div>
 
 <script src="<?= base_url() ?>assets/js/api.js"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 var BASE_URL = '<?= base_url() ?>';
 var charts = {};

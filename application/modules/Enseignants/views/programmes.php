@@ -140,6 +140,7 @@
 <script id="enseignantsData" type="application/json"><?= json_encode($enseignants ?? []) ?></script>
 <script src="<?= base_url() ?>assets/js/api.js"></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 let editingId = null;
 let deleteId = null;

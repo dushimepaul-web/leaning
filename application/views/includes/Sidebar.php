@@ -8,12 +8,7 @@
           <span>Dashboard</span>
         </a>
       </li>
-      <li>
-        <a href="<?=base_url('Parents/MesEnfants')?>">
-          <i class="ri-group-line"></i>
-          <span>Mes enfants</span>
-        </a>
-      </li>
+
       <li class="dropdown">
         <a href="javascript:void(0)">
           <i class="ri-graduation-cap-line"></i>
@@ -120,30 +115,18 @@
               Paiements
             </a>
           </li>
-          <li>
-            <a href="<?=base_url('Recus')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Reçus
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Echeance')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Échéances
-            </a>
-          </li>
         </ul>
       </li>
       <li class="dropdown">
         <a href="javascript:void(0)">
           <i class="ri-stack-line"></i>
-          <span>STOCKS</span>
+          <span>Stocks</span>
         </a>
         <ul class="sidebar-submenu">
           <li>
-            <a href="<?=base_url('Produits')?>">
+            <a href="<?=base_url('Librairie')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Produits
+              Librairie
             </a>
           </li>
           <li>
@@ -153,9 +136,9 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Stock_Mouvements')?>">
+            <a href="<?=base_url('Commandes')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Mouvements / Ventes
+              Commandes
             </a>
           </li>
           <li>
@@ -164,86 +147,9 @@
               Rapports
             </a>
           </li>
-          <li>
-            <a href="<?=base_url('Bibliotheque')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Bibliothèque
-            </a>
-          </li>
         </ul>
       </li>
-      <li class="dropdown">
-        <a href="javascript:void(0)">
-          <i class="ri-file-text-line"></i>
-          <span>Comptabilité</span>
-        </a>
-        <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Comptabilite')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Plan comptable
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Comptabilite/Ecritures')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Écritures
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="javascript:void(0)">
-          <i class="ri-shirt-line"></i>
-          <span>Uniformes & Assurances</span>
-        </a>
-        <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Uniformes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Uniformes
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Assurances')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Assurances
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="javascript:void(0)">
-          <i class="ri-shopping-bag-line"></i>
-          <span>Commandes & Matériels</span>
-        </a>
-        <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Commandes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Commandes
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Materiels')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Matériels
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Toilettes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Toilettes
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li>
-        <a href="<?=base_url('Absences')?>">
-          <i class="ri-user-unfollow-line"></i>
-          <span>Absences</span>
-        </a>
-      </li>
+
       <li class="dropdown">
         <a href="javascript:void(0)">
           <i class="ri-file-edit-line"></i>
@@ -282,56 +188,7 @@
           <span>Événements</span>
         </a>
       </li>
-      <li>
-        <a href="<?=base_url('Certificats')?>">
-          <i class="ri-award-line"></i>
-          <span>Certificats</span>
-        </a>
-      </li>
-      <li class="dropdown">
-        <a href="javascript:void(0)">
-          <i class="ri-user-heart-line"></i>
-          <span>Employés</span>
-        </a>
-        <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Employes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Employés
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Paie')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Paie
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Paie_contrat')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Contrats
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Paie_bulletin')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Bulletins paie
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Paie_rubrique')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Rubriques
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li>
-        <a href="<?=base_url('Messages')?>">
-          <i class="ri-message-line"></i>
-          <span>Messages</span>
-        </a>
-      </li>
+
       <li class="dropdown">
         <a href="javascript:void(0)">
           <i class="ri-shield-user-line"></i>
@@ -441,7 +298,7 @@
               </a>
             </div>
             <div class="text-center py-12 px-16">
-              <a href="javascript:void(0)" class="text-primary-600 fw-semibold text-md hover-underline">Voir toutes les notifications</a>
+              <a href="<?= base_url('Notifications') ?>" class="text-primary-600 fw-semibold text-md hover-underline">Voir toutes les notifications</a>
             </div>
           </div>
         </div>

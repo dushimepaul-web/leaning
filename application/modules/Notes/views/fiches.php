@@ -65,6 +65,7 @@
 <script id="classes_data" type="application/json"><?= json_encode($classes) ?></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js?v=<?= filemtime(FCPATH.'assets/js/autocomplete.js') ?>"></script>
 <script src="<?= base_url() ?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 var classesList=[];try{classesList=JSON.parse(document.getElementById('classes_data').textContent);}catch(e){}
 var appBadges={Excellent:'bg-success-100 text-success-700','Très Bien':'bg-success-50 text-success-600',Bien:'bg-info-100 text-info-600','Assez Bien':'bg-warning-100 text-warning-600',Passable:'bg-warning-50 text-warning-700',Insuffisant:'bg-danger-100 text-danger-600','Sans notes':'bg-neutral-100 text-neutral-600'};

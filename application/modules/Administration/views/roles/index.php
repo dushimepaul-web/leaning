@@ -48,7 +48,7 @@
       </div>
     </div>
   </div>
-</div>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const API_ROLES = { list: () => API.get('api/roles'), create: (d) => API.post('api/roles/create', d), update: (id, d) => API.post('api/roles/' + id + '/update', d), delete: (id) => API.get('api/roles/' + id + '/delete') };
 
@@ -85,4 +85,4 @@ async function confirmDelete(uuid) {
 
 loadTable();
 </script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
+

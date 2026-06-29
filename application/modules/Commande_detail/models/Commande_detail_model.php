@@ -16,7 +16,7 @@ class Commande_detail_model extends Model
         return $this->db->get()->result_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $data['uuid'] = generate_uuid();
         return $this->db->insert('commandes_details', $data) ? ['success' => true] : ['success' => false];

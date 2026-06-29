@@ -21,10 +21,10 @@
   <script src="<?=base_url()?>assets/js/lib/jquery-ui.min.js"></script>
   
   <!-- main js -->
-  <script src="<?=base_url()?>assets/js/app.js"></script>
+  <script src="<?=base_url()?>assets/js/app.js?v=<?= filemtime(FCPATH.'assets/js/app.js') ?>"></script>
   <!-- API JS -->
-  <script src="<?=base_url()?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
   <script>var BASE_URL = '<?= base_url() ?>';</script>
+  <script src="<?=base_url()?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
   <!-- Auto-reload + auto-add activate/deactivate for all modules -->
   <script>
   (function() {

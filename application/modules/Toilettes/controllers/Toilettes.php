@@ -12,7 +12,7 @@ class Toilettes extends MY_Controller {
 
     public function api_list() {
         $this->db->where('p.deleted_at', null);
-        $this->db->where('cp.code', 'TOILETTES');
+        $this->db->where('cp.code', 'TOILETTE');
         $this->db->select('p.*, cp.libelle as categorie');
         $this->db->from('produits p');
         $this->db->join('categories_produits cp', 'p.id_categorie = cp.id_categorie');
@@ -31,7 +31,7 @@ class Toilettes extends MY_Controller {
         $data = $this->get_json_input();
         if (empty($data['libelle'])) { $this->json_error('Libellé obligatoire'); return; }
         $this->load->helper('uuid');
-        $categorie = $this->Model->readOne('categories_produits', ['code' => 'TOILETTES']);
+        $categorie = $this->Model->readOne('categories_produits', ['code' => 'TOILETTE']);
         $insert = [
             'uuid' => generate_uuid(),
             'code' => $data['code'] ?? null,

@@ -195,6 +195,7 @@
 <script id="types_frais_data" type="application/json"><?= json_encode($types_frais) ?></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js?v=2"></script>
 <script src="<?= base_url() ?>assets/js/api.js?v=2"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 var BASE_URL = '<?= base_url() ?>';
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
@@ -279,7 +280,7 @@ async function loadData() {
     }
   } catch(e) {}
 
-  const r = await API.paiements_data.list();
+  const r = await API.paiements.list();
   if (!r.success) { $('#paiementsBody').html('<tr><td colspan="11" class="text-center text-danger">Erreur</td></tr>'); return; }
   allPaiements = r.data || [];
   var rows = '';
@@ -419,7 +420,7 @@ document.getElementById('paiementForm').addEventListener('submit', async functio
     id_section: document.getElementById('paySectionId').value || null
   };
   if (!data.id_etudiant || !data.montant) { Swal.fire({ icon: 'warning', title: 'Validation', text: 'Étudiant et montant obligatoires' }); return; }
-  var r = editUuid ? await API.paiements_data.update(editUuid, data) : await API.paiements_data.create(data);
+  var r = editUuid ? await API.paiements.update(editUuid, data) : await API.paiements.create(data);
   if (r.success) {
     closeSidebar();
     if (!editUuid && r.data && r.data.numero_recu) {

@@ -35,7 +35,7 @@ class Produits_model extends Model
         return $this->db->get()->row_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $required = ['code', 'libelle', 'id_categorie', 'prix_unitaire'];
         foreach ($required as $field) {
@@ -52,16 +52,16 @@ class Produits_model extends Model
         return ['success' => false, 'message' => 'Erreur insertion'];
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         $data['modifie_le'] = date('Y-m-d H:i:s');
         return $this->db->update('produits', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 
     public function get_categories($filters = [])

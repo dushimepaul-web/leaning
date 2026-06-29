@@ -28,6 +28,7 @@
     </div>
   </div>
 </div>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 let allMenus = <?= json_encode($menus) ?>;
 

@@ -4,6 +4,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Notifications extends MY_Controller {
     public function __construct() { parent::__construct(); }
 
+    public function index() {
+        $data['title'] = 'Notifications';
+        $this->load->view('notifications/index', $data);
+    }
+
     public function api_list() {
         $userId = $this->session->userdata('uuid');
         $this->db->where('deleted_at', null);

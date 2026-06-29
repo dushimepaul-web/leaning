@@ -1,8 +1,8 @@
 // API Service - VIP School REST Client
 if (typeof API !== 'undefined' && API.utilisateurs) { /* already loaded */ } else {
 
-const API = {
-  base_url: (typeof BASE_URL !== 'undefined' ? BASE_URL : (window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '') + window.location.pathname.replace(/\/[^/]*$/, '/'))),
+window.API = {
+  get base_url() { return typeof BASE_URL !== 'undefined' ? BASE_URL : (window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '') + window.location.pathname.replace(/\/[^/]*$/, '/')); },
 
   async request(method, endpoint, data = null) {
     const url = this.base_url + endpoint;
@@ -40,7 +40,7 @@ const API = {
    matieres_classes: { list: () => API.get('api/matieres_classes'), get: (id) => API.get('api/matieres_classes/' + id), create: (d) => API.post('api/matieres_classes/create', d), update: (id, d) => API.post('api/matieres_classes/' + id + '/update', d), delete: (id) => API.get('api/matieres_classes/' + id + '/delete') },
   enseignements: { list: () => API.get('api/enseignements'), get: (id) => API.get('api/enseignements/' + id), create: (d) => API.post('api/enseignements/create', d), update: (id, d) => API.post('api/enseignements/' + id + '/update', d), delete: (id) => API.get('api/enseignements/' + id + '/delete') },
   frais: { list: () => API.get('api/frais'), get: (id) => API.get('api/frais/' + id), create: (d) => API.post('api/frais/create', d), update: (id, d) => API.post('api/frais/' + id + '/update', d), delete: (id) => API.get('api/frais/' + id + '/delete') },
-  paiements: { list: () => API.get('api/paiements_data'), get: (id) => API.get('api/paiements_data/' + id), create: (d) => API.post('api/paiements_data/create', d), update: (id, d) => API.post('api/paiements_data/' + id + '/update', d), delete: (id) => API.get('api/paiements_data/' + id + '/delete') },
+   paiements: { list: () => API.get('api/paiements_data'), get: (id) => API.get('api/paiements_data/' + id), create: (d) => API.post('api/paiements_data/create', d), update: (id, d) => API.post('api/paiements_data/' + id + '/update', d), delete: (id) => API.get('api/paiements_data/' + id + '/delete') },
     notes: {
         list: () => API.get('api/notes'),
         create: (d) => API.post('api/notes/create', d),
@@ -62,39 +62,30 @@ const API = {
    produits: { list: () => API.get('api/produits'), get: (id) => API.get('api/produits/' + id), create: (d) => API.post('api/produits/create', d), update: (id, d) => API.post('api/produits/' + id + '/update', d), delete: (id) => API.get('api/produits/' + id + '/delete') },
    categories: { list: () => API.get('api/categories'), get: (id) => API.get('api/categories/' + id), create: (d) => API.post('api/categories/create', d), update: (id, d) => API.post('api/categories/' + id + '/update', d), delete: (id) => API.get('api/categories/' + id + '/delete') },
    mouvements: { list: () => API.get('api/mouvements'), create: (d) => API.post('api/mouvements/create', d) },
-   absences: { list: () => API.get('api/absences'), create: (d) => API.post('api/absences/create', d), delete: (id) => API.get('api/absences/' + id + '/delete') },
    commandes: { list: () => API.get('api/commandes'), get: (id) => API.get('api/commandes/' + id), create: (d) => API.post('api/commandes/create', d), update: (id, d) => API.post('api/commandes/' + id + '/update', d), delete: (id) => API.get('api/commandes/' + id + '/delete') },
    horaires: { list: () => API.get('api/horaires'), create: (d) => API.post('api/horaires/create', d), update: (id, d) => API.post('api/horaires/' + id + '/update', d), delete: (id) => API.get('api/horaires/' + id + '/delete'), generer: () => API.post('api/horaires/generer') },
-  bibliotheque: { list: () => API.get('api/bibliotheque'), get: (id) => API.get('api/bibliotheque/' + id), create: (d) => API.post('api/bibliotheque/create', d), update: (id, d) => API.post('api/bibliotheque/' + id + '/update', d), delete: (id) => API.get('api/bibliotheque/' + id + '/delete') },
-  certificats: { list: () => API.get('api/certificats'), get: (id) => API.get('api/certificats/' + id), create: (d) => API.post('api/certificats/create', d), update: (id, d) => API.post('api/certificats/' + id + '/update', d), delete: (id) => API.get('api/certificats/' + id + '/delete') },
+
   parametres: { list: () => API.get('api/parametres'), update: (d) => API.post('api/parametres/update', d) },
-  evenements: { list: () => API.get('api/evenements'), create: (d) => API.post('api/evenements/create', d), update: (id, d) => API.post('api/evenements/' + id + '/update', d), delete: (id) => API.get('api/evenements/' + id + '/delete') },
-  comptabilite: { list: () => API.get('api/comptabilite'), create: (d) => API.post('api/comptabilite/create', d), delete: (id) => API.get('api/comptabilite/' + id + '/delete') },
-   employes: { list: () => API.get('api/employes'), get: (id) => API.get('api/employes/' + id), create: (d) => API.post('api/employes/create', d), update: (id, d) => API.post('api/employes/' + id + '/update', d), delete: (id) => API.get('api/employes/' + id + '/delete') },
-   paie: { contrats: () => API.get('api/paie/contrats'), createContrat: (d) => API.post('api/paie/contrats/create', d), bulletins: () => API.get('api/paie/bulletins'), createBulletin: (d) => API.post('api/paie/bulletins/create', d) },
-   departements: { list: () => API.get('api/departements'), create: (d) => API.post('api/departements/create', d), delete: (id) => API.get('api/departements/' + id + '/delete') },
-   assurances: { list: () => API.get('api/assurances'), get: (id) => API.get('api/assurances/' + id), create: (d) => API.post('api/assurances/create', d), update: (id, d) => API.post('api/assurances/' + id + '/update', d), delete: (id) => API.get('api/assurances/' + id + '/delete') },
+   evenements: { list: () => API.get('api/evenements'), create: (d) => API.post('api/evenements/create', d), update: (id, d) => API.post('api/evenements/' + id + '/update', d), delete: (id) => API.get('api/evenements/' + id + '/delete') },
+    assurances: { list: () => API.get('api/assurances'), get: (id) => API.get('api/assurances/' + id), create: (d) => API.post('api/assurances/create', d), update: (id, d) => API.post('api/assurances/' + id + '/update', d), delete: (id) => API.get('api/assurances/' + id + '/delete') },
    creneaux: { list: () => API.get('api/creneaux'), get: (id) => API.get('api/creneaux/' + id), create: (d) => API.post('api/creneaux/create', d), update: (id, d) => API.post('api/creneaux/' + id + '/update', d), delete: (id) => API.get('api/creneaux/' + id + '/delete') },
    disponibilites: { list: () => API.get('api/disponibilites'), get: (id) => API.get('api/disponibilites/' + id), create: (d) => API.post('api/disponibilites/create', d), update: (id, d) => API.post('api/disponibilites/' + id + '/update', d), delete: (id) => API.get('api/disponibilites/' + id + '/delete') },
-  uniformes: { list: () => API.get('api/uniformes'), get: (id) => API.get('api/uniformes/' + id), create: (d) => API.post('api/uniformes/create', d), update: (id, d) => API.post('api/uniformes/' + id + '/update', d), delete: (id) => API.get('api/uniformes/' + id + '/delete') },
-  messages: { list: () => API.get('api/messages'), create: (d) => API.post('api/messages/create', d) },
+   uniformes: { list: () => API.get('api/uniformes'), get: (id) => API.get('api/uniformes/' + id), create: (d) => API.post('api/uniformes/create', d), update: (id, d) => API.post('api/uniformes/' + id + '/update', d), delete: (id) => API.get('api/uniformes/' + id + '/delete') },
    audit: { list: () => API.get('api/audit') },
    notifications: { list: () => API.get('api/notifications'), markRead: (id) => API.get('api/notifications/' + id + '/read') },
   annees: { list: () => API.get('api/annees'), get: (id) => API.get('api/annees/' + id), create: (d) => API.post('api/annees/create', d), update: (id, d) => API.post('api/annees/' + id + '/update', d), delete: (id) => API.get('api/annees/' + id + '/delete'), activate: (id) => API.get('api/annees/' + id + '/activate'), deactivate: (id) => API.get('api/annees/' + id + '/deactivate'), setActive: (id) => API.get('api/annees/' + id + '/active') },
   sauvegardes: { create: () => API.post('api/sauvegardes/create'), list: () => API.get('api/sauvegardes/list'), download: (f) => API.get('api/sauvegardes/download/' + f), delete: (f) => API.get('api/sauvegardes/delete/' + f) },
-   operations: { tables: () => API.get('api/operations/tables'), export: (t) => API.get('api/operations/export/' + t), preview: (t) => API.get('api/operations/preview/' + t) },
+    operations: { tables: () => API.get('api/operations/tables'), export: (t) => API.get('api/operations/export/' + t), preview: (t) => API.get('api/operations/preview/' + t) },
 
-   paie_contrats: { list: () => API.get('api/paie_contrats'), get: (id) => API.get('api/paie_contrats/' + id), create: (d) => API.post('api/paie_contrats/create', d), update: (id, d) => API.post('api/paie_contrats/' + id + '/update', d), delete: (id) => API.get('api/paie_contrats/' + id + '/delete') },
-   paie_bulletins: { list: () => API.get('api/paie_bulletins'), get: (id) => API.get('api/paie_bulletins/' + id), create: (d) => API.post('api/paie_bulletins/create', d), update: (id, d) => API.post('api/paie_bulletins/' + id + '/update', d), delete: (id) => API.get('api/paie_bulletins/' + id + '/delete') },
-   paie_bulletins_details: { list: () => API.get('api/paie_bulletins_details'), create: (d) => API.post('api/paie_bulletins_details/create', d), delete: (id) => API.get('api/paie_bulletins_details/' + id + '/delete') },
-   paiements_rubriques: { list: () => API.get('api/paie_rubriques'), get: (id) => API.get('api/paie_rubriques/' + id), create: (d) => API.post('api/paie_rubriques/create', d), update: (id, d) => API.post('api/paie_rubriques/' + id + '/update', d), delete: (id) => API.get('api/paie_rubriques/' + id + '/delete') },
    recus: { list: () => API.get('api/recus'), get: (id) => API.get('api/recus/' + id), create: (d) => API.post('api/recus/create', d), update: (id, d) => API.post('api/recus/' + id + '/update', d), delete: (id) => API.get('api/recus/' + id + '/delete') },
    echeances: { list: () => API.get('api/echeances'), get: (id) => API.get('api/echeances/' + id), create: (d) => API.post('api/echeances/create', d), update: (id, d) => API.post('api/echeances/' + id + '/update', d), delete: (id) => API.get('api/echeances/' + id + '/delete') },
    types_frais: { list: () => API.get('api/types_frais'), get: (id) => API.get('api/types_frais/' + id), create: (d) => API.post('api/types_frais/create', d), update: (id, d) => API.post('api/types_frais/' + id + '/update', d), delete: (id) => API.get('api/types_frais/' + id + '/delete') },
    commandes_details: { list: () => API.get('api/commandes_details'), get: (id) => API.get('api/commandes_details/' + id), create: (d) => API.post('api/commandes_details/create', d), update: (id, d) => API.post('api/commandes_details/' + id + '/update', d), delete: (id) => API.get('api/commandes_details/' + id + '/delete') },
    paiements_recus: { list: () => API.get('api/paiements_recus'), create: (d) => API.post('api/paiements_recus/create', d), delete: (id) => API.get('api/paiements_recus/' + id + '/delete') },
    toilettes: { list: () => API.get('api/toilettes'), get: (id) => API.get('api/toilettes/' + id), create: (d) => API.post('api/toilettes/create', d), update: (id, d) => API.post('api/toilettes/' + id + '/update', d), delete: (id) => API.get('api/toilettes/' + id + '/delete') },
-   materiels: { list: () => API.get('api/materiels'), get: (id) => API.get('api/materiels/' + id), create: (d) => API.post('api/materiels/create', d), update: (id, d) => API.post('api/materiels/' + id + '/update', d), delete: (id) => API.get('api/materiels/' + id + '/delete'), initialiser: () => API.post('api/materiels/initialiser') }
+   librairie: { list: () => API.get('api/librairie'), get: (id) => API.get('api/librairie/' + id), create: (d) => API.post('api/librairie/create', d), update: (id, d) => API.post('api/librairie/' + id + '/update', d), delete: (id) => API.get('api/librairie/' + id + '/delete'), initialiser: () => API.post('api/librairie/initialiser') }
 };
+
+API.paiements_data = API.paiements;
 
 }

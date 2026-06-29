@@ -33,6 +33,7 @@
     </div>
   </div>
 </div>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 async function loadBackups() {
   const res = await API.sauvegardes.list();

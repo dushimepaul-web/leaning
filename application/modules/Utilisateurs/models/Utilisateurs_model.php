@@ -35,7 +35,7 @@ class Utilisateurs_model extends Model
         return $this->db->get()->row_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $required = ['nom', 'prenom', 'email', 'role_id', 'mot_de_passe'];
         foreach ($required as $field) {
@@ -54,7 +54,7 @@ class Utilisateurs_model extends Model
         return ['success' => false, 'message' => 'Erreur insertion'];
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         if (!empty($data['mot_de_passe'])) {
@@ -64,9 +64,9 @@ class Utilisateurs_model extends Model
         return $this->db->update('utilisateurs', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
-        return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+        return $this->update_record($id, ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 
     // Rôles
@@ -107,7 +107,7 @@ class Utilisateurs_model extends Model
         $menus = $this->read('menus', ['deleted_at' => null], 'ordre');
         $tree = [];
         foreach ($menus as $m) {
-            if ($m['parent_id'] == 0 || empty($m['parent_id = $m['parent_id'])) {
+            if ($m['parent_id'] == 0 || empty($m['parent_id'])) {
                 $tree[] = $m;
             }
         }

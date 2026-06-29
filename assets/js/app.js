@@ -2,19 +2,26 @@
   "use strict";
 
 
-  // sidebar submenu collapsible js
-  $(".sidebar-menu .dropdown").on("click", function () {
-    var item = $(this);
-    item.siblings(".dropdown").children(".sidebar-submenu").slideUp();
-
-    item.siblings(".dropdown").removeClass("dropdown-open");
-
-    item.siblings(".dropdown").removeClass("open");
-
-    item.children(".sidebar-submenu").slideToggle();
-
-    item.toggleClass("dropdown-open");
-  });
+  // sidebar submenu toggle — une seule fois, même si app.js chargé 2×
+  if (!window.__sidebarInit) {
+    window.__sidebarInit = true;
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest(".sidebar-menu li.dropdown > a");
+      if (!a) return;
+      e.preventDefault();
+      var li = a.closest("li.dropdown");
+      if (!li) return;
+      // close all siblings
+      for (var s = li.parentNode.firstChild; s; s = s.nextSibling) {
+        if (s.nodeType === 1 && s !== li && s.classList.contains("dropdown")) {
+          s.classList.remove("dropdown-open", "open");
+        }
+      }
+      // toggle this one
+      li.classList.toggle("dropdown-open");
+      li.classList.toggle("open");
+    });
+  }
 
   $(".sidebar-toggle").on("click", function () {
     $(this).toggleClass("active");
@@ -32,24 +39,28 @@
     $("body").removeClass("overlay-active");
   });
 
-  //to keep the current page active
-  $(function () {
+  // Active page detection - vanilla JS
+  (function() {
     var nk = window.location.href;
-    $("ul#sidebar-menu a").filter(function () {
-      return this.href === nk || this.href === nk.replace(/\/+$/, "");
-    }).each(function () {
-      $(this).addClass("active-page");
-      $(this).parent().addClass("active-page");
-      var parent = $(this).parent();
-      while (parent.length && !parent.is("ul#sidebar-menu")) {
-        if (parent.is("li.dropdown")) {
-          parent.addClass("dropdown-open open");
-          parent.children(".sidebar-submenu").show();
+    var nkTrimmed = nk.replace(/\/+$/, "");
+    var links = document.querySelectorAll("ul#sidebar-menu a");
+    var i, link, href, parent;
+    for (i = 0; i < links.length; i++) {
+      link = links[i];
+      href = link.href;
+      if (href === nk || href === nkTrimmed) {
+        link.classList.add("active-page");
+        if (link.parentNode) link.parentNode.classList.add("active-page");
+        parent = link.parentNode;
+        while (parent && parent.id !== "sidebar-menu") {
+          if (parent.classList.contains("dropdown")) {
+            parent.classList.add("dropdown-open", "open");
+          }
+          parent = parent.parentNode;
         }
-        parent = parent.parent();
       }
-    });
-  });
+    }
+  })();
 
   /**
    * Utility function to calculate the current theme setting based on localStorage.

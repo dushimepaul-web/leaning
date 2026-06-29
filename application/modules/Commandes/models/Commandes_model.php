@@ -17,7 +17,7 @@ class Commandes_model extends Model
         return $this->db->get()->result_array();
     }
 
-    public function create($data)
+    public function create_record($data)
     {
         $data['uuid'] = generate_uuid();
         $data['date_commande'] = $data['date_commande'] ?? date('Y-m-d');
@@ -25,14 +25,14 @@ class Commandes_model extends Model
         return $this->db->insert('commandes', $data) ? ['success' => true, 'id' => $this->db->insert_id()] : ['success' => false];
     }
 
-    public function update($id, $data)
+    public function update_record($id, $data)
     {
         $this->db->where('uuid', $id);
         $data['modifie_le'] = date('Y-m-d H:i:s');
         return $this->db->update('commandes', $data);
     }
 
-    public function delete($id)
+    public function delete_record($id)
     {
         $this->db->where('uuid', $id);
         return $this->db->update('commandes', ['deleted_at' => date('Y-m-d H:i:s')]);

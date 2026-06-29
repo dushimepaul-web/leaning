@@ -214,6 +214,7 @@
 <script src="<?= base_url() ?>assets/js/autocomplete.js?v=<?= filemtime(FCPATH.'assets/js/autocomplete.js') ?>"></script>
 <script id="etudiants_data" type="application/json"><?= json_encode($etudiants) ?></script>
 <script id="produits_data" type="application/json"><?= json_encode($produits) ?></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let deleteId = null;

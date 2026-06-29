@@ -153,6 +153,7 @@
 <script src="<?= base_url() ?>assets/js/api.js"></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js"></script>
 <script id="id_section_data" type="application/json"><?= json_encode($sections) ?></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 function applyFilters() {

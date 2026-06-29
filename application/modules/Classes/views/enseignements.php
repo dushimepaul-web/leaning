@@ -126,6 +126,7 @@
 <script id="id_enseignant_data" type="application/json"><?= json_encode($enseignants) ?></script>
 <script id="id_matiere_data" type="application/json"><?= json_encode($matieres) ?></script>
 <script id="id_classe_data" type="application/json"><?= json_encode($classes) ?></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 

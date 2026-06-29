@@ -244,6 +244,7 @@
 <script id="types_frais_data" type="application/json"><?= json_encode($types_frais) ?></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js?v=<?= filemtime(FCPATH.'assets/js/autocomplete.js') ?>"></script>
 <script src="<?= base_url() ?>assets/js/api.js"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let BASE_URL = '<?= base_url() ?>';

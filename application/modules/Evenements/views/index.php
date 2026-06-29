@@ -236,6 +236,7 @@
 
 <script src="<?= base_url() ?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
 <script src="<?= base_url('assets/js/flatpickr.js') ?>"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 let currentDeleteId = null;
 const typeColors = { scolaire: '#10b981', sportif: '#2563eb', culturel: '#f59e0b', reunion: '#7c3aed', autre: '#ef4444' };

@@ -151,6 +151,7 @@
 <script id="annees_data" type="application/json"><?=json_encode($annees)?></script>
 <script>var ACTIVE_ANNEE_ID='<?=$id_annee_active?>',ACTIVE_PERIODE_ID='<?=$id_periode_active?>';</script>
 <script src="<?=base_url()?>assets/js/api.js"></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast=Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:2500,timerProgressBar:true});
 let gClasseId=null,gClasseNom='',gFicheData=null;

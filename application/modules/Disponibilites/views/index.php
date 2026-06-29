@@ -157,6 +157,7 @@
 <script id="disponibilites_enseignants_data" type="application/json"><?= json_encode($enseignants) ?></script>
 <script id="disponibilites_jours_data" type="application/json"><?= json_encode($jours) ?></script>
 <script id="disponibilites_creneaux_data" type="application/json"><?= json_encode($creneaux) ?></script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 
 
