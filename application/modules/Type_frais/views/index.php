@@ -6,7 +6,7 @@
       <h1 class="fw-semibold mb-4 h6 text-primary-light">Types de frais</h1>
       <div>
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
-        <span class="text-secondary-light"> / Types de frais</span>
+        <span class="text-secondary-light"> / Minervales / Types de frais</span>
       </div>
     </div>
     <div class="d-flex gap-2">

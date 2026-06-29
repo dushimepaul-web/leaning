@@ -20,10 +20,10 @@
           <span>Étudiants</span>
         </a>
         <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Etudiants')?>">
+<li>
+            <a href="<?=base_url('Commandes')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Étudiants
+              Commandes
             </a>
           </li>
           <li>
@@ -82,12 +82,30 @@
               Années scolaires
             </a>
           </li>
+          <li>
+            <a href="<?=base_url('Horaires')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Emploi du temps
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Creneaux')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Créneaux horaires
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Disponibilites')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Disponibilités
+            </a>
+          </li>
         </ul>
       </li>
       <li class="dropdown">
         <a href="javascript:void(0)">
           <i class="ri-money-dollar-circle-line"></i>
-          <span>Scolarité</span>
+          <span>Minervales</span>
         </a>
         <ul class="sidebar-submenu">
           <li>
@@ -109,27 +127,9 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Echeances')?>">
+            <a href="<?=base_url('Echeance')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Échéances
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Paiement_recus')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Reçus de paiement
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Toilettes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Matériels de toilettes
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Materiels')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Matériels scolaires
             </a>
           </li>
         </ul>
@@ -137,27 +137,85 @@
       <li class="dropdown">
         <a href="javascript:void(0)">
           <i class="ri-stack-line"></i>
-          <span>Produits</span>
+          <span>STOCKS</span>
         </a>
         <ul class="sidebar-submenu">
           <li>
-            <a href="<?=base_url('Produits/Stock')?>">
+            <a href="<?=base_url('Produits')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Stock
+              Produits
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Stock_Categories')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Catégories
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Stock_Mouvements')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Mouvements / Ventes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Rapports')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Rapports
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Bibliotheque')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Bibliothèque
             </a>
           </li>
         </ul>
       </li>
-      <li>
-        <a href="<?=base_url('Uniformes')?>">
-          <i class="ri-shirt-line"></i>
-          <span>Uniformes</span>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-file-text-line"></i>
+          <span>Comptabilité</span>
         </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Comptabilite')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Plan comptable
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Comptabilite/Ecritures')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Écritures
+            </a>
+          </li>
+        </ul>
       </li>
       <li class="dropdown">
         <a href="javascript:void(0)">
-          <i class="ri-shopping-cart-line"></i>
-          <span>Commandes</span>
+          <i class="ri-shirt-line"></i>
+          <span>Uniformes & Assurances</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Uniformes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Uniformes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Assurances')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Assurances
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-shopping-bag-line"></i>
+          <span>Commandes & Matériels</span>
         </a>
         <ul class="sidebar-submenu">
           <li>
@@ -167,9 +225,15 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Commande_details')?>">
+            <a href="<?=base_url('Materiels')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Détails commandes
+              Matériels
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Toilettes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Toilettes
             </a>
           </li>
         </ul>
@@ -212,32 +276,6 @@
           </li>
         </ul>
       </li>
-      <li class="dropdown">
-        <a href="javascript:void(0)">
-          <i class="ri-time-line"></i>
-          <span>Horaires</span>
-        </a>
-        <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Horaires')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Emploi du temps
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Creneaux')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Créneaux
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Disponibilites')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Disponibilités
-            </a>
-          </li>
-        </ul>
-      </li>
       <li>
         <a href="<?=base_url('Evenements')?>">
           <i class="ri-calendar-check-line"></i>
@@ -245,21 +283,9 @@
         </a>
       </li>
       <li>
-        <a href="<?=base_url('Bibliotheque')?>">
-          <i class="ri-book-shelf-line"></i>
-          <span>Bibliothèque</span>
-        </a>
-      </li>
-      <li>
         <a href="<?=base_url('Certificats')?>">
           <i class="ri-award-line"></i>
           <span>Certificats</span>
-        </a>
-      </li>
-      <li>
-        <a href="<?=base_url('Comptabilite')?>">
-          <i class="ri-calculator-line"></i>
-          <span>Comptabilité</span>
         </a>
       </li>
       <li class="dropdown">
@@ -293,24 +319,12 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Paie_bulletin_detail')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Détails bulletins
-            </a>
-          </li>
-          <li>
             <a href="<?=base_url('Paie_rubrique')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Rubriques
             </a>
           </li>
         </ul>
-      </li>
-      <li>
-        <a href="<?=base_url('Rapports')?>">
-          <i class="ri-bar-chart-line"></i>
-          <span>Rapports</span>
-        </a>
       </li>
       <li>
         <a href="<?=base_url('Messages')?>">
@@ -324,12 +338,6 @@
           <span>Administration</span>
         </a>
         <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Parametres')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Paramètres
-            </a>
-          </li>
           <li>
             <a href="<?=base_url('Utilisateurs')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
@@ -349,9 +357,15 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Administration/Menus')?>">
+            <a href="<?=base_url('Parametres')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Menus
+              Paramètres
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Administration/Sauvegardes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Sauvegardes
             </a>
           </li>
           <li>
@@ -361,15 +375,15 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Administration/Operations')?>">
+            <a href="<?=base_url('Notifications')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Opérations groupées
+              Notifications
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Administration/Sauvegardes')?>">
+            <a href="<?=base_url('Administration/Operations')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Sauvegardes
+              Opérations groupées
             </a>
           </li>
         </ul>
@@ -395,111 +409,6 @@
       <div class="d-flex flex-wrap align-items-center gap-3">
         <button type="button" data-theme-toggle
           class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center" aria-label="Dark & Light Mode Button"></button>
-        <div class="dropdown d-inline-block">
-          <button
-            class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
-            type="button" data-bs-toggle="dropdown" aria-label="Language Change Button">
-            <img src="<?=base_url()?>assets/images/flags/flag1.png" alt="image" class="w-24 h-24 object-fit-cover rounded-circle">
-          </button>
-          <div class="dropdown-menu to-top dropdown-menu-sm">
-            <div
-              class="py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
-              <div>
-                <h6 class="text-lg text-primary-light fw-semibold mb-0">Choose Your Language</h6>
-              </div>
-            </div>
-
-            <div class="max-h-400-px overflow-y-auto scroll-sm pe-8">
-              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="english">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag1.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">English</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="english">
-              </div>
-
-              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="japan">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag2.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">Japan</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="japan">
-              </div>
-
-              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="france">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag3.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">France</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="france">
-              </div>
-
-              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="germany">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag4.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">Germany</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="germany">
-              </div>
-
-              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="korea">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag5.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">South Korea</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="korea">
-              </div>
-
-              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="bangladesh">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag6.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">Bangladesh</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="bangladesh">
-              </div>
-
-              <div class="form-check style-check d-flex align-items-center justify-content-between mb-16">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="india">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag7.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">India</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="india">
-              </div>
-              <div class="form-check style-check d-flex align-items-center justify-content-between">
-                <label class="form-check-label line-height-1 fw-medium text-secondary-light" for="canada">
-                  <span class="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                    <img src="<?=base_url()?>assets/images/flags/flag8.png" alt="Image"
-                      class="w-36-px h-36-px bg-success-subtle text-success-main rounded-circle flex-shrink-0">
-                    <span class="text-md fw-semibold mb-0">Canada</span>
-                  </span>
-                </label>
-                <input class="form-check-input" type="radio" name="crypto" id="canada">
-              </div>
-            </div>
-          </div>
-        </div><!-- Language dropdown end -->
-
         <div class="dropdown">
           <button
             class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative"
@@ -516,7 +425,6 @@
               <span
                 class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
             </div>
-
             <div class="max-h-400-px overflow-y-auto scroll-sm pe-4">
               <a href="javascript:void(0)"
                 class="px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between">
@@ -532,14 +440,11 @@
                 </div>
               </a>
             </div>
-
             <div class="text-center py-12 px-16">
               <a href="javascript:void(0)" class="text-primary-600 fw-semibold text-md hover-underline">Voir toutes les notifications</a>
             </div>
-
           </div>
-        </div><!-- Notification dropdown end -->
-
+        </div>
       </div>
     </div>
   </div>

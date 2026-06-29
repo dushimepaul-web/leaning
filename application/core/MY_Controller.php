@@ -16,6 +16,7 @@ class MY_Controller extends MX_Controller
     {
         parent::__construct();
         $this->_hmvc_fixes();
+        $this->_load_module_model();
 
         if (empty($this->session->userdata('logged_in'))) {
             $session_data = array('logged_in' => FALSE);
@@ -77,6 +78,19 @@ class MY_Controller extends MX_Controller
     {
         $this->load->library('form_validation');
         $this->form_validation->CI =& $this;
+    }
+
+    private function _load_module_model()
+    {
+        $class = get_class($this);
+        if ($class === 'MY_Controller' || $class === 'MX_Controller') return;
+        $parts = explode('\\', $class);
+        $class = end($parts);
+        $model_name = $class . '_model';
+        $model_file = APPPATH . 'modules/' . $class . '/models/' . $model_name . '.php';
+        if (file_exists($model_file)) {
+            $this->load->model($class . '/' . $model_name);
+        }
     }
 
     public function render_view($view, $data = array())

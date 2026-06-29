@@ -3,10 +3,10 @@
 <div class="dashboard-main-body">
   <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
     <div>
-      <h1 class="fw-semibold mb-4 h6 text-primary-light">Gestion des Produits</h1>
+      <h1 class="fw-semibold mb-4 h6 text-primary-light">Gestion des Stocks / Produits</h1>
       <div>
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
-        <span class="text-secondary-light"> / Produits</span>
+        <span class="text-secondary-light"> / Stocks</span>
       </div>
     </div>
     <button type="button" class="btn btn-primary-600 d-flex align-items-center gap-6" onclick="openAddSidebar()">
@@ -25,46 +25,38 @@
                 <span><i class="ri-arrow-down-s-line"></i></span>
               </button>
               <ul class="dropdown-menu p-12 border bg-base shadow">
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export PDF',text:'Fonctionnalit� � venir'})"><i class="ri-file-3-line"></i> PDF</button></li>
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export Excel',text:'Fonctionnalit� � venir'})"><i class="ri-file-excel-line"></i> Excel</button></li>
                 <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="exportCSV()"><i class="ri-file-excel-line"></i> CSV</button></li>
               </ul>
             </div>
             <form class="navbar-search dt-search m-0">
-              <input type="text" id="dtSearch" class="dt-input bg-transparent radius-4" aria-controls="dataTable" name="search" placeholder="Rechercher...">
+              <input type="text" id="dtSearch" class="dt-input bg-transparent radius-4" name="search" placeholder="Rechercher...">
               <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
             </form>
-          </div>
-          <div class="d-flex align-items-center gap-8 text-secondary-light">
             <div class="dropdown">
               <button type="button" class="px-12 py-5-px border border-neutral-300 radius-8 d-flex align-items-center gap-20" data-bs-toggle="dropdown" aria-expanded="false">
                 <span class="d-flex align-items-center gap-1 text-secondary-light text-sm">Filtrer</span>
-                <span class=""><i class="ri-arrow-down-s-line"></i></span>
+                <span><i class="ri-arrow-down-s-line"></i></span>
               </button>
               <div class="dropdown-menu border bg-base shadow dropdown-menu-lg p-0">
                 <div class="d-flex align-items-center justify-content-between border-bottom py-8 px-16">
                   <span class="fw-semibold text-lg text-primary-light">Filtre</span>
                 </div>
-                <form class="p-16 d-grid grid-cols-2 gap-16">
+                <form class="p-16 d-grid grid-cols-1 gap-16">
                   <div>
-                    <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Statut</label>
-                    <select id="filterStatut" class="form-control form-select">
-                      <option value="">Tous</option>
-                      <option value="actif">Actif</option>
-                      <option value="inactif">Inactif</option>
+                    <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Catégorie</label>
+                    <select id="filterCategory" class="form-control form-select">
+                      <option value="">Toutes les catégories</option>
                     </select>
                   </div>
-                  <div>
-                    <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Recherche</label>
-                    <input type="text" id="filterSearch" class="form-control" placeholder="Mot-cl�...">
-                  </div>
-                  <div><button type="reset" class="btn btn-danger-200 text-danger-600 w-100" onclick="resetFilters()">R�initialiser</button></div>
+                  <div><button type="reset" class="btn btn-danger-200 text-danger-600 w-100" onclick="resetFilters()">Réinitialiser</button></div>
                   <div><button type="button" class="btn btn-primary-600 w-100" onclick="applyFilters()">Appliquer</button></div>
                 </form>
               </div>
             </div>
+          </div>
+          <div class="d-flex align-items-center gap-8 text-secondary-light">
             <span>Lignes par page :</span>
-            <div class="dt-length"><select id="dtLength" name="dataTable_length" aria-controls="dataTable" class="dt-input form-control form-select">
+            <div class="dt-length"><select id="dtLength" class="dt-input form-control form-select">
               <option value="5">5</option>
               <option value="10" selected>10</option>
               <option value="25">25</option>
@@ -73,15 +65,16 @@
             </select></div>
           </div>
         </div>
-        <table class="table bordered-table mb-0 data-table" id="dataTable" data-page-length='10' style="width:100%">
+        <table class="table bordered-table mb-0 data-table" id="dataTable" style="width:100%">
           <thead>
             <tr>
-                            <th scope="col"><div class="form-check style-check d-flex align-items-center"><input class="form-check-input" type="checkbox"><label class="form-check-label">S.L</label></div></th>
+              <th>S.L</th>
               <th>Code</th>
               <th>Libellé</th>
               <th>Catégorie</th>
               <th>Prix</th>
               <th>Stock</th>
+              <th>Stock Min</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -113,22 +106,34 @@
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Catégorie</label>
         <select class="form-control form-select" id="id_categorie">
           <option value="">Sélectionner</option>
-          <?php foreach ($categories as $c): ?>
-            <option value="<?= $c['id_categorie'] ?>"><?= $c['libelle'] ?></option>
-          <?php endforeach; ?>
         </select>
       </div>
       <div class="col-md-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire</label>
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (FCFA)</label>
         <input type="number" class="form-control" id="prix_unitaire" step="0.01" placeholder="0.00">
       </div>
       <div class="col-md-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Stock initial</label>
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Taille</label>
+        <input type="text" class="form-control" id="taille" placeholder="Ex: S, M, L, XL (uniformes)">
+      </div>
+      <div class="col-md-4">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Stock actuel</label>
         <input type="number" class="form-control" id="stock_initial" value="0">
       </div>
-      <div class="col-md-6">
+      <div class="col-md-4">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Stock minimum</label>
         <input type="number" class="form-control" id="stock_mini" value="5">
+      </div>
+      <div class="col-md-4">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Unité</label>
+        <select class="form-control form-select" id="unite">
+          <option value="pièce">Pièce</option>
+          <option value="lot">Lot</option>
+          <option value="paquet">Paquet</option>
+          <option value="boîte">Boîte</option>
+          <option value="kg">Kg</option>
+          <option value="litre">Litre</option>
+        </select>
       </div>
     </div>
     <div class="col-12">
@@ -158,35 +163,41 @@
 
 <script src="<?= base_url() ?>assets/js/api.js"></script>
 <script>
-
-
-function applyFilters() {
-  const searchVal = document.getElementById('filterSearch')?.value || '';
-  $('#dataTable').DataTable().search(searchVal).draw();
-}
-
-function resetFilters() {
-  if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
-  if (document.getElementById('filterStatut')) document.getElementById('filterStatut').value = '';
-  $('#dataTable').DataTable().search('').draw();
-}
+var BASE_URL = '<?= base_url() ?>';
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editingId = null;
 let deleteId = null;
 
+async function loadCategories() {
+  try {
+    const r = await fetch(BASE_URL + 'api/produits/categories').then(r => r.json());
+    if (r.success && r.data) {
+      let opts = '<option value="">Sélectionner</option>';
+      r.data.forEach(c => { opts += `<option value="${c.id_categorie}">${c.libelle} (${c.code})</option>`; });
+      document.getElementById('id_categorie').innerHTML = opts;
+      let filterOpts = '<option value="">Toutes les catégories</option>';
+      r.data.forEach(c => { filterOpts += `<option value="${c.id_categorie}">${c.libelle}</option>`; });
+      document.getElementById('filterCategory').innerHTML = filterOpts;
+    }
+  } catch(e) {}
+}
+
 async function loadData() {
   const res = await API.produits.list();
-  if (!res.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur</td></tr>'); return; }
+  if (!res.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur</td></tr>'); return; }
   let rows = '';
+  const filtreCat = document.getElementById('filterCategory').value;
   res.data.forEach((p, i) => {
-    const stockBadge = p.stock_actuel <= p.stock_mini ? 'bg-danger-100 text-danger-600' : 'bg-success-100 text-success-600';
+    if (filtreCat && String(p.id_categorie) !== filtreCat) return;
+    const stockRatio = p.stock_actuel <= p.stock_mini ? 'bg-danger-100 text-danger-600' : 'bg-success-100 text-success-600';
     rows += `<tr>
       <td>${i + 1}</td>
       <td><span class="fw-semibold">${p.code || '-'}</span></td>
       <td>${p.libelle}</td>
       <td>${p.categorie || '-'}</td>
-      <td><strong>${parseFloat(p.prix_unitaire || 0).toLocaleString()}</strong></td>
-      <td><span class="${stockBadge} px-24 py-4 radius-4 fw-medium text-sm">${p.stock_actuel || 0}</span></td>
+      <td><strong>${parseFloat(p.prix_unitaire || 0).toLocaleString()} FCFA</strong></td>
+      <td><span class="${stockRatio} px-24 py-4 radius-4 fw-medium text-sm">${p.stock_actuel || 0}</span></td>
+      <td>${p.stock_mini || 0}</td>
       <td>
         <div class="btn-group">
           <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
@@ -208,6 +219,9 @@ async function loadData() {
   });
 }
 
+function applyFilters() { loadData(); }
+function resetFilters() { document.getElementById('filterCategory').value = ''; loadData(); }
+
 function openAddSidebar() {
   editingId = null;
   document.getElementById('sidebarTitle').textContent = 'Ajouter un produit';
@@ -215,6 +229,7 @@ function openAddSidebar() {
   document.getElementById('recordId').value = '';
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
+  loadCategories();
 }
 
 function openEditSidebar(data) {
@@ -226,8 +241,11 @@ function openEditSidebar(data) {
   document.getElementById('id_categorie').value = data.id_categorie || '';
   document.getElementById('prix_unitaire').value = data.prix_unitaire || '';
   document.getElementById('stock_mini').value = data.stock_mini || 5;
+  document.getElementById('unite').value = data.unite || 'pièce';
+  document.getElementById('taille').value = data.taille || '';
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
+  loadCategories();
 }
 
 async function editRecord(id) {
@@ -242,12 +260,17 @@ async function saveRecord() {
     id_categorie: document.getElementById('id_categorie').value || null,
     prix_unitaire: document.getElementById('prix_unitaire').value || 0,
     stock_actuel: document.getElementById('stock_initial').value || 0,
-    stock_mini: document.getElementById('stock_mini').value || 5
+    stock_mini: document.getElementById('stock_mini').value || 5,
+    unite: document.getElementById('unite').value || 'pièce',
+    taille: document.getElementById('taille').value
   };
   if (!data.libelle) { Swal.fire({ icon: 'warning', title: 'Validation', text: 'Libellé obligatoire' }); return; }
   let r;
   if (editingId) {
-    delete data.stock_actuel;
+    const original = await API.produits.get(editingId);
+    if (original.success) {
+      data.stock_actuel = document.getElementById('stock_initial').value || original.data.stock_actuel;
+    }
     r = await API.produits.update(editingId, data);
   } else {
     r = await API.produits.create(data);
@@ -265,11 +288,7 @@ function closeSidebar() {
 }
 
 document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
-
-document.getElementById('mainForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  saveRecord();
-});
+document.getElementById('mainForm').addEventListener('submit', function(e) { e.preventDefault(); saveRecord(); });
 
 function confirmDelete(id) {
   deleteId = id;
@@ -290,12 +309,10 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 function exportCSV() {
   const table = $('#dataTable').DataTable();
   const data = table.rows({ filter: 'applied' }).data();
-  let csv = '\uFEFF';
-  const headers = ['#', 'Code', 'Libellé', 'Catégorie', 'Prix', 'Stock'];
-  csv += headers.join(',') + '\n';
+  let csv = '\uFEFFCode,Libellé,Catégorie,Prix,Stock,Stock Min\n';
   data.each(function(row) {
     const cols = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 1; i <= 6; i++) {
       let val = $(row[i]).text().trim() || row[i] || '';
       val = '"' + val.replace(/"/g, '""') + '"';
       cols.push(val);
@@ -305,14 +322,15 @@ function exportCSV() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = 'produits.csv';
+  link.download = 'stocks_produits.csv';
   link.click();
 }
 
 (function() {
   var wait = setInterval(function() {
-    if (typeof jQuery !== 'undefined' && $.fn && $.fn.DataTable && typeof API !== 'undefined' && API.produits) {
+    if (typeof jQuery !== 'undefined' && $.fn && $.fn.DataTable && typeof API !== 'undefined') {
       clearInterval(wait);
+      loadCategories();
       loadData();
       $('#dtSearch').on('keyup', function() { $('#dataTable').DataTable().search(this.value).draw(); });
       $('#dtLength').on('change', function() { $('#dataTable').DataTable().page.len(+this.value).draw(); });

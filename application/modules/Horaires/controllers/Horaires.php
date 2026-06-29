@@ -260,4 +260,37 @@ class Horaires extends MY_Controller {
         }
         return null;
     }
+
+    public function api_matieres_by_classe($id_classe) {
+        $this->db->select('m.id_matiere, m.libelle, m.code');
+        $this->db->from('matieres m');
+        $this->db->join('matieres_classes mc', 'm.id_matiere = mc.id_matiere AND mc.deleted_at IS NULL', 'inner');
+        $this->db->where('mc.id_classe', $id_classe);
+        $this->db->where('m.deleted_at', null);
+        $this->db->order_by('m.libelle');
+        $matieres = $this->db->get()->result_array();
+        if (empty($matieres)) {
+            $this->db->select('m.id_matiere, m.libelle, m.code');
+            $this->db->from('enseignements en');
+            $this->db->join('matieres m', 'en.id_matiere = m.id_matiere');
+            $this->db->where('en.id_classe', $id_classe);
+            $this->db->where('en.deleted_at', null);
+            $this->db->where('m.deleted_at', null);
+            $this->db->order_by('m.libelle');
+            $matieres = $this->db->get()->result_array();
+        }
+        $this->json_success($matieres);
+    }
+
+    public function api_enseignant_by_classe_matiere($id_classe, $id_matiere) {
+        $this->db->select('e.id_enseignant, e.nom, e.prenom, e.matricule');
+        $this->db->from('enseignements en');
+        $this->db->join('enseignants e', 'en.id_enseignant = e.id_enseignant');
+        $this->db->where('en.id_classe', $id_classe);
+        $this->db->where('en.id_matiere', $id_matiere);
+        $this->db->where('en.deleted_at', null);
+        $this->db->where('e.deleted_at', null);
+        $ens = $this->db->get()->row_array();
+        $this->json_success($ens);
+    }
 }

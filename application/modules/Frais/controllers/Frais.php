@@ -33,8 +33,8 @@ class Frais extends MY_Controller {
 
     public function api_create() {
         $data = $this->get_json_input();
-        if (empty($data['id_type_frais']) || empty($data['montant'])) {
-            $this->json_error('Type de frais et montant obligatoires'); return;
+        if (empty($data['id_type_frais']) || empty($data['montant']) || empty($data['id_classe'])) {
+            $this->json_error('Type de frais, classe et montant obligatoires'); return;
         }
         $id = $this->Model->createLastId('frais', $data);
         if ($id) $this->json_success(['id_frais' => $id], 'Frais créé');
@@ -72,22 +72,20 @@ class Frais extends MY_Controller {
 
     public function api_create_paiement() {
         $data = $this->get_json_input();
-        if (empty($data['id_etudiant']) || empty($data['montant']) || empty($data['id_type_frais'])) {
-            $this->json_error('Étudiant, type de frais et montant obligatoires'); return;
+        if (empty($data['id_etudiant']) || empty($data['montant']) || empty($data['id_frais'])) {
+            $this->json_error('Étudiant, frais et montant obligatoires'); return;
         }
 
-        $frais = $this->Model->createLastId('frais', [
-            'id_type_frais' => $data['id_type_frais'],
-            'id_classe' => $data['id_classe'] ?? null,
-            'id_annee' => $this->id_annee_active,
-            'montant' => $data['montant']
-        ]);
-        $frais_id = $frais ?: null;
+        // Vérifier que le frais existe
+        $frais_existe = $this->Model->readOne('frais', ['id_frais' => $data['id_frais'], 'deleted_at' => null]);
+        if (!$frais_existe) {
+            $this->json_error('Frais sélectionné inexistant (id_frais=' . $data['id_frais'] . ')'); return;
+        }
 
         $id_utilisateur = $this->session->userdata('id_utilisateur') ?? null;
         $insert = [
             'id_etudiant' => $data['id_etudiant'],
-            'id_frais' => $frais_id,
+            'id_frais' => $data['id_frais'],
             'id_annee' => $this->id_annee_active,
             'montant' => $data['montant'],
             'mode_paiement' => $data['mode_paiement'] ?? 'especes',

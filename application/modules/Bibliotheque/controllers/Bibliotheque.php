@@ -9,6 +9,12 @@ class Bibliotheque extends MY_Controller {
         $this->load->view('index', $data);
     }
 
+    public function api_get($id) {
+        $r = $this->Model->readOne('bibliotheque_livres', ['uuid' => $id]);
+        if (!$r) { $this->json_error('Livre non trouvé', 404); return; }
+        $this->json_success($r);
+    }
+
     public function api_list() {
         $this->db->where('deleted_at', null);
         $this->db->order_by('id_livre', 'DESC');

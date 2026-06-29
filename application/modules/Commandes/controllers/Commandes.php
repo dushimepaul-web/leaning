@@ -58,6 +58,19 @@ class Commandes extends MY_Controller {
                 'quantite' => $qty,
                 'prix_unitaire' => $price,
             ]);
+            $produit = $this->Model->readOne('produits', ['id_produit' => $d['id_produit']]);
+            if ($produit) {
+                $nouveau_stock = max(0, intval($produit['stock_actuel']) - $qty);
+                $this->Model->update('produits', ['id_produit' => $d['id_produit']], ['stock_actuel' => $nouveau_stock]);
+                $this->Model->create('mouvements_stock', [
+                    'id_produit' => $d['id_produit'],
+                    'type' => 'sortie',
+                    'quantite' => $qty,
+                    'prix_unitaire' => $price,
+                    'motif' => 'Commande #' . $id,
+                    'id_utilisateur' => $this->session->userdata('id_utilisateur')
+                ]);
+            }
             $total += $qty * $price;
         }
         $this->db->where('id_commande', $id)->update('commandes', ['total' => $total]);

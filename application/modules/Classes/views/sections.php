@@ -6,7 +6,7 @@
       <h1 class="fw-semibold mb-4 h6 text-primary-light">Sections</h1>
       <div>
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
-        <span class="text-secondary-light"> / Sections</span>
+        <span class="text-secondary-light"> / Classes / Sections</span>
       </div>
     </div>
     <button type="button" class="btn btn-primary-600 d-flex align-items-center gap-6" onclick="openAddSidebar()">
@@ -29,8 +29,7 @@
                 <span><i class="ri-arrow-down-s-line"></i></span>
               </button>
               <ul class="dropdown-menu p-12 border bg-base shadow">
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export PDF',text:'Fonctionnalité à venir'})"><i class="ri-file-3-line"></i> PDF</button></li>
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export Excel',text:'Fonctionnalité à venir'})"><i class="ri-file-excel-line"></i> Excel</button></li>
+                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="exportCSV()"><i class="ri-file-excel-line"></i> CSV</button></li>
               </ul>
             </div>
             <form class="navbar-search dt-search m-0">
@@ -66,7 +65,6 @@
 </div>
 
 <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300" id="sidebarOverlay"></div>
-
 <div class="bg-white position-fixed end-0 top-0 h-100vh overflow-y-auto z-99 w-100 translate-x-full duration-300 active-translate-0" id="addSidebar" style="width:50vw;max-width:50vw;box-shadow: -4px 0 20px rgba(0,0,0,0.1);">
   <div class="px-20 py-12 border-bottom d-flex align-items-center justify-content-between gap-20">
     <h5 class="text-lg mb-0" id="sidebarTitle">Ajouter une section</h5>
@@ -109,7 +107,10 @@
   </div>
 </div>
 
+<script src="<?= base_url() ?>assets/js/api.js"></script>
 <script>
+const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
+
 let editingId = null;
 let deleteId = null;
 
@@ -171,6 +172,7 @@ async function loadData() {
 async function editRecord(id) {
   const res = await API.sections.get(id);
   if (res.success) openEditSidebar(res.data);
+  else Toast.fire({ icon: 'error', title: res.message || 'Erreur' });
 }
 
 document.getElementById('mainForm').addEventListener('submit', async function(e) {
@@ -188,6 +190,8 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   else res = await API.sections.create(data);
   if (res.success) {
     closeSidebar();
+    Toast.fire({ icon: 'success', title: editingId ? 'Section modifiée' : 'Section créée' });
+    loadData();
   } else {
     Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
   }
@@ -207,11 +211,29 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
   const res = await API.sections.delete(deleteId);
   if (res.success) {
     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+    Toast.fire({ icon: 'success', title: 'Section supprimée' });
+    loadData();
   } else {
     Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
   }
   deleteId = null;
 });
+
+function exportCSV() {
+  const table = $('#dataTable').DataTable();
+  const data = table.rows({ filter: 'applied' }).data();
+  let csv = '\uFEFFCode,Libellé\n';
+  data.each(function(row) {
+    const code = $(row[1]).text().trim();
+    const libelle = $(row[2]).text().trim();
+    csv += '"' + code + '","' + libelle + '"\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'sections.csv';
+  link.click();
+}
 
 (function() {
   var wait = setInterval(function() {

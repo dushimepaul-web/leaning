@@ -8,17 +8,13 @@ class Dashboard extends MY_Controller {
     }
 
     public function index() {
-        $stats = $this->Model->get_statistics();
         $data['title'] = 'Tableau de bord';
-        $data['total_etudiants'] = $stats['total_etudiants'];
-        $data['total_enseignants'] = $stats['total_enseignants'];
-        $data['total_classes'] = $stats['total_classes'];
-        $data['total_inscriptions'] = $stats['total_inscriptions'];
-        $data['total_paiements'] = $stats['total_paiements'];
-
-        $data['total_notes'] = $this->Model->countWhere('notes', ['deleted_at' => null]);
-        $data['total_evaluations'] = $this->Model->countWhere('evaluations', ['deleted_at' => null]);
-        $data['total_bulletins'] = $this->Model->countWhere('bulletins', ['deleted_at' => null]);
+        $data['total_etudiants'] = $this->Model->countWhere('etudiants', ['deleted_at' => null]);
+        $data['total_enseignants'] = $this->Model->countWhere('enseignants', ['deleted_at' => null]);
+        $data['total_classes'] = $this->Model->countWhere('classes', ['deleted_at' => null]);
+        $data['total_paiements'] = $this->Model->countWhere('paiements', ['deleted_at' => null]);
+        $data['total_produits'] = $this->Model->countWhere('produits', ['deleted_at' => null]);
+        $data['total_mouvements'] = $this->Model->count('mouvements_stock');
 
         $periode = $this->Model->readOne('periodes', ['est_en_cours' => 1]);
         $data['periode_active_name'] = $periode ? $periode['libelle'] : 'Non défini';

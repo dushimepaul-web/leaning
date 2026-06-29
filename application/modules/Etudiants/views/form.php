@@ -3,26 +3,26 @@
 <div class="dashboard-main-body">
   <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
     <div>
-      <h1 class="fw-semibold mb-4 h6 text-primary-light"><?= $etudiant ? 'Edit Student' : 'Add New Student' ?></h1>
+      <h1 class="fw-semibold mb-4 h6 text-primary-light"><?= $etudiant ? 'Modifier l\'élève' : 'Nouvel élève' ?></h1>
       <div>
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
-        <a href="<?= base_url('Etudiants') ?>" class="text-secondary-light hover-text-primary hover-underline"> / Student</a>
-        <span class="text-secondary-light"> / <?= $etudiant ? 'Edit Student' : 'Add New Student' ?></span>
+        <a href="<?= base_url('Etudiants') ?>" class="text-secondary-light hover-text-primary hover-underline"> / Élèves</a>
+        <span class="text-secondary-light"> / <?= $etudiant ? 'Modifier' : 'Nouveau' ?></span>
       </div>
     </div>
   </div>
   <form id="mainForm" class="mt-24">
     <input type="hidden" id="id_etudiant" value="<?= $etudiant['uuid'] ?? '' ?>">
     <div class="row gy-3">
-      <div class="col-lg-12">
+      <div class="col-lg-6">
         <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
           <div class="card-header border-bottom bg-base py-16 px-24">
-            <h6 class="text-lg fw-semibold mb-0">Personal Info</h6>
+            <h6 class="text-lg fw-semibold mb-0">Informations Inscription</h6>
           </div>
           <div class="card-body p-20">
             <div class="row gy-3">
-              <div class="col-xxl-3 col-xl-4 col-sm-6 position-relative">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Academic Year</label>
+              <div class="col-12 position-relative">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Année scolaire</label>
                 <input type="hidden" id="id_annee" value="<?= $etudiant['inscription']['id_annee'] ?? $this->id_annee_active ?>">
                 <input type="text" class="form-control" id="id_annee_search" placeholder="Rechercher..." autocomplete="off"
                   value="<?php
@@ -31,8 +31,8 @@
                   ?>">
                 <div id="id_annee_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
               </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6 position-relative">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Class <span class="text-danger-600">*</span></label>
+              <div class="col-sm-6 position-relative">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe <span class="text-danger-600">*</span></label>
                 <input type="hidden" id="id_classe" value="<?= $etudiant['inscription']['id_classe'] ?? '' ?>">
                 <input type="text" class="form-control" id="id_classe_search" placeholder="Rechercher..." autocomplete="off"
                   value="<?php
@@ -41,7 +41,7 @@
                   ?>">
                 <div id="id_classe_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
               </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6 position-relative">
+              <div class="col-sm-6 position-relative">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Section</label>
                 <input type="hidden" id="id_section" value="<?= $etudiant['inscription']['id_section'] ?? '' ?>">
                 <input type="text" class="form-control" id="id_section_search" placeholder="Rechercher..." autocomplete="off"
@@ -51,42 +51,21 @@
                   ?>">
                 <div id="id_section_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
               </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Full Name <span class="text-danger-600">*</span></label>
-                <input type="text" class="form-control" id="nom" value="<?= $etudiant['nom'] ?? '' ?>" placeholder="Full Name">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Post Name</label>
-                <input type="text" class="form-control" id="postnom" value="<?= $etudiant['postnom'] ?? '' ?>" placeholder="Post Name">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">First Name <span class="text-danger-600">*</span></label>
-                <input type="text" class="form-control" id="prenom" value="<?= $etudiant['prenom'] ?? '' ?>" placeholder="First Name">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Gender</label>
-                <select id="sexe" class="form-control form-select">
-                  <option value="">Select Gender</option>
-                  <option value="M" <?= ($etudiant['sexe'] ?? '') == 'M' ? 'selected' : '' ?>>Male</option>
-                  <option value="F" <?= ($etudiant['sexe'] ?? '') == 'F' ? 'selected' : '' ?>>Female</option>
-                </select>
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date Of Birth</label>
-                <input type="date" class="form-control" id="date_naissance" value="<?= $etudiant['date_naissance'] ?? '' ?>">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Phone Number</label>
-                <input type="text" class="form-control" id="telephone" value="<?= $etudiant['telephone'] ?? '' ?>" placeholder="Phone Number">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Email</label>
-                <input type="email" class="form-control" id="email" value="<?= $etudiant['email'] ?? '' ?>" placeholder="Email">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Student Photo</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
+          <div class="card-header border-bottom bg-base py-16 px-24">
+            <h6 class="text-lg fw-semibold mb-0">Informations Personnelles</h6>
+          </div>
+          <div class="card-body p-20">
+            <div class="row gy-3">
+              <div class="col-sm-12">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Photo de l'élève</label>
                 <div class="drop-zone height-44-px p-4 d-flex justify-content-center align-items-center text-center fw-medium text-md cursor-pointer border border-neutral-400 radius-8 border-dashed bg-hover-neutral-200">
-                  <span class="drop-zone__prompt">Click to upload photo</span>
+                  <span class="drop-zone__prompt">Cliquer pour télécharger une photo</span>
                   <input type="file" id="photoInput" class="drop-zone__input" accept="image/*">
                 </div>
                 <input type="hidden" id="photo" value="<?= $etudiant['photo'] ?? '' ?>">
@@ -94,77 +73,41 @@
                   <img src="<?= base_url($etudiant['photo']) ?>" class="mt-8 radius-8" style="max-width:100px;max-height:100px;">
                 <?php endif; ?>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-12">
-        <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
-          <div class="card-header border-bottom bg-base py-16 px-24">
-            <h6 class="text-lg fw-semibold mb-0">Parent & Guardian Info</h6>
-          </div>
-          <div class="card-body p-20">
-            <div class="row gy-3">
-              <div class="col-xxl-4 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Father's Name</label>
-                <input type="text" class="form-control" id="pere_nom" value="<?= $etudiant['parents']['pere']['nom'] ?? '' ?>" placeholder="Father's Name">
+              <div class="col-sm-12">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Adresse de l'élève</label>
+                <textarea class="form-control" id="adresse" rows="2" placeholder="Adresse complète"><?= $etudiant['adresse'] ?? '' ?></textarea>
               </div>
-              <div class="col-xxl-4 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Father's Phone</label>
-                <input type="tel" class="form-control" id="pere_telephone" value="<?= $etudiant['parents']['pere']['telephone'] ?? '' ?>" placeholder="Phone">
+              <div class="col-sm-12">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Nom complet <span class="text-danger-600">*</span></label>
+                <input type="text" class="form-control" id="nom" value="<?= $etudiant['nom'] ?? '' ?>" placeholder="Nom">
               </div>
-              <div class="col-xxl-4 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Father's Occupation</label>
-                <input type="text" class="form-control" id="pere_profession" value="<?= $etudiant['parents']['pere']['profession'] ?? '' ?>" placeholder="Occupation">
+              <div class="col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Post-nom</label>
+                <input type="text" class="form-control" id="postnom" value="<?= $etudiant['postnom'] ?? '' ?>" placeholder="Post-nom">
               </div>
-              <div class="col-xxl-4 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Mother's Name</label>
-                <input type="text" class="form-control" id="mere_nom" value="<?= $etudiant['parents']['mere']['nom'] ?? '' ?>" placeholder="Mother's Name">
+              <div class="col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prénom <span class="text-danger-600">*</span></label>
+                <input type="text" class="form-control" id="prenom" value="<?= $etudiant['prenom'] ?? '' ?>" placeholder="Prénom">
               </div>
-              <div class="col-xxl-4 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Mother's Phone</label>
-                <input type="tel" class="form-control" id="mere_telephone" value="<?= $etudiant['parents']['mere']['telephone'] ?? '' ?>" placeholder="Phone">
-              </div>
-              <div class="col-xxl-4 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Mother's Occupation</label>
-                <input type="text" class="form-control" id="mere_profession" value="<?= $etudiant['parents']['mere']['profession'] ?? '' ?>" placeholder="Occupation">
-              </div>
-              <div class="col-12 mt-16">
-                <h6 class="text-md fw-semibold mb-8">Guardian</h6>
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Guardian Name</label>
-                <input type="text" class="form-control" id="tuteur_nom" value="<?= $etudiant['parents']['tuteur']['nom'] ?? $etudiant['tuteur_nom'] ?? '' ?>" placeholder="Guardian Name">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Relation</label>
-                <select id="tuteur_relation" class="form-control form-select">
-                  <option value="">Select relation</option>
-                  <option value="Father" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Father' ? 'selected' : '' ?>>Father</option>
-                  <option value="Mother" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Mother' ? 'selected' : '' ?>>Mother</option>
-                  <option value="Uncle" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Uncle' ? 'selected' : '' ?>>Uncle</option>
-                  <option value="Aunt" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Aunt' ? 'selected' : '' ?>>Aunt</option>
-                  <option value="Brother" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Brother' ? 'selected' : '' ?>>Brother</option>
-                  <option value="Sister" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Sister' ? 'selected' : '' ?>>Sister</option>
-                  <option value="Grandparent" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Grandparent' ? 'selected' : '' ?>>Grandparent</option>
-                  <option value="Other" <?= ($etudiant['parents']['tuteur']['relation'] ?? '') == 'Other' ? 'selected' : '' ?>>Other</option>
+              <div class="col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Genre</label>
+                <select id="sexe" class="form-control form-select">
+                  <option value="">Sélectionner</option>
+                  <option value="M" <?= ($etudiant['sexe'] ?? '') == 'M' ? 'selected' : '' ?>>Masculin</option>
+                  <option value="F" <?= ($etudiant['sexe'] ?? '') == 'F' ? 'selected' : '' ?>>Féminin</option>
                 </select>
               </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Guardian Email</label>
-                <input type="email" class="form-control" id="tuteur_email" value="<?= $etudiant['parents']['tuteur']['email'] ?? '' ?>" placeholder="Email">
+              <div class="col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date de naissance</label>
+                <input type="date" class="form-control" id="date_naissance" value="<?= $etudiant['date_naissance'] ?? '' ?>">
               </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Guardian Phone</label>
-                <input type="tel" class="form-control" id="tuteur_telephone" value="<?= $etudiant['parents']['tuteur']['telephone'] ?? $etudiant['tuteur_telephone'] ?? '' ?>" placeholder="Phone">
+              <div class="col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Téléphone</label>
+                <input type="text" class="form-control" id="telephone" value="<?= $etudiant['telephone'] ?? '' ?>" placeholder="Téléphone">
               </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Guardian Occupation</label>
-                <input type="text" class="form-control" id="tuteur_profession" value="<?= $etudiant['parents']['tuteur']['profession'] ?? '' ?>" placeholder="Occupation">
-              </div>
-              <div class="col-xl-9 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Guardian Address</label>
-                <input type="text" class="form-control" id="tuteur_adresse" value="<?= $etudiant['parents']['tuteur']['adresse'] ?? '' ?>" placeholder="Address">
+              <div class="col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Email</label>
+                <input type="email" class="form-control" id="email" value="<?= $etudiant['email'] ?? '' ?>" placeholder="Email">
               </div>
             </div>
           </div>
@@ -173,21 +116,25 @@
       <div class="col-lg-12">
         <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
           <div class="card-header border-bottom bg-base py-16 px-24">
-            <h6 class="text-lg fw-semibold mb-0">Address</h6>
+            <h6 class="text-lg fw-semibold mb-0">Informations Parent / Tuteur</h6>
           </div>
           <div class="card-body p-20">
             <div class="row gy-3">
-              <div class="col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Current Address</label>
-                <textarea class="form-control" id="adresse" rows="2" placeholder="Current Address"><?= $etudiant['adresse'] ?? '' ?></textarea>
+              <div class="col-lg-3 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Nom complet</label>
+                <input type="text" class="form-control" id="parent_nom" value="<?= $etudiant['parent_nom'] ?? '' ?>" placeholder="Nom complet du parent/tuteur">
               </div>
-              <div class="col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Permanent Address</label>
-                <textarea class="form-control" id="adresse_permanente" rows="2" placeholder="Permanent Address"><?= $etudiant['adresse_permanente'] ?? '' ?></textarea>
-                <div class="form-check mt-8">
-                  <input class="form-check-input" type="checkbox" id="sameAddress">
-                  <label class="form-check-label text-sm" for="sameAddress">Same as current address</label>
-                </div>
+              <div class="col-lg-3 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Téléphone</label>
+                <input type="tel" class="form-control" id="parent_telephone" value="<?= $etudiant['parent_telephone'] ?? '' ?>" placeholder="Téléphone">
+              </div>
+              <div class="col-lg-3 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Occupation</label>
+                <input type="text" class="form-control" id="parent_profession" value="<?= $etudiant['parent_profession'] ?? '' ?>" placeholder="Profession / Occupation">
+              </div>
+              <div class="col-lg-3 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Adresse</label>
+                <input type="text" class="form-control" id="parent_adresse" value="<?= $etudiant['parent_adresse'] ?? '' ?>" placeholder="Adresse du parent">
               </div>
             </div>
           </div>
@@ -195,8 +142,8 @@
       </div>
       <div class="col-12">
         <div class="d-flex align-items-center justify-content-center gap-3 mt-8">
-          <a href="<?= base_url('Etudiants') ?>" class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-50 py-11 radius-8 text-decoration-none">Cancel</a>
-          <button type="submit" class="btn btn-primary-600 border border-primary-600 text-md px-28 py-12 radius-8">Save Changes</button>
+          <a href="<?= base_url('Etudiants') ?>" class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-50 py-11 radius-8 text-decoration-none">Annuler</a>
+          <button type="submit" class="btn btn-primary-600 border border-primary-600 text-md px-28 py-12 radius-8">Enregistrer</button>
         </div>
       </div>
     </div>
@@ -238,7 +185,7 @@ document.getElementById('photoInput')?.addEventListener('change', async function
       });
       const data = await res.json();
       if (!data.success) {
-        Swal.fire({ icon: 'error', title: 'Upload Error', text: data.message });
+        Swal.fire({ icon: 'error', title: 'Erreur Upload', text: data.message });
         return;
       }
       if (data.data?.completed) {
@@ -252,18 +199,12 @@ document.getElementById('photoInput')?.addEventListener('change', async function
           document.querySelector('.drop-zone').after(preview);
         }
         preview.src = BASE_URL + data.data.path;
-        Toast.fire({ icon: 'success', title: 'Photo uploaded (' + file.size + ' bytes)' });
+        Toast.fire({ icon: 'success', title: 'Photo téléchargée' });
         return;
       }
     }
   } catch (err) {
-    Swal.fire({ icon: 'error', title: 'Upload Failed', text: err.message });
-  }
-});
-
-document.getElementById('sameAddress')?.addEventListener('change', function() {
-  if (this.checked) {
-    document.getElementById('adresse_permanente').value = document.getElementById('adresse').value;
+    Swal.fire({ icon: 'error', title: 'Échec Upload', text: err.message });
   }
 });
 
@@ -279,29 +220,27 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     telephone: document.getElementById('telephone').value,
     email: document.getElementById('email').value,
     adresse: document.getElementById('adresse').value,
-    adresse_permanente: document.getElementById('adresse_permanente').value,
     photo: document.getElementById('photo').value,
     id_classe: document.getElementById('id_classe').value || null,
     id_section: document.getElementById('id_section').value || null,
     id_annee: document.getElementById('id_annee').value || null,
-    parents: {
-      pere: { nom: document.getElementById('pere_nom').value, telephone: document.getElementById('pere_telephone').value, profession: document.getElementById('pere_profession').value },
-      mere: { nom: document.getElementById('mere_nom').value, telephone: document.getElementById('mere_telephone').value, profession: document.getElementById('mere_profession').value },
-      tuteur: { nom: document.getElementById('tuteur_nom').value, relation: document.getElementById('tuteur_relation').value, email: document.getElementById('tuteur_email').value, telephone: document.getElementById('tuteur_telephone').value, profession: document.getElementById('tuteur_profession').value, adresse: document.getElementById('tuteur_adresse').value }
-    }
+    parent_nom: document.getElementById('parent_nom').value,
+    parent_telephone: document.getElementById('parent_telephone').value,
+    parent_profession: document.getElementById('parent_profession').value,
+    parent_adresse: document.getElementById('parent_adresse').value
   };
   if (!data.nom || !data.prenom) {
-    Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Name and First Name are required' });
+    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Le nom et le prénom sont obligatoires' });
     return;
   }
   let res;
   if (id) res = await API.etudiants.update(id, data);
   else res = await API.etudiants.create(data);
   if (res.success) {
-    await Toast.fire({ icon: 'success', title: res.message || (id ? 'Student updated' : 'Student created') });
+    await Toast.fire({ icon: 'success', title: res.message || (id ? 'Élève modifié' : 'Élève créé') });
     window.location.href = '<?= base_url('Etudiants') ?>';
   } else {
-    Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+    Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
   }
 });
 

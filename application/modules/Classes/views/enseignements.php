@@ -127,6 +127,8 @@
 <script id="id_matiere_data" type="application/json"><?= json_encode($matieres) ?></script>
 <script id="id_classe_data" type="application/json"><?= json_encode($classes) ?></script>
 <script>
+const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
+
 let editingId = null;
 let deleteId = null;
 
@@ -226,6 +228,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   else res = await API.enseignements.create(data);
   if (res.success) {
     closeSidebar();
+    Toast.fire({ icon: 'success', title: editingId ? 'Enseignement modifié' : 'Enseignement créé' });
     loadData();
   } else {
     Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
@@ -244,6 +247,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
   const res = await API.enseignements.delete(deleteId);
   if (res.success) {
     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+    Toast.fire({ icon: 'success', title: 'Enseignement supprimé' });
     loadData();
   } else {
     Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });

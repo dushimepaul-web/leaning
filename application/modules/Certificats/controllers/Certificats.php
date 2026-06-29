@@ -10,6 +10,12 @@ class Certificats extends MY_Controller {
         $this->load->view('index', $data);
     }
 
+    public function api_get($id) {
+        $r = $this->Model->readOne('certificats', ['uuid' => $id]);
+        if (!$r) { $this->json_error('Certificat non trouvé', 404); return; }
+        $this->json_success($r);
+    }
+
     public function api_list() {
         $this->db->where('c.deleted_at', null);
         $this->db->select('c.*, e.nom, e.prenom, e.matricule');
