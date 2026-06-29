@@ -20,10 +20,10 @@
           <span>Étudiants</span>
         </a>
         <ul class="sidebar-submenu">
-<li>
-            <a href="<?=base_url('Commandes')?>">
+          <li>
+            <a href="<?=base_url('Etudiants')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Commandes
+              Élèves
             </a>
           </li>
           <li>
