@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : dim. 28 juin 2026 à 19:28
+-- Généré le : lun. 29 juin 2026 à 13:08
 -- Version du serveur : 9.1.0
 -- Version de PHP : 8.0.30
 
@@ -20,43 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Base de données : `vip_school`
 --
-
--- --------------------------------------------------------
-
---
--- Structure de la table `absences`
---
-
-DROP TABLE IF EXISTS `absences`;
-CREATE TABLE IF NOT EXISTS `absences` (
-  `id_absence` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_etudiant` int DEFAULT NULL,
-  `id_enseignant` int DEFAULT NULL,
-  `id_horaire` int DEFAULT NULL,
-  `date_absence` date NOT NULL,
-  `type_absence` enum('etudiant','enseignant','employe') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'etudiant',
-  `motif` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `justifiee` tinyint(1) NOT NULL DEFAULT '0',
-  `justificatif` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `id_utilisateur_saisie` int DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_absence`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_etudiant` (`id_etudiant`),
-  KEY `id_enseignant` (`id_enseignant`),
-  KEY `id_horaire` (`id_horaire`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Déchargement des données de la table `absences`
---
-
-INSERT INTO `absences` (`id_absence`, `uuid`, `id_etudiant`, `id_enseignant`, `id_horaire`, `date_absence`, `type_absence`, `motif`, `justifiee`, `justificatif`, `id_utilisateur_saisie`, `deleted_at`, `cree_le`, `modifie_le`) VALUES
-(1, '565702ba-bdd2-4b1d-8504-74e6eda3a44b', 1, NULL, NULL, '2026-06-18', 'etudiant', '7879', 0, NULL, NULL, '2026-06-18 13:06:19', '2026-06-18 15:03:59', '2026-06-18 15:06:19'),
-(2, '340a9623-d693-409c-acc9-27b69d811f00', 3, NULL, NULL, '2026-06-18', 'etudiant', '2', 0, NULL, NULL, NULL, '2026-06-18 15:04:34', '2026-06-18 15:04:34');
 
 -- --------------------------------------------------------
 
@@ -85,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `annees_scolaires` (
 --
 
 INSERT INTO `annees_scolaires` (`id_annee`, `uuid`, `libelle`, `debut`, `fin`, `est_en_cours`, `deleted_at`, `cree_le`, `modifie_le`) VALUES
-(1, '19bd43cf-ebc6-43b9-95ac-48992c3eace5', '2025-2026', '2025-09-09', '2026-07-12', 1, NULL, '2026-06-09 01:06:14', '2026-06-19 10:05:42');
+(1, '19bd43cf-ebc6-43b9-95ac-48992c3eace5', '2025-2026', '2025-09-09', '2026-07-12', 1, NULL, '2026-06-09 01:06:14', '2026-06-29 13:35:22');
 
 -- --------------------------------------------------------
 
@@ -137,69 +100,14 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `id_utilisateur` (`id_utilisateur`),
   KEY `idx_audit_table` (`table_concernee`),
   KEY `idx_audit_date` (`date_action`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `bibliotheque_emprunts`
---
-
-DROP TABLE IF EXISTS `bibliotheque_emprunts`;
-CREATE TABLE IF NOT EXISTS `bibliotheque_emprunts` (
-  `id_emprunt` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_livre` int NOT NULL,
-  `id_membre` int NOT NULL,
-  `type_membre` enum('etudiant','enseignant','employe') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'etudiant',
-  `date_emprunt` date NOT NULL,
-  `date_retour_prevue` date NOT NULL,
-  `date_retour_reelle` date DEFAULT NULL,
-  `statut` enum('en_cours','retourne','en_retard','perdu') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'en_cours',
-  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `id_utilisateur_saisie` int DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_emprunt`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_livre` (`id_livre`),
-  KEY `id_membre` (`id_membre`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `bibliotheque_livres`
---
-
-DROP TABLE IF EXISTS `bibliotheque_livres`;
-CREATE TABLE IF NOT EXISTS `bibliotheque_livres` (
-  `id_livre` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `titre` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `auteur` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `isbn` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `editeur` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `annee_publication` year DEFAULT NULL,
-  `quantite_totale` int NOT NULL DEFAULT '1',
-  `quantite_disponible` int NOT NULL DEFAULT '1',
-  `prix_unitaire` decimal(10,2) DEFAULT '0.00',
-  `emplacement` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_livre`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `isbn` (`isbn`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Déchargement des données de la table `bibliotheque_livres`
+-- Déchargement des données de la table `audit_logs`
 --
 
-INSERT INTO `bibliotheque_livres` (`id_livre`, `uuid`, `titre`, `auteur`, `isbn`, `editeur`, `annee_publication`, `quantite_totale`, `quantite_disponible`, `prix_unitaire`, `emplacement`, `deleted_at`, `cree_le`, `modifie_le`) VALUES
-(1, '52d35777-7528-41ec-acd8-d66c26785c75', 'Kubera Iki Umuhungu Agira Igitsina Gito NUFOTEC', 'kjdks', 'lsodi', 'sddo', NULL, 78, 78, 0.00, 'poi', '2026-06-18 15:16:46', '2026-06-18 17:16:32', '2026-06-18 17:16:46');
+INSERT INTO `audit_logs` (`id_log`, `uuid`, `id_utilisateur`, `action`, `table_concernee`, `id_enregistrement`, `anciennes_valeurs`, `nouvelles_valeurs`, `adresse_ip`, `date_action`, `cree_le`) VALUES
+(1, '51ade7a6-ae99-442e-b604-6c1632619250', NULL, 'update', 'roles_menus', 1, NULL, NULL, '::1', '2026-06-29 12:07:26', '2026-06-29 12:07:26');
 
 -- --------------------------------------------------------
 
@@ -257,7 +165,7 @@ CREATE TABLE IF NOT EXISTS `categories_produits` (
   PRIMARY KEY (`id_categorie`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `categories_produits`
@@ -269,39 +177,6 @@ INSERT INTO `categories_produits` (`id_categorie`, `uuid`, `code`, `libelle`, `c
 (3, '795422d3-6369-11f1-9d55-9c7bef735b1f', 'MATERIEL', 'Matériels scolaires', '2026-06-08 20:40:08', NULL),
 (4, 'c10f846a-6fcb-11f1-bfbc-9c7bef735b1f', 'FOURNITURE', 'Fournitures diverses', '2026-06-24 14:53:53', NULL),
 (5, 'c10f932c-6fcb-11f1-bfbc-9c7bef735b1f', 'TOILETTE', 'Produits de toilette', '2026-06-24 14:53:53', NULL);
-
--- --------------------------------------------------------
-
---
--- Structure de la table `certificats`
---
-
-DROP TABLE IF EXISTS `certificats`;
-CREATE TABLE IF NOT EXISTS `certificats` (
-  `id_certificat` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_etudiant` int NOT NULL,
-  `type_certificat` enum('scolarite','inscription','stage','fin_etudes','autre') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'scolarite',
-  `numero_certificat` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date_emission` date NOT NULL,
-  `contenu` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `signataire` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `id_utilisateur_emetteur` int DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_certificat`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `numero_certificat` (`numero_certificat`),
-  KEY `id_etudiant` (`id_etudiant`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Déchargement des données de la table `certificats`
---
-
-INSERT INTO `certificats` (`id_certificat`, `uuid`, `id_etudiant`, `type_certificat`, `numero_certificat`, `date_emission`, `contenu`, `signataire`, `id_utilisateur_emetteur`, `deleted_at`, `cree_le`, `modifie_le`) VALUES
-(1, '7508a1ff-dae4-4d10-b686-c28edab43c18', 1, 'inscription', 'CERT-6A340C9E671C3', '2026-06-18', NULL, '', NULL, '2026-06-18 15:20:05', '2026-06-18 17:19:58', '2026-06-18 17:20:05');
 
 -- --------------------------------------------------------
 
@@ -356,14 +231,15 @@ CREATE TABLE IF NOT EXISTS `commandes` (
   UNIQUE KEY `uuid` (`uuid`),
   KEY `idx_commandes_etudiant` (`id_etudiant`),
   KEY `idx_commandes_statut` (`statut`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `commandes`
 --
 
 INSERT INTO `commandes` (`id_commande`, `uuid`, `id_etudiant`, `date_commande`, `statut`, `total`, `cree_le`, `modifie_le`, `deleted_at`) VALUES
-(1, 'a7506e81-42e2-4b8a-a848-880066556497', 2, '2026-06-18 00:00:00', 'prete', 23.00, '2026-06-18 15:22:07', '2026-06-18 15:22:46', NULL);
+(1, 'a7506e81-42e2-4b8a-a848-880066556497', 2, '2026-06-18 00:00:00', 'prete', 23.00, '2026-06-18 15:22:07', '2026-06-18 15:22:46', NULL),
+(2, '14c19a47-2009-4d04-a66d-21607584fc83', 2, '2026-06-29 00:00:00', 'en_attente', 23.00, '2026-06-29 12:00:24', '2026-06-29 12:00:49', '2026-06-29 10:00:49');
 
 -- --------------------------------------------------------
 
@@ -384,65 +260,15 @@ CREATE TABLE IF NOT EXISTS `commandes_details` (
   UNIQUE KEY `uuid` (`uuid`),
   KEY `id_commande` (`id_commande`),
   KEY `id_produit` (`id_produit`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `commandes_details`
 --
 
 INSERT INTO `commandes_details` (`id_detail`, `uuid`, `id_commande`, `id_produit`, `quantite`, `prix_unitaire`, `cree_le`) VALUES
-(1, '066c7634-77a1-4456-8346-136722925f1c', 1, 1, 1, 23.00, '2026-06-18 15:22:08');
-
--- --------------------------------------------------------
-
---
--- Structure de la table `comptabilite_ecritures`
---
-
-DROP TABLE IF EXISTS `comptabilite_ecritures`;
-CREATE TABLE IF NOT EXISTS `comptabilite_ecritures` (
-  `id_ecriture` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_plan` int NOT NULL,
-  `libelle` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `debit` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `credit` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `date_ecriture` date NOT NULL,
-  `reference` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `id_paiement` int DEFAULT NULL,
-  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `id_utilisateur_saisie` int DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_ecriture`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_plan` (`id_plan`),
-  KEY `date_ecriture` (`date_ecriture`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `comptabilite_plans`
---
-
-DROP TABLE IF EXISTS `comptabilite_plans`;
-CREATE TABLE IF NOT EXISTS `comptabilite_plans` (
-  `id_plan` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code_compte` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `libelle` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` enum('actif','passif','produit','charge') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `actif` tinyint(1) NOT NULL DEFAULT '1',
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_plan`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `code_compte` (`code_compte`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+(1, '066c7634-77a1-4456-8346-136722925f1c', 1, 1, 1, 23.00, '2026-06-18 15:22:08'),
+(2, 'b0d80885-6611-473a-9c1b-56bee2da9b88', 2, 1, 1, 23.00, '2026-06-29 12:00:24');
 
 -- --------------------------------------------------------
 
@@ -515,27 +341,6 @@ INSERT INTO `creneaux` (`id_creneau`, `uuid`, `libelle`, `heure_debut`, `heure_f
 -- --------------------------------------------------------
 
 --
--- Structure de la table `departements`
---
-
-DROP TABLE IF EXISTS `departements`;
-CREATE TABLE IF NOT EXISTS `departements` (
-  `id_departement` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `libelle` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_departement`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Structure de la table `disponibilites_enseignants`
 --
 
@@ -569,31 +374,6 @@ INSERT INTO `disponibilites_enseignants` (`id_disponibilite`, `uuid`, `id_enseig
 -- --------------------------------------------------------
 
 --
--- Structure de la table `distributions`
---
-
-DROP TABLE IF EXISTS `distributions`;
-CREATE TABLE IF NOT EXISTS `distributions` (
-  `id_distribution` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_commande` int NOT NULL,
-  `id_etudiant` int NOT NULL,
-  `date_distribution` date NOT NULL,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `id_utilisateur` int DEFAULT NULL,
-  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `deleted_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id_distribution`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_commande` (`id_commande`),
-  KEY `id_etudiant` (`id_etudiant`),
-  KEY `id_utilisateur` (`id_utilisateur`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Structure de la table `echeances`
 --
 
@@ -616,38 +396,6 @@ CREATE TABLE IF NOT EXISTS `echeances` (
   KEY `idx_echeances_statut` (`statut`),
   KEY `idx_echeances_date` (`date_echeance`),
   KEY `fk_echeances_frais` (`id_frais`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `employes`
---
-
-DROP TABLE IF EXISTS `employes`;
-CREATE TABLE IF NOT EXISTS `employes` (
-  `id_employe` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `matricule` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `nom_complet` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `telephone` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `adresse` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `id_departement` int DEFAULT NULL,
-  `poste` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date_embauche` date DEFAULT NULL,
-  `type` enum('administratif','entretien','securite','autre') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'administratif',
-  `statut` enum('actif','suspendu','quitte') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'actif',
-  `photo` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `id_utilisateur` int DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_employe`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `matricule` (`matricule`),
-  KEY `id_departement` (`id_departement`),
-  KEY `id_utilisateur` (`id_utilisateur`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -715,15 +463,15 @@ CREATE TABLE IF NOT EXISTS `enseignements` (
   UNIQUE KEY `uniq_enseignement` (`id_enseignant`,`id_matiere`,`id_classe`),
   KEY `id_matiere` (`id_matiere`),
   KEY `id_classe` (`id_classe`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `enseignements`
 --
 
 INSERT INTO `enseignements` (`id_enseignement`, `uuid`, `id_enseignant`, `id_matiere`, `id_classe`, `cree_le`, `deleted_at`, `modifie_le`) VALUES
-(3, 'becd8bf3-c522-45d7-aada-9feb04af7569', 3, 1, 1, '2026-06-16 14:56:30', NULL, '2026-06-16 14:56:30'),
-(10, 'bc0739c9-ec1d-4f04-90d8-990b36ab0916', 1, 2, 1, '2026-06-19 10:32:33', NULL, '2026-06-19 10:32:33');
+(10, 'bc0739c9-ec1d-4f04-90d8-990b36ab0916', 1, 2, 1, '2026-06-19 10:32:33', NULL, '2026-06-19 10:32:33'),
+(11, '943fc8cb-8440-4920-9f01-d42fa9a33e33', 3, 1, 1, '2026-06-29 12:32:37', NULL, '2026-06-29 12:32:37');
 
 -- --------------------------------------------------------
 
@@ -846,7 +594,8 @@ CREATE TABLE IF NOT EXISTS `evenements` (
   `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_evenement`),
   UNIQUE KEY `uuid` (`uuid`),
-  KEY `date_debut` (`date_debut`)
+  KEY `date_debut` (`date_debut`),
+  KEY `idx_utilisateur_createur` (`id_utilisateur_createur`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -860,7 +609,7 @@ CREATE TABLE IF NOT EXISTS `frais` (
   `id_frais` int NOT NULL AUTO_INCREMENT,
   `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `id_type_frais` int NOT NULL,
-  `id_classe` int DEFAULT NULL,
+  `id_classe` int NOT NULL,
   `id_annee` int NOT NULL,
   `montant` decimal(12,2) NOT NULL,
   `echeance` date DEFAULT NULL,
@@ -871,7 +620,8 @@ CREATE TABLE IF NOT EXISTS `frais` (
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `uniq_frais` (`id_type_frais`,`id_classe`,`id_annee`),
   KEY `id_classe` (`id_classe`),
-  KEY `id_annee` (`id_annee`)
+  KEY `id_annee` (`id_annee`),
+  KEY `idx_frais_id_type_frais` (`id_type_frais`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -879,7 +629,6 @@ CREATE TABLE IF NOT EXISTS `frais` (
 --
 
 INSERT INTO `frais` (`id_frais`, `uuid`, `id_type_frais`, `id_classe`, `id_annee`, `montant`, `echeance`, `cree_le`, `modifie_le`, `deleted_at`) VALUES
-(3, '7af716eb-5205-4313-ba0d-8ccaa5076456', 2, NULL, 1, 10000.00, NULL, '2026-06-24 16:47:37', '2026-06-24 16:47:37', NULL),
 (4, 'f5b85aea-7e0f-4fb9-8bb9-1f7b619e8e9e', 4, 7, 1, 65478.00, NULL, '2026-06-24 16:53:31', '2026-06-24 16:53:31', NULL),
 (5, '17902c8a-4ac9-489c-b4a2-5e05743aa6ea', 2, 1, 1, 38983.00, NULL, '2026-06-24 16:58:24', '2026-06-24 16:58:24', NULL);
 
@@ -913,19 +662,9 @@ CREATE TABLE IF NOT EXISTS `horaires` (
   KEY `idx_horaires_generation` (`id_generation`),
   KEY `idx_horaires_enseignant` (`id_enseignant`),
   KEY `idx_horaires_classe` (`id_classe`),
-  KEY `idx_horaires_jour` (`id_jour`)
+  KEY `idx_horaires_jour` (`id_jour`),
+  KEY `idx_matiere` (`id_matiere`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Déchargement des données de la table `horaires`
---
-
-INSERT INTO `horaires` (`id_horaire`, `uuid`, `id_generation`, `id_enseignement`, `id_matiere`, `id_enseignant`, `id_classe`, `id_creneau`, `id_jour`, `deleted_at`, `cree_le`, `modifie_le`) VALUES
-(8, '429db525-89e5-48e4-9cfd-cd9b486119f5', 1, 3, NULL, 3, 1, 13, 6, NULL, '2026-06-18 16:21:57', '2026-06-18 16:21:57'),
-(9, '0f7ce39e-7340-4971-86be-25f74688500c', 1, 3, NULL, 3, 1, 14, 6, NULL, '2026-06-18 16:21:57', '2026-06-18 16:21:57'),
-(10, 'a54955c6-4c11-4fb9-ab97-26707bc67256', 1, 3, NULL, 3, 1, 6, 6, NULL, '2026-06-18 16:21:57', '2026-06-18 16:21:57'),
-(11, 'a5f1fb95-fa7a-4652-8bef-3df82d1ba8c5', 1, 3, NULL, 3, 1, 13, 5, NULL, '2026-06-18 16:21:57', '2026-06-18 16:21:57'),
-(12, '29e6a4ca-a3a0-406a-9cd9-384b7f9289de', 1, 3, NULL, 3, 1, 14, 5, NULL, '2026-06-18 16:21:57', '2026-06-18 16:21:57');
 
 -- --------------------------------------------------------
 
@@ -1029,56 +768,6 @@ INSERT INTO `jours_semaine` (`id_jour`, `uuid`, `code`, `libelle`, `actif`, `ord
 -- --------------------------------------------------------
 
 --
--- Structure de la table `livres_scolaires`
---
-
-DROP TABLE IF EXISTS `livres_scolaires`;
-CREATE TABLE IF NOT EXISTS `livres_scolaires` (
-  `id_livre_scolaire` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `titre` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_matiere` int DEFAULT NULL,
-  `id_classe` int DEFAULT NULL,
-  `editeur` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `prix` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `stock_actuel` int NOT NULL DEFAULT '0',
-  `stock_minimum` int NOT NULL DEFAULT '10',
-  `annee_edition` year DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_livre_scolaire`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_matiere` (`id_matiere`),
-  KEY `id_classe` (`id_classe`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `materiels_scolaires`
---
-
-DROP TABLE IF EXISTS `materiels_scolaires`;
-CREATE TABLE IF NOT EXISTS `materiels_scolaires` (
-  `id_materiel` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `libelle` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `prix_unitaire` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `stock_actuel` int NOT NULL DEFAULT '0',
-  `stock_minimum` int NOT NULL DEFAULT '10',
-  `unite_mesure` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'piece',
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_materiel`),
-  UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Structure de la table `matieres`
 --
 
@@ -1145,7 +834,7 @@ INSERT INTO `matieres_classes` (`id_matiere_classe`, `uuid`, `id_matiere`, `id_c
 DROP TABLE IF EXISTS `menus`;
 CREATE TABLE IF NOT EXISTS `menus` (
   `id_menu` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT (uuid()),
+  `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `libelle` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `icon` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -1204,30 +893,6 @@ INSERT INTO `menus` (`id_menu`, `uuid`, `code`, `libelle`, `icon`, `parent_id`, 
 -- --------------------------------------------------------
 
 --
--- Structure de la table `messages`
---
-
-DROP TABLE IF EXISTS `messages`;
-CREATE TABLE IF NOT EXISTS `messages` (
-  `id_message` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_expediteur` int NOT NULL,
-  `id_destinataire` int DEFAULT NULL,
-  `sujet` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `corps` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `lu` tinyint(1) NOT NULL DEFAULT '0',
-  `date_lu` datetime DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_message`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_expediteur` (`id_expediteur`),
-  KEY `id_destinataire` (`id_destinataire`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Structure de la table `mouvements_stock`
 --
 
@@ -1251,7 +916,7 @@ CREATE TABLE IF NOT EXISTS `mouvements_stock` (
   KEY `idx_mouvements_produit` (`id_produit`),
   KEY `idx_mouvements_date` (`date_mvt`),
   KEY `idx_mvt_etudiant` (`id_etudiant`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `mouvements_stock`
@@ -1260,7 +925,8 @@ CREATE TABLE IF NOT EXISTS `mouvements_stock` (
 INSERT INTO `mouvements_stock` (`id_mouvement`, `uuid`, `id_produit`, `type`, `quantite`, `prix_unitaire`, `motif`, `date_mvt`, `modifie_le`, `id_utilisateur`, `id_etudiant`, `cree_le`) VALUES
 (1, 'c908b305-1eba-405f-a6fa-0ffcdd37b32c', 1, 'sortie', 23, 23.00, 'Ajustement manuel', '2026-06-24 14:51:39', '2026-06-24 14:51:39', 1, NULL, '2026-06-24 14:51:39'),
 (2, '41257d52-4f71-4b14-ad20-e0cf8e82402c', 1, 'sortie', 1, 23.00, 'Vente à Mukendi Marie', '2026-06-24 16:27:26', '2026-06-24 16:27:26', 1, 2, '2026-06-24 16:27:26'),
-(3, '0d814ee8-e7f0-44dc-b367-d4cc54326843', 1, 'sortie', 1, 23.00, 'Vente à Mukendi Marie', '2026-06-24 16:27:27', '2026-06-24 16:27:27', 1, 2, '2026-06-24 16:27:27');
+(3, '0d814ee8-e7f0-44dc-b367-d4cc54326843', 1, 'sortie', 1, 23.00, 'Vente à Mukendi Marie', '2026-06-24 16:27:27', '2026-06-24 16:27:27', 1, 2, '2026-06-24 16:27:27'),
+(4, '5717c519-e43a-4ada-8805-18f6356cc0b0', 1, 'sortie', 1, 23.00, 'Commande #2', '2026-06-29 12:00:24', '2026-06-29 12:00:24', 1, NULL, '2026-06-29 12:00:24');
 
 -- --------------------------------------------------------
 
@@ -1282,7 +948,9 @@ CREATE TABLE IF NOT EXISTS `notes` (
   PRIMARY KEY (`id_note`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `uniq_note` (`id_evaluation`,`id_etudiant`),
-  KEY `idx_notes_etudiant` (`id_etudiant`)
+  KEY `idx_notes_etudiant` (`id_etudiant`),
+  KEY `idx_notes_id_evaluation` (`id_evaluation`),
+  KEY `idx_notes_id_etudiant` (`id_etudiant`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -1337,7 +1005,7 @@ CREATE TABLE IF NOT EXISTS `paiements` (
   `id_paiement` int NOT NULL AUTO_INCREMENT,
   `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `id_etudiant` int NOT NULL,
-  `id_frais` int DEFAULT NULL,
+  `id_frais` int NOT NULL,
   `id_annee` int NOT NULL,
   `montant` decimal(12,2) NOT NULL DEFAULT '0.00' COMMENT 'Montant vers?? dans ce paiement',
   `date_paiement` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1357,7 +1025,9 @@ CREATE TABLE IF NOT EXISTS `paiements` (
   KEY `idx_paiements_date` (`date_paiement`),
   KEY `idx_paiements_annee` (`id_annee`),
   KEY `idx_paiements_mode` (`mode_paiement`),
-  KEY `idx_paiements_statut` (`statut`)
+  KEY `idx_paiements_statut` (`statut`),
+  KEY `idx_paiements_id_frais` (`id_frais`),
+  KEY `idx_paiements_id_etudiant` (`id_etudiant`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -1365,7 +1035,6 @@ CREATE TABLE IF NOT EXISTS `paiements` (
 --
 
 INSERT INTO `paiements` (`id_paiement`, `uuid`, `id_etudiant`, `id_frais`, `id_annee`, `montant`, `date_paiement`, `mode_paiement`, `reference`, `id_utilisateur`, `statut`, `notes`, `cree_le`, `modifie_le`, `deleted_at`) VALUES
-(3, '66c101cd-a2c7-465c-bba3-af6a4f42c407', 2, 3, 1, 10000.00, '2026-06-24 00:00:00', 'banque', '23873', 1, 'solde', '', '2026-06-24 16:47:37', '2026-06-24 16:47:37', NULL),
 (4, '048ed206-a551-4fcc-8d0f-35e564bc58d9', 4, 4, 1, 65478.00, '2026-06-24 00:00:00', 'especes', '', 1, 'solde', '', '2026-06-24 16:53:31', '2026-06-24 16:53:31', NULL),
 (5, '91033758-d4d3-4f84-94b9-775a4924a4b4', 6, 5, 1, 38983.00, '2026-06-24 00:00:00', 'banque', '', 1, 'solde', '', '2026-06-24 16:58:24', '2026-06-24 16:58:24', NULL),
 (6, '22ce2fe9-37e0-48e3-8ca9-e4f9accd71e6', 1, 5, 1, 430943.00, '2026-06-24 00:00:00', 'especes', '', 1, 'solde', '', '2026-06-24 17:02:44', '2026-06-24 17:02:44', NULL);
@@ -1394,106 +1063,9 @@ CREATE TABLE IF NOT EXISTS `paiements_recus` (
 --
 
 INSERT INTO `paiements_recus` (`id_paiement_recu`, `uuid`, `id_recu`, `id_paiement`, `cree_le`) VALUES
-(1, '1b6e1bde-e2c0-4e56-8087-480292f093ca', 2, 3, '2026-06-24 16:47:37'),
 (2, '246e6b1b-f834-445e-8c6e-394fda7a8ebc', 3, 4, '2026-06-24 16:53:31'),
 (3, 'a7a2bd0f-54d0-40d2-9b2d-3918299d3675', 4, 5, '2026-06-24 16:58:24'),
 (4, '1b129568-5239-4fc6-a4f6-08092bb1be46', 5, 6, '2026-06-24 17:02:44');
-
--- --------------------------------------------------------
-
---
--- Structure de la table `paie_bulletins`
---
-
-DROP TABLE IF EXISTS `paie_bulletins`;
-CREATE TABLE IF NOT EXISTS `paie_bulletins` (
-  `id_bulletin_paie` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_contrat` int NOT NULL,
-  `mois` tinyint NOT NULL,
-  `annee` year NOT NULL,
-  `salaire_base` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_gains` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `total_retenues` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `net_a_payer` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `statut` enum('calcule','valide','paye','annule') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'calcule',
-  `date_paiement` date DEFAULT NULL,
-  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_bulletin_paie`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `contrat_mois_annee` (`id_contrat`,`mois`,`annee`),
-  KEY `id_contrat` (`id_contrat`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `paie_bulletins_details`
---
-
-DROP TABLE IF EXISTS `paie_bulletins_details`;
-CREATE TABLE IF NOT EXISTS `paie_bulletins_details` (
-  `id_detail` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_bulletin_paie` int NOT NULL,
-  `id_rubrique` int NOT NULL,
-  `montant` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_detail`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_bulletin_paie` (`id_bulletin_paie`),
-  KEY `id_rubrique` (`id_rubrique`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `paie_contrats`
---
-
-DROP TABLE IF EXISTS `paie_contrats`;
-CREATE TABLE IF NOT EXISTS `paie_contrats` (
-  `id_contrat` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_employe` int NOT NULL,
-  `type_employe` enum('enseignant','personnel') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'personnel',
-  `salaire_base` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `date_debut` date NOT NULL,
-  `date_fin` date DEFAULT NULL,
-  `statut` enum('actif','termine','suspendu') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'actif',
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_contrat`),
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `id_employe` (`id_employe`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `paie_rubriques`
---
-
-DROP TABLE IF EXISTS `paie_rubriques`;
-CREATE TABLE IF NOT EXISTS `paie_rubriques` (
-  `id_rubrique` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `libelle` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` enum('gain','retenue','cotisation') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'gain',
-  `formule` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `actif` tinyint(1) NOT NULL DEFAULT '1',
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_rubrique`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1569,8 +1141,9 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
   `expires_at` datetime NOT NULL,
   `utilise` tinyint(1) NOT NULL DEFAULT '0',
   `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_reset`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id_reset`),
+  KEY `fk_password_resets_utilisateur` (`id_utilisateur`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -1620,6 +1193,10 @@ CREATE TABLE IF NOT EXISTS `produits` (
   `libelle` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `taille` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `editeur` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `annee_edition` year DEFAULT NULL,
+  `id_matiere` int DEFAULT NULL,
+  `id_classe` int DEFAULT NULL,
   `prix_unitaire` decimal(12,2) NOT NULL DEFAULT '0.00',
   `stock_mini` int NOT NULL DEFAULT '0',
   `stock_actuel` int NOT NULL DEFAULT '0',
@@ -1630,15 +1207,17 @@ CREATE TABLE IF NOT EXISTS `produits` (
   PRIMARY KEY (`id_produit`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `code` (`code`),
-  KEY `idx_produits_categorie` (`id_categorie`)
+  KEY `idx_produits_categorie` (`id_categorie`),
+  KEY `idx_matiere` (`id_matiere`),
+  KEY `idx_classe` (`id_classe`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `produits`
 --
 
-INSERT INTO `produits` (`id_produit`, `uuid`, `id_categorie`, `code`, `libelle`, `description`, `taille`, `prix_unitaire`, `stock_mini`, `stock_actuel`, `unite`, `cree_le`, `modifie_le`, `deleted_at`) VALUES
-(1, '59625ff8-a2f2-4874-9769-e5c407b73b9f', 3, 'siue', 'ddsilfjiow', NULL, NULL, 23.00, 5, 21, 'pi??ce', '2026-06-18 15:18:19', '2026-06-24 16:27:27', NULL);
+INSERT INTO `produits` (`id_produit`, `uuid`, `id_categorie`, `code`, `libelle`, `description`, `taille`, `editeur`, `annee_edition`, `id_matiere`, `id_classe`, `prix_unitaire`, `stock_mini`, `stock_actuel`, `unite`, `cree_le`, `modifie_le`, `deleted_at`) VALUES
+(1, '59625ff8-a2f2-4874-9769-e5c407b73b9f', 3, 'siue', 'ddsilfjiow', NULL, NULL, NULL, NULL, NULL, NULL, 23.00, 5, 20, 'pi??ce', '2026-06-18 15:18:19', '2026-06-29 12:00:24', NULL);
 
 -- --------------------------------------------------------
 
@@ -1711,7 +1290,7 @@ INSERT INTO `roles` (`id_role`, `uuid`, `code`, `libelle`, `hierarchie`, `cree_l
 (5, '7948bc8d-6369-11f1-9d55-9c7bef735b1f', 'lecture', 'Lecture seule', 1, '2026-06-08 20:40:08', '2026-06-08 20:40:08', NULL),
 (6, '65582d92-682c-11f1-9e11-9c7bef735b1f', 'enseignant', 'Enseignant', 4, '2026-06-14 22:05:30', '2026-06-14 22:05:30', NULL),
 (7, '65586e62-682c-11f1-9e11-9c7bef735b1f', 'eleve', 'Eleve', 2, '2026-06-14 22:05:30', '2026-06-14 22:05:30', NULL),
-(8, '65587180-682c-11f1-9e11-9c7bef735b1f', 'parent', 'Parent', 1, '2026-06-14 22:05:30', '2026-06-14 22:05:30', NULL);
+(8, '65587180-682c-11f1-9e11-9c7bef735b1f', 'parent', 'Parent', 1, '2026-06-14 22:05:30', '2026-06-29 12:05:23', '2026-06-29 10:05:23');
 
 -- --------------------------------------------------------
 
@@ -1905,6 +1484,7 @@ CREATE TABLE IF NOT EXISTS `sections` (
   `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `libelle` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `actif` tinyint(1) NOT NULL DEFAULT '1',
   `deleted_at` datetime DEFAULT NULL,
   `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1917,32 +1497,9 @@ CREATE TABLE IF NOT EXISTS `sections` (
 -- Déchargement des données de la table `sections`
 --
 
-INSERT INTO `sections` (`id_section`, `uuid`, `code`, `libelle`, `deleted_at`, `cree_le`, `modifie_le`) VALUES
-(1, '6b0d10b0-c337-4acf-80ed-52119b3ac260', 'ECONOMIQUE', 'ECO', NULL, '2026-06-09 01:17:28', '2026-06-09 01:17:28'),
-(2, '0440a63a-8fac-4707-ba27-df78355ab4dd', 'PEDAGOGIQUE', 'PEDA', NULL, '2026-06-09 01:17:50', '2026-06-09 01:17:50');
-
--- --------------------------------------------------------
-
---
--- Structure de la table `sessions`
---
-
-DROP TABLE IF EXISTS `sessions`;
-CREATE TABLE IF NOT EXISTS `sessions` (
-  `id_session` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_utilisateur` int NOT NULL,
-  `token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date_expiration` datetime NOT NULL,
-  `adresse_ip` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_session`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `token` (`token`),
-  KEY `id_utilisateur` (`id_utilisateur`),
-  KEY `idx_sessions_token` (`token`),
-  KEY `idx_sessions_expiration` (`date_expiration`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `sections` (`id_section`, `uuid`, `code`, `libelle`, `actif`, `deleted_at`, `cree_le`, `modifie_le`) VALUES
+(1, '6b0d10b0-c337-4acf-80ed-52119b3ac260', 'ECONOMIQUE', 'ECO', 1, NULL, '2026-06-09 01:17:28', '2026-06-09 01:17:28'),
+(2, '0440a63a-8fac-4707-ba27-df78355ab4dd', 'PEDAGOGIQUE', 'PEDA', 1, NULL, '2026-06-09 01:17:50', '2026-06-09 01:17:50');
 
 -- --------------------------------------------------------
 
@@ -2033,30 +1590,6 @@ INSERT INTO `utilisateurs` (`id_utilisateur`, `uuid`, `id_role`, `nom_complet`, 
 (1, '795185c3-6369-11f1-9d55-9c7bef735b1f', 1, 'Administrateur', 'admin@vip-school.com', NULL, NULL, '$2y$10$WYhZEBBp3mQBwVB0csJhIuiYzX15/lPRIiN7uR286PQUAJMSKVIaC', 1, '2026-06-08 20:40:08', '2026-06-09 21:11:44', NULL),
 (2, 'dfdd5a4e-58ca-4b6e-b003-7d4d50a3cbae', 7, 'Administateur Ilunga Esther', 'paul@gmail.com', NULL, NULL, '$2y$10$XVG0U4t5jjKv3rzEpQqC3uPy69n4M7tGyEnASRPZp8bRaaMNiCo1i', 1, '2026-06-24 15:07:56', '2026-06-24 15:07:56', NULL);
 
--- --------------------------------------------------------
-
---
--- Structure de la table `volumes_horaires`
---
-
-DROP TABLE IF EXISTS `volumes_horaires`;
-CREATE TABLE IF NOT EXISTS `volumes_horaires` (
-  `id_volume` int NOT NULL AUTO_INCREMENT,
-  `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `id_enseignement` int NOT NULL,
-  `id_annee` int NOT NULL,
-  `nb_heures_semaine` decimal(4,1) NOT NULL DEFAULT '1.0',
-  `max_heures_jour` int NOT NULL DEFAULT '1',
-  `deleted_at` datetime DEFAULT NULL,
-  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_volume`),
-  UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `uniq_volume_ens` (`id_enseignement`,`id_annee`),
-  KEY `id_annee` (`id_annee`),
-  KEY `idx_volumes_ens` (`id_enseignement`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 --
 -- Contraintes pour les tables déchargées
 --
@@ -2119,19 +1652,17 @@ ALTER TABLE `disponibilites_enseignants`
   ADD CONSTRAINT `disponibilites_enseignants_ibfk_3` FOREIGN KEY (`id_jour`) REFERENCES `jours_semaine` (`id_jour`) ON DELETE CASCADE;
 
 --
--- Contraintes pour la table `distributions`
---
-ALTER TABLE `distributions`
-  ADD CONSTRAINT `distributions_ibfk_1` FOREIGN KEY (`id_commande`) REFERENCES `commandes` (`id_commande`) ON DELETE CASCADE,
-  ADD CONSTRAINT `distributions_ibfk_2` FOREIGN KEY (`id_etudiant`) REFERENCES `etudiants` (`id_etudiant`),
-  ADD CONSTRAINT `distributions_ibfk_3` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateurs` (`id_utilisateur`) ON DELETE SET NULL;
-
---
 -- Contraintes pour la table `echeances`
 --
 ALTER TABLE `echeances`
   ADD CONSTRAINT `echeances_ibfk_2` FOREIGN KEY (`id_etudiant`) REFERENCES `etudiants` (`id_etudiant`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_echeances_frais` FOREIGN KEY (`id_frais`) REFERENCES `frais` (`id_frais`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `enseignants`
+--
+ALTER TABLE `enseignants`
+  ADD CONSTRAINT `fk_enseignants_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateurs` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `enseignements`
@@ -2142,6 +1673,12 @@ ALTER TABLE `enseignements`
   ADD CONSTRAINT `enseignements_ibfk_3` FOREIGN KEY (`id_classe`) REFERENCES `classes` (`id_classe`) ON DELETE CASCADE;
 
 --
+-- Contraintes pour la table `etudiants`
+--
+ALTER TABLE `etudiants`
+  ADD CONSTRAINT `fk_etudiants_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateurs` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
 -- Contraintes pour la table `evaluations`
 --
 ALTER TABLE `evaluations`
@@ -2149,6 +1686,12 @@ ALTER TABLE `evaluations`
   ADD CONSTRAINT `evaluations_ibfk_2` FOREIGN KEY (`id_classe`) REFERENCES `classes` (`id_classe`),
   ADD CONSTRAINT `evaluations_ibfk_3` FOREIGN KEY (`id_matiere`) REFERENCES `matieres` (`id_matiere`),
   ADD CONSTRAINT `evaluations_ibfk_4` FOREIGN KEY (`id_annee`) REFERENCES `annees_scolaires` (`id_annee`);
+
+--
+-- Contraintes pour la table `evenements`
+--
+ALTER TABLE `evenements`
+  ADD CONSTRAINT `fk_evenements_utilisateur` FOREIGN KEY (`id_utilisateur_createur`) REFERENCES `utilisateurs` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `frais`
@@ -2162,6 +1705,7 @@ ALTER TABLE `frais`
 -- Contraintes pour la table `horaires`
 --
 ALTER TABLE `horaires`
+  ADD CONSTRAINT `fk_horaires_matiere` FOREIGN KEY (`id_matiere`) REFERENCES `matieres` (`id_matiere`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `horaires_ibfk_1` FOREIGN KEY (`id_generation`) REFERENCES `horaires_generations` (`id_generation`) ON DELETE CASCADE,
   ADD CONSTRAINT `horaires_ibfk_2` FOREIGN KEY (`id_enseignement`) REFERENCES `enseignements` (`id_enseignement`) ON DELETE CASCADE,
   ADD CONSTRAINT `horaires_ibfk_3` FOREIGN KEY (`id_enseignant`) REFERENCES `enseignants` (`id_enseignant`),
@@ -2201,6 +1745,7 @@ ALTER TABLE `menus`
 -- Contraintes pour la table `mouvements_stock`
 --
 ALTER TABLE `mouvements_stock`
+  ADD CONSTRAINT `fk_mouvements_etudiant` FOREIGN KEY (`id_etudiant`) REFERENCES `etudiants` (`id_etudiant`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `mouvements_stock_ibfk_1` FOREIGN KEY (`id_produit`) REFERENCES `produits` (`id_produit`) ON DELETE CASCADE,
   ADD CONSTRAINT `mouvements_stock_ibfk_2` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateurs` (`id_utilisateur`) ON DELETE SET NULL;
 
@@ -2226,6 +1771,12 @@ ALTER TABLE `paiements`
 ALTER TABLE `paiements_recus`
   ADD CONSTRAINT `paiements_recus_ibfk_1` FOREIGN KEY (`id_recu`) REFERENCES `recus` (`id_recu`) ON DELETE CASCADE,
   ADD CONSTRAINT `paiements_recus_ibfk_2` FOREIGN KEY (`id_paiement`) REFERENCES `paiements` (`id_paiement`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `password_resets`
+--
+ALTER TABLE `password_resets`
+  ADD CONSTRAINT `fk_password_resets_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateurs` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `periodes`
@@ -2255,23 +1806,10 @@ ALTER TABLE `roles_menus`
   ADD CONSTRAINT `roles_menus_ibfk_2` FOREIGN KEY (`id_menu`) REFERENCES `menus` (`id_menu`) ON DELETE CASCADE;
 
 --
--- Contraintes pour la table `sessions`
---
-ALTER TABLE `sessions`
-  ADD CONSTRAINT `sessions_ibfk_1` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateurs` (`id_utilisateur`) ON DELETE CASCADE;
-
---
 -- Contraintes pour la table `utilisateurs`
 --
 ALTER TABLE `utilisateurs`
   ADD CONSTRAINT `utilisateurs_ibfk_1` FOREIGN KEY (`id_role`) REFERENCES `roles` (`id_role`);
-
---
--- Contraintes pour la table `volumes_horaires`
---
-ALTER TABLE `volumes_horaires`
-  ADD CONSTRAINT `volumes_horaires_ibfk_1` FOREIGN KEY (`id_enseignement`) REFERENCES `enseignements` (`id_enseignement`) ON DELETE CASCADE,
-  ADD CONSTRAINT `volumes_horaires_ibfk_2` FOREIGN KEY (`id_annee`) REFERENCES `annees_scolaires` (`id_annee`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
