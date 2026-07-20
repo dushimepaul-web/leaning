@@ -170,6 +170,7 @@ $route['api/parametres'] = 'Parametres/Parametres/api_list';
 $route['api/parametres/update'] = 'Parametres/Parametres/api_update';
 $route['api/parametres/upload_logo'] = 'Parametres/Parametres/api_upload_logo';
 $route['api/parametres/upload_favicon'] = 'Parametres/Parametres/api_upload_favicon';
+$route['api/parametres/upload_login_img'] = 'Parametres/Parametres/api_upload_login_img';
 $route['api/email/test'] = 'Parametres/Parametres/api_test_email';
 
 

@@ -211,7 +211,7 @@
         </div>
         <div class="card-body p-24 text-center">
           <div class="mb-16 bg-neutral-50 rounded-8 p-20 d-flex align-items-center justify-content-center" style="min-height:130px;">
-            <img src="<?= base_url($this->Model->get_setting('login_img', 'assets/images/thumbs/login-img.png')) ?>" alt="Login Image" class="img-fluid" style="max-height:110px;object-fit:cover;" id="loginImg">
+            <img src="<?= base_url($this->Model->get_setting('login_img', 'assets/images/thumbs/login-img.png')) ?>" alt="Login Image" class="img-fluid" style="max-height:110px;object-fit:cover;" id="loginImg" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\'ri-image-line text-secondary-light\' style=\'font-size:48px\'></i>'">
           </div>
           <small class="text-secondary-light d-block mb-12">JPG, PNG, GIF, WEBP — max 2MB</small>
           <button type="button" class="btn btn-outline-primary-600 px-24 py-10 radius-8" onclick="document.getElementById('loginImgInput').click()">

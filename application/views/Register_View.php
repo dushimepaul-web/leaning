@@ -15,7 +15,7 @@
   <div class="d-lg-flex bg-white" style="min-height:100vh;">
     <div class="w-50 d-lg-block d-none overflow-hidden d-flex">
       <?php $login_img = $this->Model->get_setting('login_img', 'assets/images/thumbs/login-img.png'); ?>
-      <img src="<?= base_url($login_img) ?>" alt="Inscription" class="w-100 h-100 object-fit-cover">
+      <img src="<?= base_url($login_img) ?>" alt="Inscription" class="w-100 h-100 object-fit-cover" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#25A194 0%,#1C7F73 100%)'">
     </div>
     <div class="lg-w-50 px-24 py-40 d-flex justify-content-center align-items-center">
       <div class="max-w-540-px mx-auto w-100">
