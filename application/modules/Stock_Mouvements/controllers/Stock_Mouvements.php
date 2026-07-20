@@ -18,7 +18,8 @@ class Stock_Mouvements extends MY_Controller {
         $this->db->join('utilisateurs u', 'm.id_utilisateur = u.id_utilisateur', 'left');
         $this->db->join('etudiants e', 'm.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('m.date_mvt', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_create() {

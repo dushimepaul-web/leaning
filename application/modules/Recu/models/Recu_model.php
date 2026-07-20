@@ -14,7 +14,9 @@ class Recu_model extends Model
         $this->db->join('annees_scolaires a', 'r.id_annee = a.id_annee', 'left');
         if (!empty($filters['id_etudiant'])) $this->db->where('r.id_etudiant', $filters['id_etudiant']);
         $this->db->order_by('r.id_recu', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -26,7 +28,9 @@ class Recu_model extends Model
         $this->db->join('etudiants e', 'r.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('annees_scolaires a', 'r.id_annee = a.id_annee', 'left');
         $this->db->join('utilisateurs u', 'r.id_utilisateur = u.id_utilisateur', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)

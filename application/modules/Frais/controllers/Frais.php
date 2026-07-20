@@ -21,7 +21,8 @@ class Frais extends MY_Controller {
         $this->db->from('frais f');
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
         $this->db->order_by('f.id_frais', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -63,7 +64,8 @@ class Frais extends MY_Controller {
         $this->db->join('frais f', 'p.id_frais = f.id_frais', 'left');
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
         $this->db->order_by('p.id_paiement', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_recus() {
@@ -133,7 +135,8 @@ class Frais extends MY_Controller {
         $this->db->like('numero_recu', $prefix, 'after');
         $this->db->order_by('numero_recu', 'DESC');
         $this->db->limit(1);
-        $q = $this->db->get()->row_array();
+        $q_r = $this->db->get();
+        $q = $q_r !== false ? $q_r->row_array() : null;
         if ($q && preg_match('/RECU-\d{8}-(\d+)$/', $q['numero_recu'], $m)) {
             $next = (int)$m[1] + 1;
         } else {

@@ -22,7 +22,9 @@ class Enseignants_model extends Model
                 ->group_end();
         }
         $this->db->order_by('e.nom', 'ASC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -33,7 +35,9 @@ class Enseignants_model extends Model
         $this->db->from('enseignants e');
         $this->db->join('departements d', 'e.id_departement = d.id_departement', 'left');
         $this->db->join('utilisateurs u', 'e.id_utilisateur = u.id_utilisateur', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)
@@ -75,6 +79,8 @@ class Enseignants_model extends Model
         $this->db->join('classes c', 'p.id_classe = c.id_classe', 'left');
         $this->db->join('enseignants e', 'p.id_enseignant = e.id_enseignant', 'left');
         if (!empty($filters['id_classe'])) $this->db->where('p.id_classe', $filters['id_classe']);
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 }

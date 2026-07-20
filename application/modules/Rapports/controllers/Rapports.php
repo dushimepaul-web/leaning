@@ -19,7 +19,8 @@ class Rapports extends MY_Controller {
         $this->db->where('c.deleted_at', null);
         $this->db->group_by('c.id_classe');
         $this->db->order_by('c.libelle');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_eleves_par_section() {
@@ -30,7 +31,8 @@ class Rapports extends MY_Controller {
         $this->db->where('s.deleted_at', null);
         $this->db->group_by('s.id_section');
         $this->db->order_by('s.libelle');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_paiements_par_classe() {
@@ -41,7 +43,8 @@ class Rapports extends MY_Controller {
         $this->db->where('c.deleted_at', null);
         $this->db->group_by('c.id_classe');
         $this->db->order_by('c.libelle');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_paiements_par_section() {
@@ -53,7 +56,8 @@ class Rapports extends MY_Controller {
         $this->db->where('s.deleted_at', null);
         $this->db->group_by('s.id_section');
         $this->db->order_by('s.libelle');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_paiements_statuts() {
@@ -76,7 +80,8 @@ class Rapports extends MY_Controller {
         $this->db->where('c.deleted_at', null);
         $this->db->group_by('c.id_classe');
         $this->db->order_by('c.libelle');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_produits_par_section() {
@@ -89,7 +94,8 @@ class Rapports extends MY_Controller {
         $this->db->where('s.deleted_at', null);
         $this->db->group_by('s.id_section');
         $this->db->order_by('s.libelle');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_consommation_stock() {
@@ -99,6 +105,7 @@ class Rapports extends MY_Controller {
         $this->db->where('p.deleted_at', null);
         $this->db->order_by('p.stock_actuel', 'ASC');
         $this->db->limit(10);
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 }

@@ -23,7 +23,8 @@ class Bulletins extends MY_Controller {
         $this->db->join('periodes p', 'b.id_periode = p.id_periode', 'left');
         $this->db->join('annees_scolaires a', 'b.id_annee = a.id_annee', 'left');
         $this->db->order_by('b.date_edition', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_create() {
@@ -122,7 +123,8 @@ class Bulletins extends MY_Controller {
         $this->db->select('i.id_etudiant, i.id_classe, e.nom, e.prenom');
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant');
-        $students = $this->db->get()->result_array();
+        $q_s = $this->db->get();
+        $students = $q_s !== false ? $q_s->result_array() : array();
 
         if (empty($students)) { $this->json_error('Aucun étudiant trouvé'); return; }
 

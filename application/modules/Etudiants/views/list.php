@@ -137,13 +137,15 @@ async function loadData() {
     const statusBadge = statut === 'actif' ? 'bg-success-100 text-success-600' : (statut === 'inactif' ? 'bg-danger-100 text-danger-600' : 'bg-warning-100 text-warning-600');
     const statusText = statut.charAt(0).toUpperCase() + statut.slice(1);
     const nom = e.nom_complet || e.nom;
-    const photo = e.photo ? BASE_URL + e.photo : BASE_URL + 'assets/images/thumbs/avatar-img1.png';
+    const photoHtml = e.photo
+        ? '<img src="' + BASE_URL + e.photo + '" alt="" class="flex-shrink-0 me-12 radius-8" style="width:40px;height:40px;object-fit:cover;">'
+        : '<span class="flex-shrink-0 me-12 radius-8 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:#EEF2F6;"><iconify-icon icon="solar:user-bold" class="text-secondary-light text-xl"></iconify-icon></span>';
     rows += `<tr>
       <td>${i + 1}</td>
       <td><span class="text-primary-600">${e.matricule || '-'}</span></td>
       <td>
         <div class="d-flex align-items-center">
-          <img src="${photo}" alt="" class="flex-shrink-0 me-12 radius-8" style="width:40px;height:40px;object-fit:cover;">
+          ${photoHtml}
           <div>
             <h6 class="text-md mb-0 fw-medium"><a href="${BASE_URL}Etudiants/details/${e.uuid}" class="text-primary-light">${nom}</a></h6>
             <span class="text-sm">Roll No: <span class="fw-semibold">${e.numero_ordre || '-'}</span></span>

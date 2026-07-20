@@ -15,7 +15,8 @@ class Periodes extends MY_Controller {
         $this->db->from('periodes p');
         $this->db->join('annees_scolaires a', 'p.id_annee = a.id_annee', 'left');
         $this->db->order_by('p.date_debut', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {

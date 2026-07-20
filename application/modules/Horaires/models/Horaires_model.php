@@ -19,7 +19,9 @@ class Horaires_model extends Model
         if (!empty($filters['id_classe'])) $this->db->where('h.id_classe', $filters['id_classe']);
         if (!empty($filters['id_generation'])) $this->db->where('h.id_generation', $filters['id_generation']);
         $this->db->order_by('h.id_jour, h.id_creneau');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_matieres_by_classe($id_classe)
@@ -30,7 +32,9 @@ class Horaires_model extends Model
         $this->db->where('mc.id_classe', $id_classe);
         $this->db->where('m.deleted_at', null);
         $this->db->order_by('m.libelle');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_enseignant_by_classe_matiere($id_classe, $id_matiere)
@@ -42,6 +46,8 @@ class Horaires_model extends Model
         $this->db->where('en.id_matiere', $id_matiere);
         $this->db->where('en.deleted_at', null);
         $this->db->where('e.deleted_at', null);
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 }

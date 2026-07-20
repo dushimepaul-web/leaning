@@ -22,7 +22,9 @@ class Frais_model extends Model
         if (!empty($filters['id_annee'])) $this->db->where('f.id_annee', $filters['id_annee']);
 
         $this->db->order_by('f.id_frais', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -34,7 +36,9 @@ class Frais_model extends Model
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
         $this->db->join('classes c', 'f.id_classe = c.id_classe', 'left');
         $this->db->join('annees_scolaires a', 'f.id_annee = a.id_annee', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)

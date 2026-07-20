@@ -13,7 +13,9 @@ class Rapports_model extends Model
         $this->db->join('classes c', 'i.id_classe = c.id_classe', 'left');
         $this->db->where('e.deleted_at', null);
         $this->db->group_by('c.id_classe');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function rapport_paiements_par_mois($id_annee = null)
@@ -25,7 +27,9 @@ class Rapports_model extends Model
         $this->db->where('deleted_at', null);
         $this->db->group_by('MONTH(date_paiement)');
         $this->db->order_by('mois');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function rapport_absences_par_classe($id_annee = null)
@@ -40,7 +44,9 @@ class Rapports_model extends Model
             $this->db->where('i.id_annee', $id_annee);
         }
         $this->db->group_by('c.id_classe');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function rapport_notes_par_matiere($id_classe, $id_periode)
@@ -54,6 +60,8 @@ class Rapports_model extends Model
         $this->db->where('ev.id_periode', $id_periode);
         $this->db->where('ev.deleted_at', null);
         $this->db->group_by('ev.id_matiere');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 }

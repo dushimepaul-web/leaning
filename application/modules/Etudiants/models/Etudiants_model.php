@@ -34,7 +34,9 @@ class Etudiants_model extends Model
         }
 
         $this->db->order_by('e.nom', 'ASC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -48,7 +50,9 @@ class Etudiants_model extends Model
         $this->db->join('sections s', 'i.id_section = s.id_section', 'left');
         $this->db->join('annees_scolaires a', 'i.id_annee = a.id_annee', 'left');
         $this->db->join('utilisateurs u', 'e.id_utilisateur = u.id_utilisateur', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)
@@ -118,7 +122,9 @@ class Etudiants_model extends Model
         if (!empty($filters['id_section'])) $this->db->where('i.id_section', $filters['id_section']);
         if (!empty($filters['id_annee'])) $this->db->where('i.id_annee', $filters['id_annee']);
 
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_inscription($data)

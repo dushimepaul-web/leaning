@@ -14,7 +14,9 @@ class Stock_Mouvements_model extends Model
         if (!empty($filters['id_produit'])) $this->db->where('m.id_produit', $filters['id_produit']);
         if (!empty($filters['type'])) $this->db->where('m.type', $filters['type']);
         $this->db->order_by('m.date_mouvement', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

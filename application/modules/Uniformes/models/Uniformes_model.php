@@ -13,7 +13,9 @@ class Uniformes_model extends Model
         $this->db->join('etudiants e', 'u.id_etudiant = e.id_etudiant', 'left');
         if (!empty($filters['id_etudiant'])) $this->db->where('u.id_etudiant', $filters['id_etudiant']);
         $this->db->order_by('u.date_commande', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

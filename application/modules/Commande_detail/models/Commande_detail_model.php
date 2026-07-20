@@ -13,7 +13,9 @@ class Commande_detail_model extends Model
         $this->db->join('commandes c', 'cd.id_commande = c.id_commande', 'left');
         $this->db->join('produits p', 'cd.id_produit = p.id_produit', 'left');
         if (!empty($filters['id_commande'])) $this->db->where('cd.id_commande', $filters['id_commande']);
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

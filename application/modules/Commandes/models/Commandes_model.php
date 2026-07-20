@@ -14,7 +14,9 @@ class Commandes_model extends Model
         if (!empty($filters['id_etudiant'])) $this->db->where('c.id_etudiant', $filters['id_etudiant']);
         if (!empty($filters['statut'])) $this->db->where('c.statut', $filters['statut']);
         $this->db->order_by('c.date_commande', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

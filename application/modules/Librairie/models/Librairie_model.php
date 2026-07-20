@@ -13,7 +13,9 @@ class Librairie_model extends Model
         $this->db->join('categories_produits cp', 'p.id_categorie = cp.id_categorie');
         if (!empty($filters['categorie'])) $this->db->where('cp.code', strtoupper($filters['categorie']));
         $this->db->order_by('cp.libelle', 'ASC')->order_by('p.libelle', 'ASC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

@@ -16,7 +16,8 @@ class Recu extends MY_Controller {
         $this->db->from('recus r');
         $this->db->join('etudiants e', 'r.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('r.id_recu', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -24,7 +25,8 @@ class Recu extends MY_Controller {
         $this->db->select('r.*, e.nom, e.prenom, e.matricule');
         $this->db->from('recus r');
         $this->db->join('etudiants e', 'r.id_etudiant = e.id_etudiant', 'left');
-        $d = $this->db->get()->row_array();
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Reçu non trouvé', 404); return; }
         $this->json_success($d);
     }

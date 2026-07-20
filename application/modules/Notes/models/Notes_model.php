@@ -22,7 +22,9 @@ class Notes_model extends Model
         if (!empty($filters['id_classe'])) $this->db->where('ev.id_classe', $filters['id_classe']);
         if (!empty($filters['id_matiere'])) $this->db->where('ev.id_matiere', $filters['id_matiere']);
 
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -34,7 +36,9 @@ class Notes_model extends Model
         $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)
@@ -115,7 +119,9 @@ class Notes_model extends Model
         if (!empty($filters['id_classe'])) $this->db->where('b.id_classe', $filters['id_classe']);
         if (!empty($filters['id_periode'])) $this->db->where('b.id_periode', $filters['id_periode']);
 
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_grille_notes($id_classe, $id_periode, $id_matiere = null)
@@ -127,7 +133,8 @@ class Notes_model extends Model
         $this->db->select('ev.*, m.libelle as matiere');
         $this->db->from('evaluations ev');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
-        $evaluations = $this->db->get()->result_array();
+        $q = $this->db->get();
+        $evaluations = $q === false ? array() : $q->result_array();
 
         $this->db->where('e.deleted_at', null);
         $this->db->where('i.id_classe', $id_classe);
@@ -135,7 +142,8 @@ class Notes_model extends Model
         $this->db->select('e.*, i.id_inscription');
         $this->db->from('etudiants e');
         $this->db->join('inscriptions i', 'e.id_etudiant = i.id_etudiant', 'left');
-        $etudiants = $this->db->get()->result_array();
+        $q = $this->db->get();
+        $etudiants = $q === false ? array() : $q->result_array();
 
         // Récupérer toutes les notes
         $eval_ids = array_column($evaluations, 'id_evaluation');
@@ -143,7 +151,8 @@ class Notes_model extends Model
         if (!empty($eval_ids)) {
             $this->db->where_in('id_evaluation', $eval_ids);
             $this->db->where('deleted_at', null);
-            $notes = $this->db->get('notes')->result_array();
+            $q = $this->db->get('notes');
+            $notes = $q === false ? array() : $q->result_array();
         }
 
         return [
@@ -162,7 +171,8 @@ class Notes_model extends Model
         $this->db->select('e.id_etudiant');
         $this->db->from('etudiants e');
         $this->db->join('inscriptions i', 'e.id_etudiant = i.id_etudiant', 'left');
-        $etudiants = $this->db->get()->result_array();
+        $q = $this->db->get();
+        $etudiants = $q === false ? array() : $q->result_array();
 
         $created = 0;
         foreach ($etudiants as $et) {
@@ -175,7 +185,8 @@ class Notes_model extends Model
             $this->db->where('ev.id_periode', $id_periode);
             $this->db->where('ev.deleted_at', null);
             $this->db->select('n.note, ev.coefficient, ev.note_max');
-            $notes = $this->db->get('notes')->result_array();
+            $q = $this->db->get('notes');
+            $notes = $q === false ? array() : $q->result_array();
 
             if (empty($notes)) continue;
 
@@ -214,7 +225,8 @@ class Notes_model extends Model
         $this->db->where('id_periode', $id_periode);
         $this->db->where('id_annee', $id_annee);
         $this->db->order_by('moyenne_generale', 'DESC');
-        $bulletins = $this->db->get('bulletins')->result_array();
+        $q = $this->db->get('bulletins');
+        $bulletins = $q === false ? array() : $q->result_array();
         
         $rang = 1;
         $prev_moyenne = null;

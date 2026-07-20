@@ -15,7 +15,8 @@ class Audit extends MY_Controller {
         $this->db->join('utilisateurs u', 'a.id_utilisateur = u.id_utilisateur', 'left');
         $this->db->order_by('a.date_action', 'DESC');
         $this->db->limit(500);
-        $logs = $this->db->get()->result_array();
+        $ql = $this->db->get();
+        $logs = $ql !== false ? $ql->result_array() : array();
         foreach ($logs as &$log) {
             if (isset($log['nouvelles_valeurs']) && is_string($log['nouvelles_valeurs'])) {
                 $log['nouvelles_valeurs'] = json_decode($log['nouvelles_valeurs'], true);

@@ -33,7 +33,8 @@ class Notes extends MY_Controller {
         }
 
         $this->db->order_by('n.id_note', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_create() {
@@ -88,7 +89,8 @@ class Notes extends MY_Controller {
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant');
         $this->db->order_by('e.nom, e.prenom');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_evaluations_by_classe($id_classe) {
@@ -98,7 +100,8 @@ class Notes extends MY_Controller {
         $this->db->from('evaluations ev');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
         $this->db->order_by('ev.date_eval', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_matieres_by_classe($id_classe) {
@@ -127,7 +130,8 @@ class Notes extends MY_Controller {
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant');
         $this->db->order_by('e.nom, e.prenom');
-        $eleves = $this->db->get()->result_array();
+        $q_el = $this->db->get();
+        $eleves = $q_el !== false ? $q_el->result_array() : array();
 
         $this->db->where('ev.id_classe', $id_classe);
         $this->db->where('ev.id_matiere', $id_matiere);
@@ -135,7 +139,8 @@ class Notes extends MY_Controller {
         $this->db->select('ev.id_evaluation, ev.libelle, ev.sur, ev.date_eval, ev.type, ev.coefficient');
         $this->db->from('evaluations ev');
         $this->db->order_by('ev.date_eval', 'ASC');
-        $evaluations = $this->db->get()->result_array();
+        $q_ev = $this->db->get();
+        $evaluations = $q_ev !== false ? $q_ev->result_array() : array();
 
         $notes = [];
         if (!empty($eleves) && !empty($evaluations)) {
@@ -172,7 +177,8 @@ class Notes extends MY_Controller {
         $this->db->join('sections s', 'c.id_section = s.id_section', 'left');
         $this->db->where('c.deleted_at', null);
         $this->db->order_by('c.libelle');
-        $classes = $this->db->get()->result_array();
+        $q_c = $this->db->get();
+        $classes = $q_c !== false ? $q_c->result_array() : array();
 
         foreach ($classes as &$cl) {
             $cl['nb_etudiants'] = $this->db

@@ -25,7 +25,8 @@ class Programmes extends MY_Controller {
         $this->db->join('enseignants e', 'mc.id_enseignant = e.id_enseignant', 'left');
         $this->db->where('mc.deleted_at', null);
         $this->db->order_by('cl.libelle, m.libelle');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -35,7 +36,8 @@ class Programmes extends MY_Controller {
         $this->db->join('classes cl', 'mc.id_classe = cl.id_classe');
         $this->db->join('enseignants e', 'mc.id_enseignant = e.id_enseignant', 'left');
         $this->db->where('mc.uuid', $id);
-        $m = $this->db->get()->row_array();
+        $q_m = $this->db->get();
+        $m = $q_m !== false ? $q_m->row_array() : null;
         if (!$m) { $this->json_error('Programme non trouvé', 404); return; }
         $this->json_success($m);
     }

@@ -23,7 +23,8 @@ class Evaluations extends MY_Controller {
         $this->db->join('classes c', 'ev.id_classe = c.id_classe', 'left');
         $this->db->join('periodes p', 'ev.id_periode = p.id_periode', 'left');
         $this->db->order_by('ev.date_evaluation', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_create() {

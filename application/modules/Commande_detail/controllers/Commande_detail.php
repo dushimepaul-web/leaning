@@ -17,7 +17,8 @@ class Commande_detail extends MY_Controller {
         $this->db->join('commandes c', 'd.id_commande = c.id_commande', 'left');
         $this->db->join('produits p', 'd.id_produit = p.id_produit', 'left');
         $this->db->order_by('d.id_detail', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -26,7 +27,8 @@ class Commande_detail extends MY_Controller {
         $this->db->from('commandes_details d');
         $this->db->join('commandes c', 'd.id_commande = c.id_commande', 'left');
         $this->db->join('produits p', 'd.id_produit = p.id_produit', 'left');
-        $d = $this->db->get()->row_array();
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Détail non trouvé', 404); return; }
         $this->json_success($d);
     }

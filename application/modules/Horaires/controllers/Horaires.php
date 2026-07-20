@@ -26,7 +26,8 @@ class Horaires extends MY_Controller {
         $this->db->join('enseignements en', 'h.id_enseignement = en.id_enseignement', 'left');
         $this->db->join('matieres m', 'en.id_matiere = m.id_matiere', 'left');
         $this->db->order_by('h.id_jour, h.id_creneau');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_create() {
@@ -268,7 +269,8 @@ class Horaires extends MY_Controller {
         $this->db->where('mc.id_classe', $id_classe);
         $this->db->where('m.deleted_at', null);
         $this->db->order_by('m.libelle');
-        $matieres = $this->db->get()->result_array();
+        $q_m = $this->db->get();
+        $matieres = $q_m !== false ? $q_m->result_array() : array();
         if (empty($matieres)) {
             $this->db->select('m.id_matiere, m.libelle, m.code');
             $this->db->from('enseignements en');
@@ -277,7 +279,8 @@ class Horaires extends MY_Controller {
             $this->db->where('en.deleted_at', null);
             $this->db->where('m.deleted_at', null);
             $this->db->order_by('m.libelle');
-            $matieres = $this->db->get()->result_array();
+            $q_m2 = $this->db->get();
+            $matieres = $q_m2 !== false ? $q_m2->result_array() : array();
         }
         $this->json_success($matieres);
     }
@@ -290,7 +293,8 @@ class Horaires extends MY_Controller {
         $this->db->where('en.id_matiere', $id_matiere);
         $this->db->where('en.deleted_at', null);
         $this->db->where('e.deleted_at', null);
-        $ens = $this->db->get()->row_array();
+        $q_ens = $this->db->get();
+        $ens = $q_ens !== false ? $q_ens->row_array() : null;
         $this->json_success($ens);
     }
 }

@@ -17,18 +17,20 @@ class Commandes extends MY_Controller {
         $this->db->from('commandes c');
         $this->db->join('etudiants e', 'c.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('c.date_commande', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
         $row = $this->Model->readOne('commandes', ['uuid' => $id, 'deleted_at' => null]);
         if (!$row) { $this->json_error('Commande introuvable'); return; }
-        $row['details'] = $this->db
+        $q_d = $this->db
             ->select('cd.*, p.libelle as produit_libelle, p.code as produit_code')
             ->from('commandes_details cd')
             ->join('produits p', 'cd.id_produit = p.id_produit', 'left')
             ->where('cd.id_commande', $row['id_commande'])
-            ->get()->result_array();
+            ->get();
+        $row['details'] = $q_d !== false ? $q_d->result_array() : array();
         $this->json_success($row);
     }
 

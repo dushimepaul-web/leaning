@@ -14,7 +14,9 @@ class Classes_model extends Model
         $this->db->where('deleted_at', null);
         if (!empty($filters['id_annee'])) $this->db->where('id_annee', $filters['id_annee']);
         $this->db->order_by('libelle');
-        return $this->db->get('sections')->result_array();
+        $q = $this->db->get('sections');
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_matieres($filters = [])
@@ -25,7 +27,9 @@ class Classes_model extends Model
             $this->db->where('mc.id_classe', $filters['id_classe']);
         }
         $this->db->order_by('libelle');
-        return $this->db->get('matieres m')->result_array();
+        $q = $this->db->get('matieres m');
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     // Classes
@@ -37,7 +41,9 @@ class Classes_model extends Model
         $this->db->join('sections s', 'c.id_section = s.id_section', 'left');
         if (!empty($filters['id_section'])) $this->db->where('c.id_section', $filters['id_section']);
         $this->db->order_by('c.libelle');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     // Enseignements
@@ -51,7 +57,9 @@ class Classes_model extends Model
         $this->db->join('classes c', 'en.id_classe = c.id_classe', 'left');
         if (!empty($filters['id_classe'])) $this->db->where('en.id_classe', $filters['id_classe']);
         if (!empty($filters['id_enseignant'])) $this->db->where('en.id_enseignant', $filters['id_enseignant']);
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     // Periodes
@@ -63,6 +71,8 @@ class Classes_model extends Model
         $this->db->join('annees_scolaires a', 'p.id_annee = a.id_annee', 'left');
         if (!empty($filters['id_annee'])) $this->db->where('p.id_annee', $filters['id_annee']);
         $this->db->order_by('p.date_debut');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 }

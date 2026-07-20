@@ -29,7 +29,8 @@
         $this->db->where('h.id_enseignant', $teacher['id_enseignant']);
         $this->db->where('h.deleted_at', null);
         $this->db->order_by('h.id_jour, cr.ordre');
-        $horaires = $this->db->get()->result_array();
+        $q = $this->db->get();
+        $horaires = $q !== false ? $q->result_array() : array();
       }
       $by_jour = [];
       foreach ($horaires as $h) {

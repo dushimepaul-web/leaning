@@ -16,7 +16,8 @@ class Assurances extends MY_Controller {
         $this->db->from('assurances a');
         $this->db->join('etudiants e', 'a.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('a.id_assurance', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {

@@ -62,7 +62,8 @@ class Etudiants extends MY_Controller {
         $this->db->join('classes c', 'i.id_classe = c.id_classe', 'left');
         $this->db->join('sections s', 'i.id_section = s.id_section', 'left');
         $this->db->order_by('e.id_etudiant', 'DESC');
-        $etudiants = $this->db->get()->result_array();
+        $q_e = $this->db->get();
+        $etudiants = $q_e !== false ? $q_e->result_array() : array();
 
         foreach ($etudiants as &$et) {
             $et['nom_complet'] = trim(($et['nom'] ?? '') . ' ' . ($et['postnom'] ?? '') . ' ' . ($et['prenom'] ?? ''));
@@ -270,7 +271,8 @@ class Etudiants extends MY_Controller {
         $this->db->like('matricule', $prefix, 'after');
         $this->db->order_by('matricule', 'DESC');
         $this->db->limit(1);
-        $q = $this->db->get()->row_array();
+        $q_m = $this->db->get();
+        $q = $q_m !== false ? $q_m->row_array() : null;
         if ($q && preg_match('/^(\d+)\/(\d+)$/', $q['matricule'], $m)) {
             $next = (int)$m[2] + 1;
         } else {
@@ -287,7 +289,8 @@ class Etudiants extends MY_Controller {
         $this->db->where('e.deleted_at', null);
         $this->db->where('i.id_annee', $this->id_annee_active);
         $this->db->order_by('i.id_classe ASC, e.nom ASC, e.postnom ASC, e.prenom ASC');
-        $rows = $this->db->get()->result_array();
+        $q_r = $this->db->get();
+        $rows = $q_r !== false ? $q_r->result_array() : array();
         $current_classe = null;
         $seq = 0;
         foreach ($rows as $r) {

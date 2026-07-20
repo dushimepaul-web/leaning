@@ -20,7 +20,8 @@ class Enseignements extends MY_Controller {
         $this->db->join('matieres m', 'e.id_matiere = m.id_matiere', 'left');
         $this->db->join('classes c', 'e.id_classe = c.id_classe', 'left');
         $this->db->order_by('e.id_enseignement', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {

@@ -19,7 +19,8 @@ class Echeance extends MY_Controller {
         $this->db->join('frais f', 'e.id_frais = f.id_frais', 'left');
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
         $this->db->order_by('e.date_echeance', 'ASC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -29,7 +30,8 @@ class Echeance extends MY_Controller {
         $this->db->join('etudiants et', 'e.id_etudiant = et.id_etudiant', 'left');
         $this->db->join('frais f', 'e.id_frais = f.id_frais', 'left');
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
-        $d = $this->db->get()->row_array();
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Échéance non trouvée', 404); return; }
         $this->json_success($d);
     }

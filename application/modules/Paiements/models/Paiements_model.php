@@ -25,7 +25,9 @@ class Paiements_model extends Model
         if (!empty($filters['date_to'])) $this->db->where('p.date_paiement <=', $filters['date_to']);
 
         $this->db->order_by('p.id_paiement', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -40,7 +42,9 @@ class Paiements_model extends Model
         $this->db->join('inscriptions i', 'p.id_etudiant = i.id_etudiant AND i.deleted_at IS NULL AND i.id_annee = ' . (int)$this->id_annee_active, 'left');
         $this->db->join('paiements_recus pr', 'p.id_paiement = pr.id_paiement', 'left');
         $this->db->join('recus r', 'pr.id_recu = r.id_recu', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)

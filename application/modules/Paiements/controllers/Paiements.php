@@ -12,7 +12,8 @@ class Paiements extends MY_Controller {
         $this->db->join('classes c', 'i.id_classe = c.id_classe', 'left');
         $this->db->join('sections s', 'i.id_section = s.id_section', 'left');
         $this->db->where('e.deleted_at', null);
-        $data['etudiants'] = $this->db->get()->result_array();
+        $q_e = $this->db->get();
+        $data['etudiants'] = $q_e !== false ? $q_e->result_array() : array();
         $data['types_frais'] = $this->Model->read('types_frais', ['deleted_at' => null]);
         $this->load->view('index', $data);
     }
@@ -26,7 +27,8 @@ class Paiements extends MY_Controller {
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
         $this->db->join('inscriptions i', 'p.id_etudiant = i.id_etudiant AND i.deleted_at IS NULL AND i.id_annee = '.(int)$this->id_annee_active, 'left');
         $this->db->order_by('p.id_paiement', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -36,7 +38,8 @@ class Paiements extends MY_Controller {
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('frais f', 'p.id_frais = f.id_frais', 'left');
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
-        $d = $this->db->get()->row_array();
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Paiement non trouvé', 404); return; }
         $this->json_success($d);
     }
@@ -108,7 +111,8 @@ class Paiements extends MY_Controller {
         $this->db->like('numero_recu', $prefix, 'after');
         $this->db->order_by('numero_recu', 'DESC');
         $this->db->limit(1);
-        $q = $this->db->get()->row_array();
+        $q_r = $this->db->get();
+        $q = $q_r !== false ? $q_r->row_array() : null;
         if ($q && preg_match('/RECU-\d{8}-(\d+)$/', $q['numero_recu'], $m)) {
             $next = (int)$m[1] + 1;
         } else {

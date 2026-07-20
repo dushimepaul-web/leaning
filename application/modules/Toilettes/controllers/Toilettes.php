@@ -17,7 +17,8 @@ class Toilettes extends MY_Controller {
         $this->db->from('produits p');
         $this->db->join('categories_produits cp', 'p.id_categorie = cp.id_categorie');
         $this->db->order_by('p.libelle', 'ASC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {

@@ -22,7 +22,9 @@ class Produits_model extends Model
                 ->group_end();
         }
         $this->db->order_by('p.libelle', 'ASC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -32,7 +34,9 @@ class Produits_model extends Model
         $this->db->select('p.*, c.libelle as categorie_libelle');
         $this->db->from('produits p');
         $this->db->join('categories_produits c', 'p.id_categorie = c.id_categorie', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)
@@ -67,7 +71,9 @@ class Produits_model extends Model
     public function get_categories($filters = [])
     {
         $this->db->where('deleted_at', null);
-        return $this->db->get('categories_produits')->result_array();
+        $q = $this->db->get('categories_produits');
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     // Mouvements stock
@@ -83,7 +89,9 @@ class Produits_model extends Model
         if (!empty($filters['date_from'])) $this->db->where('m.date_mouvement >=', $filters['date_from']);
         if (!empty($filters['date_to'])) $this->db->where('m.date_mouvement <=', $filters['date_to']);
         $this->db->order_by('m.id_mouvement', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_mouvement($data)

@@ -14,7 +14,9 @@ class Notifications_model extends Model
         if (!empty($filters['id_utilisateur'])) $this->db->where('n.id_utilisateur', $filters['id_utilisateur']);
         if (isset($filters['lu']) && $filters['lu'] !== '') $this->db->where('n.lu', $filters['lu']);
         $this->db->order_by('n.cree_le', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_non_lues($id_utilisateur)
@@ -22,7 +24,9 @@ class Notifications_model extends Model
         $this->db->where('id_utilisateur', $id_utilisateur);
         $this->db->where('lu', 0);
         $this->db->where('deleted_at', null);
-        return $this->db->get('notifications')->result_array();
+        $q = $this->db->get('notifications');
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

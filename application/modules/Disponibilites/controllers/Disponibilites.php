@@ -20,7 +20,8 @@ class Disponibilites extends MY_Controller {
         $this->db->join('creneaux c', 'd.id_creneau = c.id_creneau', 'left');
         $this->db->join('jours_semaine j', 'd.id_jour = j.id_jour', 'left');
         $this->db->order_by('d.id_disponibilite', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {

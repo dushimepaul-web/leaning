@@ -7,7 +7,9 @@ class Inscriptions extends MY_Controller {
         $this->db->where('id_annee', $id_annee);
         $this->db->where('deleted_at', null);
         if ($exclude_id !== null) $this->db->where('uuid !=', $exclude_id);
-        return (bool) $this->db->get('inscriptions')->row_array();
+        $q = $this->db->get('inscriptions');
+        $r = $q !== false ? $q->row_array() : null;
+        return (bool) $r;
     }
     public function __construct() { parent::__construct(); $this->not_logged_in(); }
 
@@ -29,7 +31,8 @@ class Inscriptions extends MY_Controller {
         $this->db->join('sections s', 'i.id_section = s.id_section', 'left');
         $this->db->join('annees_scolaires a', 'i.id_annee = a.id_annee', 'left');
         $this->db->order_by('i.id_inscription', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -85,7 +88,8 @@ class Inscriptions extends MY_Controller {
         $this->db->where('e.deleted_at', null);
         $this->db->where('i.id_annee', $this->id_annee_active);
         $this->db->order_by('i.id_classe ASC, e.nom ASC, e.postnom ASC, e.prenom ASC');
-        $rows = $this->db->get()->result_array();
+        $q_r = $this->db->get();
+        $rows = $q_r !== false ? $q_r->result_array() : array();
         $current_classe = null;
         $seq = 0;
         foreach ($rows as $r) {

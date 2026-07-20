@@ -18,7 +18,8 @@ class Paiement_recu extends MY_Controller {
         $this->db->join('paiements p', 'pr.id_paiement = p.id_paiement', 'left');
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('pr.id_paiement_recu', 'DESC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
@@ -28,7 +29,8 @@ class Paiement_recu extends MY_Controller {
         $this->db->join('recus r', 'pr.id_recu = r.id_recu', 'left');
         $this->db->join('paiements p', 'pr.id_paiement = p.id_paiement', 'left');
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
-        $d = $this->db->get()->row_array();
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Reçu de paiement non trouvé', 404); return; }
         $this->json_success($d);
     }

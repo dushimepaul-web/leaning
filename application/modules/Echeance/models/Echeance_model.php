@@ -17,7 +17,9 @@ class Echeance_model extends Model
         if (!empty($filters['id_frais'])) $this->db->where('e.id_frais', $filters['id_frais']);
         if (!empty($filters['statut'])) $this->db->where('e.statut', $filters['statut']);
         $this->db->order_by('e.date_echeance', 'ASC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

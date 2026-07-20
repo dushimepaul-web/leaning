@@ -22,7 +22,9 @@ class Utilisateurs_model extends Model
                 ->group_end();
         }
         $this->db->order_by('u.nom', 'ASC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_by_id($id)
@@ -32,7 +34,9 @@ class Utilisateurs_model extends Model
         $this->db->select('u.*, r.libelle as role_libelle, r.id_role');
         $this->db->from('utilisateurs u');
         $this->db->join('roles r', 'u.role_id = r.id_role', 'left');
-        return $this->db->get()->row_array();
+        $q = $this->db->get();
+        if ($q === false) return null;
+        return $q->row_array();
     }
 
     public function create_record($data)
@@ -73,13 +77,17 @@ class Utilisateurs_model extends Model
     public function get_roles($filters = [])
     {
         $this->db->where('deleted_at', null);
-        return $this->db->get('roles')->result_array();
+        $q = $this->db->get('roles');
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function get_role_permissions($id_role)
     {
         $this->db->where('id_role', $id_role);
-        return $this->db->get('roles_menus')->result_array();
+        $q = $this->db->get('roles_menus');
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function update_role_permissions($id_role, $menus)

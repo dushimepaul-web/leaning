@@ -15,7 +15,9 @@ class Disponibilites_model extends Model
         $this->db->join('jours_semaine j', 'd.id_jour = j.id_jour', 'left');
         if (!empty($filters['id_enseignant'])) $this->db->where('d.id_enseignant', $filters['id_enseignant']);
         if (!empty($filters['type'])) $this->db->where('d.type', $filters['type']);
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

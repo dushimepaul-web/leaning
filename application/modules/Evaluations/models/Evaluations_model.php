@@ -15,7 +15,9 @@ class Evaluations_model extends Model
         $this->db->join('periodes p', 'ev.id_periode = p.id_periode', 'left');
         if (!empty($filters['id_classe'])) $this->db->where('ev.id_classe', $filters['id_classe']);
         if (!empty($filters['id_matiere'])) $this->db->where('ev.id_matiere', $filters['id_matiere']);
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

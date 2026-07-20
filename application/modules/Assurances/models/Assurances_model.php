@@ -13,7 +13,9 @@ class Assurances_model extends Model
         $this->db->join('etudiants e', 'a.id_etudiant = e.id_etudiant', 'left');
         if (!empty($filters['statut'])) $this->db->where('a.statut', $filters['statut']);
         $this->db->order_by('a.date_debut', 'DESC');
-        return $this->db->get()->result_array();
+        $q = $this->db->get();
+        if ($q === false) return array();
+        return $q->result_array();
     }
 
     public function create_record($data)

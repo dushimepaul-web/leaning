@@ -21,7 +21,8 @@ class Librairie extends MY_Controller {
         $this->db->join('categories_produits cp', 'p.id_categorie = cp.id_categorie');
         if ($categorie) $this->db->where('cp.code', strtoupper($categorie));
         $this->db->order_by('cp.libelle', 'ASC')->order_by('p.libelle', 'ASC');
-        $this->json_success($this->db->get()->result_array());
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
