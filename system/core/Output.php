@@ -240,7 +240,7 @@ class CI_Output {
 	 */
 	public function set_content_type($mime_type, $charset = NULL)
 	{
-		if (strpos($mime_type, '/') === FALSE)
+		if (strpos((string) $mime_type, '/') === FALSE)
 		{
 			$extension = ltrim($mime_type, '.');
 

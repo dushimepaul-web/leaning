@@ -38,6 +38,7 @@ require_once dirname(__FILE__).'/Config.php';
  * THE SOFTWARE.
  **/
 if (!class_exists('CI', FALSE)) {
+	#[\AllowDynamicProperties]
 	class CI extends CI_Controller
 	{
 		public static $APP;

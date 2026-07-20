@@ -595,6 +595,7 @@ class CI_Loader {
 		is_array($helpers) OR $helpers = array($helpers);
 		foreach ($helpers as &$helper)
 		{
+			$helper = (string) $helper;
 			$filename = basename($helper);
 			$filepath = ($filename === $helper) ? '' : substr($helper, 0, strlen($helper) - strlen($filename));
 			$filename = strtolower(preg_replace('#(_helper)?(\.php)?$#i', '', $filename)).'_helper';
@@ -1323,7 +1324,7 @@ class CI_Loader {
 		}
 
 		// Load any custom config file
-		if (count($autoload['config']) > 0)
+		if (isset($autoload['config']) && count($autoload['config']) > 0)
 		{
 			foreach ($autoload['config'] as $val)
 			{

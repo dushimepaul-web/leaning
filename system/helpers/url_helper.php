@@ -506,7 +506,7 @@ if ( ! function_exists('url_title'))
 
 		if ($lowercase === TRUE)
 		{
-			$str = strtolower($str);
+			$str = strtolower((string) $str);
 		}
 
 		return trim(trim($str, $separator));

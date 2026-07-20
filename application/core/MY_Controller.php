@@ -5,12 +5,12 @@ if (!defined('BASEPATH'))
 
 class MY_Controller extends MX_Controller
 {
-    var $permission = array();
-    var $permission_codes = array();
-    var $group_name = "";
-    var $id_annee_active = 0;
-    var $id_periode_active = 0;
-    var $menus_data = array();
+    public $permission = array();
+    public $permission_codes = array();
+    public $group_name = "";
+    public $id_annee_active = 0;
+    public $id_periode_active = 0;
+    public $menus_data = array();
 
     public function __construct()
     {
@@ -129,7 +129,8 @@ class MY_Controller extends MX_Controller
 
     protected function get_json_input()
     {
-        return json_decode(file_get_contents('php://input'), true);
+        $input = file_get_contents('php://input');
+        return $input ? json_decode($input, true) : null;
     }
 
     protected function _create_linked_user($table, $record_id, $data, $role_code = 'lecture')

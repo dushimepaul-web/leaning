@@ -127,7 +127,7 @@ class Admin extends MY_Controller
 
         if ($email_result['success']) {
             $sms['sms'] = '<div id="message" class="alert alert-success text-center">
-                <strong>Succès!</strong> Un code de vérification a été envoyé à ' . htmlspecialchars($email) . '.
+                <strong>Succès!</strong> Un code de vérification a été envoyé à ' . htmlspecialchars($email ?? '', ENT_QUOTES, 'UTF-8') . '.
             </div>';
         } else {
             $sms['sms'] = '<div id="message" class="alert alert-warning text-center">

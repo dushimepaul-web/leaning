@@ -338,7 +338,7 @@ class CI_Config {
 	{
 		if ($this->item('enable_query_strings') === FALSE)
 		{
-			is_array($uri) && $uri = implode('/', $uri);
+			$uri = is_array($uri) ? implode('/', $uri) : (string) $uri;
 			return ltrim($uri, '/');
 		}
 		elseif (is_array($uri))

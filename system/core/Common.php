@@ -102,7 +102,7 @@ if ( ! function_exists('is_really_writable'))
 		 */
 		if (is_dir($file))
 		{
-			$file = rtrim($file, '/').'/'.md5(mt_rand());
+			$file = rtrim((string) $file, '/').'/'.md5(mt_rand());
 			if (($fp = @fopen($file, 'ab')) === FALSE)
 			{
 				return FALSE;
@@ -708,6 +708,7 @@ if ( ! function_exists('remove_invisible_characters'))
 	 */
 	function remove_invisible_characters($str, $url_encoded = TRUE)
 	{
+		$str = (string) $str;
 		$non_displayables = array();
 
 		// every control character except newline (dec 10),
@@ -759,7 +760,7 @@ if ( ! function_exists('html_escape'))
 			return $var;
 		}
 
-		return htmlspecialchars($var, ENT_QUOTES, config_item('charset'), $double_encode);
+		return htmlspecialchars($var, ENT_QUOTES, (string) config_item('charset'), $double_encode);
 	}
 }
 

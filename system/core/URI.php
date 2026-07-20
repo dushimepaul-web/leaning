@@ -233,7 +233,9 @@ class CI_URI {
 			$_SERVER['QUERY_STRING'] = $query;
 		}
 
-		parse_str($_SERVER['QUERY_STRING'], $_GET);
+		if (isset($_SERVER['QUERY_STRING'])) {
+			parse_str($_SERVER['QUERY_STRING'], $_GET);
+		}
 
 		if ($uri === '/' OR $uri === '')
 		{
@@ -268,7 +270,9 @@ class CI_URI {
 			$uri = $uri[0];
 		}
 
-		parse_str($_SERVER['QUERY_STRING'], $_GET);
+		if (isset($_SERVER['QUERY_STRING'])) {
+			parse_str($_SERVER['QUERY_STRING'], $_GET);
+		}
 
 		return $this->_remove_relative_directory($uri);
 	}
