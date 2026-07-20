@@ -18,59 +18,75 @@ class MY_Controller extends MX_Controller
         $this->_hmvc_fixes();
         $this->_load_module_model();
 
-        if (empty($this->session->userdata('logged_in'))) {
-            $session_data = array('logged_in' => FALSE);
-            $this->session->set_userdata($session_data);
-        } else {
-            $uuid = $this->session->userdata('uuid');
-            $user_data = $this->Model->readOne('utilisateurs', ['uuid' => $uuid]);
-            if ($user_data) {
-                $role_data = $this->Model->readOne('roles', ['id_role' => $user_data['id_role']]);
-                $this->group_name = $role_data ? $role_data['libelle'] : '';
-                $this->session->set_userdata('photo', $user_data['photo'] ?? null);
-                $this->session->set_userdata('role_libelle', $this->group_name);
-                $this->load->model('Role_permission_model');
-                $role_menus = $this->Model->read('roles_menus', ['id_role' => $user_data['id_role'], 'can_view' => 1]);
-                $this->permission = array_column($role_menus, 'id_menu');
-                if (!empty($this->permission)) {
-                    $this->menus_data = $this->Role_permission_model->get_role_menus($user_data['id_role']);
-                    $this->permission_codes = array_column($this->menus_data, 'code');
+        try {
+            if (empty($this->session->userdata('logged_in'))) {
+                $session_data = array('logged_in' => FALSE);
+                $this->session->set_userdata($session_data);
+            } else {
+                $uuid = $this->session->userdata('uuid');
+                $user_data = $this->Model->readOne('utilisateurs', ['uuid' => $uuid]);
+                if ($user_data) {
+                    $role_data = $this->Model->readOne('roles', ['id_role' => $user_data['id_role']]);
+                    $this->group_name = $role_data ? $role_data['libelle'] : '';
+                    $this->session->set_userdata('photo', $user_data['photo'] ?? null);
+                    $this->session->set_userdata('role_libelle', $this->group_name);
+                    $this->load->model('Role_permission_model');
+                    $role_menus = $this->Model->read('roles_menus', ['id_role' => $user_data['id_role'], 'can_view' => 1]);
+                    $this->permission = array_column($role_menus, 'id_menu');
+                    if (!empty($this->permission)) {
+                        $this->menus_data = $this->Role_permission_model->get_role_menus($user_data['id_role']);
+                        $this->permission_codes = array_column($this->menus_data, 'code');
+                    }
                 }
             }
+        } catch (Throwable $e) {
+            log_message('error', 'MY_Controller user load failed: ' . $e->getMessage());
         }
 
-        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
-        if ($annee) {
-            $this->id_annee_active = $annee['id_annee'];
-        } else {
-            $fallback = $this->db
-                ->select('id_annee')
-                ->where('deleted_at', null)
-                ->order_by('id_annee', 'DESC')
-                ->limit(1)
-                ->get('annees_scolaires')
-                ->row_array();
-            $this->id_annee_active = $fallback ? $fallback['id_annee'] : 0;
-        }
-
-        $periode = $this->Model->readOne('periodes', ['est_en_cours' => 1]);
-        if ($periode) {
-            $this->id_periode_active = $periode['id_periode'];
-        } else {
-            $paramPeriode = $this->Model->get_setting('periode_active');
-            if ($paramPeriode) {
-                $this->id_periode_active = intval($paramPeriode);
+        try {
+            $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+            if ($annee) {
+                $this->id_annee_active = $annee['id_annee'];
             } else {
-                $fallbackP = $this->db
-                    ->select('id_periode')
-                    ->where('id_annee', $this->id_annee_active)
+                $fallback = $this->db
+                    ->select('id_annee')
                     ->where('deleted_at', null)
-                    ->order_by('id_periode', 'DESC')
+                    ->order_by('id_annee', 'DESC')
                     ->limit(1)
-                    ->get('periodes')
-                    ->row_array();
-                $this->id_periode_active = $fallbackP ? $fallbackP['id_periode'] : 0;
+                    ->get('annees_scolaires');
+                if ($fallback !== false) {
+                    $fb = $fallback->row_array();
+                    $this->id_annee_active = $fb ? $fb['id_annee'] : 0;
+                }
             }
+        } catch (Throwable $e) {
+            log_message('error', 'MY_Controller annee query failed: ' . $e->getMessage());
+        }
+
+        try {
+            $periode = $this->Model->readOne('periodes', ['est_en_cours' => 1]);
+            if ($periode) {
+                $this->id_periode_active = $periode['id_periode'];
+            } else {
+                $paramPeriode = $this->Model->get_setting('periode_active');
+                if ($paramPeriode) {
+                    $this->id_periode_active = intval($paramPeriode);
+                } else {
+                    $fallbackP = $this->db
+                        ->select('id_periode')
+                        ->where('id_annee', $this->id_annee_active)
+                        ->where('deleted_at', null)
+                        ->order_by('id_periode', 'DESC')
+                        ->limit(1)
+                        ->get('periodes');
+                    if ($fallbackP !== false) {
+                        $fbP = $fallbackP->row_array();
+                        $this->id_periode_active = $fbP ? $fbP['id_periode'] : 0;
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            log_message('error', 'MY_Controller periode query failed: ' . $e->getMessage());
         }
     }
 

@@ -22,14 +22,17 @@ class Model extends CI_Model
             $this->db->order_by($order_by_column, $order);
         }
         $query = $this->db->get($table);
+        if ($query === false) return array();
         return $query->result_array();
     }
 
     function readWhereIdIn($table, $ids = array(), $id_column = 'id')
     {
+        if (empty($ids)) return array();
         $this->db->where('deleted_at', null);
         $this->db->where_in($id_column, $ids);
         $query = $this->db->get($table);
+        if ($query === false) return array();
         return $query->result_array();
     }
 
@@ -47,6 +50,7 @@ class Model extends CI_Model
         $affected_rows = $this->db->affected_rows();
         if ($affected_rows > 0) {
             $query = $this->db->get_where($table, $criteres);
+            if ($query === false) return null;
             return $query->row_array();
         }
         return null;
@@ -63,6 +67,7 @@ class Model extends CI_Model
     {
         $this->db->where($criteres);
         $query = $this->db->get($table);
+        if ($query === false) return null;
         return $query->row_array();
     }
 
@@ -73,10 +78,8 @@ class Model extends CI_Model
         } else {
             $query = $this->db->query($query);
         }
-        if ($query) {
-            return $query->result_array();
-        }
-        return array();
+        if ($query === false) return array();
+        return $query->result_array();
     }
 
     function readQueryOne($query, $bindings = null)
@@ -86,10 +89,8 @@ class Model extends CI_Model
         } else {
             $query = $this->db->query($query);
         }
-        if ($query) {
-            return $query->row_array();
-        }
-        return null;
+        if ($query === false) return null;
+        return $query->row_array();
     }
 
     function createLastId($table, $data)
@@ -108,6 +109,7 @@ class Model extends CI_Model
 
     function createBatch($table, $data)
     {
+        if (empty($data)) return false;
         $query = $this->db->insert_batch($table, $data);
         return ($query) ? true : false;
     }
@@ -116,14 +118,13 @@ class Model extends CI_Model
     {
         $this->db->limit($limit);
         $query = $this->db->get($table);
-        if ($query) {
-            return $query->result_array();
-        }
-        return array();
+        if ($query === false) return array();
+        return $query->result_array();
     }
 
     function updateBatch($table, $data, $where_key = 'uuid')
     {
+        if (empty($data)) return false;
         $query = $this->db->update_batch($table, $data, $where_key);
         return ($query) ? true : false;
     }
@@ -132,18 +133,35 @@ class Model extends CI_Model
     {
         $this->db->where($criteres);
         $query = $this->db->get($table);
+        if ($query === false) return false;
         return ($query->num_rows() > 0);
     }
 
     function count($table)
     {
-        return $this->db->count_all($table);
+        try {
+            return $this->db->count_all($table);
+        } catch (Exception $e) {
+            log_message('error', 'count() failed for table: ' . $table . ' - ' . $e->getMessage());
+            return 0;
+        } catch (Throwable $e) {
+            log_message('error', 'count() failed for table: ' . $table . ' - ' . $e->getMessage());
+            return 0;
+        }
     }
 
     function countWhere($table, $where)
     {
-        $this->db->where($where);
-        return $this->db->count_all_results($table);
+        try {
+            $this->db->where($where);
+            return $this->db->count_all_results($table);
+        } catch (Exception $e) {
+            log_message('error', 'countWhere() failed for table: ' . $table . ' - ' . $e->getMessage());
+            return 0;
+        } catch (Throwable $e) {
+            log_message('error', 'countWhere() failed for table: ' . $table . ' - ' . $e->getMessage());
+            return 0;
+        }
     }
 
     // ---- Authentification vip_school ----
@@ -152,7 +170,7 @@ class Model extends CI_Model
         if ($username && $password) {
             $sql = "SELECT * FROM utilisateurs WHERE email = ? AND actif = 1 AND deleted_at IS NULL";
             $query = $this->db->query($sql, array($username));
-            if ($query->num_rows() == 1) {
+            if ($query !== false && $query->num_rows() == 1) {
                 $result = $query->row_array();
                 if (password_verify($password, $result['mot_de_passe'])) {
                     return $result;
@@ -173,7 +191,7 @@ class Model extends CI_Model
         if ($email) {
             $sql = 'SELECT * FROM utilisateurs WHERE email = ? AND actif = 1 AND deleted_at IS NULL';
             $query = $this->db->query($sql, array($email));
-            return ($query->num_rows() == 1);
+            return ($query !== false && $query->num_rows() == 1);
         }
         return false;
     }
@@ -204,12 +222,18 @@ class Model extends CI_Model
 
     public function get_setting($key, $default = null)
     {
-        $this->db->select('valeur');
-        $this->db->from('parametres');
-        $this->db->where('clef', $key);
-        $query = $this->db->get();
-        if ($query->num_rows() > 0) {
-            return $query->row()->valeur;
+        try {
+            $this->db->select('valeur');
+            $this->db->from('parametres');
+            $this->db->where('clef', $key);
+            $query = $this->db->get();
+            if ($query !== false && $query->num_rows() > 0) {
+                return $query->row()->valeur;
+            }
+        } catch (Exception $e) {
+            log_message('error', 'get_setting() failed for key: ' . $key . ' - ' . $e->getMessage());
+        } catch (Throwable $e) {
+            log_message('error', 'get_setting() failed for key: ' . $key . ' - ' . $e->getMessage());
         }
         return $default;
     }
@@ -219,7 +243,7 @@ class Model extends CI_Model
         $this->load->helper('uuid');
         $this->db->where('clef', $key);
         $query = $this->db->get('parametres');
-        if ($query->num_rows() > 0) {
+        if ($query !== false && $query->num_rows() > 0) {
             $this->db->where('clef', $key);
             $this->db->update('parametres', array('valeur' => $value));
         } else {
