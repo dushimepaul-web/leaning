@@ -23,11 +23,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-// Vérifier si on est en localhost
-if (isset($_SERVER['HTTP_HOST']) && ($_SERVER['HTTP_HOST'] == 'localhost' || $_SERVER['HTTP_HOST'] == '127.0.0.1')) {
+$host = $_SERVER['HTTP_HOST'] ?? '';
+if ($host === 'localhost' || $host === '127.0.0.1') {
     $config['base_url'] = 'http://localhost/leaning/';
 } else {
-    // Sinon, sur le serveur de production
     $config['base_url'] = 'https://vipschool.abe.bi/';
 }
 
@@ -386,7 +385,7 @@ $config['encryption_key'] = 'f7c9e2a4b8d1f3e5a7c9b2d4f6e8a0c3b5d7e9f1a2b4c6d8e0f
 $config['sess_driver'] = 'files';
 $config['sess_cookie_name'] = 'ci_session';
 $config['sess_expiration'] = 7200;
-$config['sess_save_path'] = NULL;
+$config['sess_save_path'] = APPPATH . 'cache/';
 $config['sess_match_ip'] = FALSE;
 $config['sess_time_to_update'] = 300;
 $config['sess_regenerate_destroy'] = FALSE;
@@ -481,7 +480,7 @@ $config['csrf_exclude_uris'] = array();
 | by the output class.  Do not 'echo' any values with compression enabled.
 |
 */
-$config['compress_output'] = TRUE;
+$config['compress_output'] = FALSE;
 
 /*
 |--------------------------------------------------------------------------

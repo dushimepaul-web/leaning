@@ -76,7 +76,8 @@ $active_group = 'default';
 $query_builder = TRUE;
 
 // Détection automatique de l'environnement
-if ($_SERVER['SERVER_NAME'] == 'localhost') {
+$server_name = $_SERVER['SERVER_NAME'] ?? '';
+if ($server_name === 'localhost' || $server_name === '127.0.0.1') {
     // Configuration pour le serveur local
     $db['default'] = array(
 	'dsn'	=> '',

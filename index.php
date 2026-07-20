@@ -53,7 +53,8 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+	$ci_env = $_SERVER['CI_ENV'] ?? (getenv('CI_ENV') ?: 'development');
+	define('ENVIRONMENT', $ci_env);
 
 /*
  *---------------------------------------------------------------

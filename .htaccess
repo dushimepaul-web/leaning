@@ -1,11 +1,5 @@
 RewriteEngine on
 
-# Suppression des erreurs et warnings PHP pour compatibilité CI3/PHP8
-php_flag display_errors off
-php_flag log_errors on
-php_value error_reporting "E_ERROR | E_PARSE"
-
-# Vos règles de réécriture existantes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule .* index.php/$0 [PT,L]
+RewriteRule ^(.*)$ index.php/$1 [L]
