@@ -1,5 +1,10 @@
 <?php (defined('BASEPATH')) OR exit('No direct script access allowed');
 
+if (PHP_VERSION_ID < 80200 && !class_exists('AllowDynamicProperties', false)) {
+    #[Attribute(Attribute::TARGET_CLASS)]
+    class AllowDynamicProperties {}
+}
+
 /** load the CI class for Modular Extensions **/
 require dirname(__FILE__).'/Base.php';
 

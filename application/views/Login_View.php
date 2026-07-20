@@ -14,7 +14,8 @@
   <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300"></div>
   <div class="d-lg-flex bg-white" style="min-height:100vh;">
     <div class="w-50 d-lg-flex d-none overflow-hidden">
-      <img src="<?= base_url('assets/images/thumbs/login-img.png') ?>" alt="Login Image" class="w-100 h-100 object-fit-cover">
+      <?php $login_img = $this->Model->get_setting('login_img', 'assets/images/thumbs/login-img.png'); ?>
+      <img src="<?= base_url($login_img) ?>" alt="Login Image" class="w-100 h-100 object-fit-cover">
     </div>
     <div class="lg-w-50 px-24 py-32 d-flex justify-content-center align-items-center">
       <div class="max-w-540-px mx-auto w-100">

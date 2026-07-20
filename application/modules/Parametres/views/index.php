@@ -202,6 +202,25 @@
         </div>
       </div>
 
+      <!-- Image de connexion -->
+      <div class="card shadow-1 radius-12 mb-24">
+        <div class="card-header py-16 px-24 border-bottom bg-base">
+          <h6 class="text-lg fw-semibold mb-0 d-flex align-items-center gap-8">
+            <i class="ri-image-2-line text-primary-600"></i> Image de connexion
+          </h6>
+        </div>
+        <div class="card-body p-24 text-center">
+          <div class="mb-16 bg-neutral-50 rounded-8 p-20 d-flex align-items-center justify-content-center" style="min-height:130px;">
+            <img src="<?= base_url($this->Model->get_setting('login_img', 'assets/images/thumbs/login-img.png')) ?>" alt="Login Image" class="img-fluid" style="max-height:110px;object-fit:cover;" id="loginImg">
+          </div>
+          <small class="text-secondary-light d-block mb-12">JPG, PNG, GIF, WEBP — max 2MB</small>
+          <button type="button" class="btn btn-outline-primary-600 px-24 py-10 radius-8" onclick="document.getElementById('loginImgInput').click()">
+            <i class="ri-upload-line me-1"></i> Changer l'image
+          </button>
+          <input type="file" id="loginImgInput" class="d-none" accept="image/jpeg,image/png,image/gif,image/webp">
+        </div>
+      </div>
+
       <!-- Année scolaire -->
       <div class="card shadow-1 radius-12 mb-24">
         <div class="card-header py-16 px-24 border-bottom bg-base">
@@ -276,6 +295,7 @@ async function loadSettings() {
     if (s.email_sendmail_path) document.getElementById('email_sendmail_path').value = s.email_sendmail_path;
     if (s.logo_ecole) document.getElementById('logoImg').src = '<?= base_url() ?>' + s.logo_ecole;
     if (s.favicon_ecole) document.getElementById('faviconImg').src = '<?= base_url() ?>' + s.favicon_ecole;
+    if (s.login_img) document.getElementById('loginImg').src = '<?= base_url() ?>' + s.login_img;
   } catch (err) { console.error(err); }
 }
 
@@ -435,6 +455,19 @@ document.getElementById('faviconInput').addEventListener('change', async functio
     if (r.success) {
       document.getElementById('faviconImg').src = API.base_url + r.data.path;
       Toast.fire({ icon: 'success', title: 'Favicon mis à jour' });
+    } else Swal.fire({ icon: 'error', title: 'Erreur', text: r.message || 'Erreur upload' });
+  } catch (e) { Swal.fire({ icon: 'error', title: 'Erreur', text: 'Erreur de connexion' }); }
+});
+
+document.getElementById('loginImgInput').addEventListener('change', async function() {
+  if (!this.files || !this.files[0]) return;
+  const fd = new FormData(); fd.append('login_img', this.files[0]);
+  try {
+    const res = await fetch(API.base_url + 'api/parametres/upload_login_img', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const r = await res.json();
+    if (r.success) {
+      document.getElementById('loginImg').src = API.base_url + r.data.path;
+      Toast.fire({ icon: 'success', title: 'Image de connexion mise à jour' });
     } else Swal.fire({ icon: 'error', title: 'Erreur', text: r.message || 'Erreur upload' });
   } catch (e) { Swal.fire({ icon: 'error', title: 'Erreur', text: 'Erreur de connexion' }); }
 });

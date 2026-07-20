@@ -99,4 +99,31 @@ class Parametres extends MY_Controller {
             $this->json_error('Erreur lors de la sauvegarde du fichier');
         }
     }
+
+    public function api_upload_login_img() {
+        if (empty($_FILES['login_img'])) {
+            $this->json_error('Aucun fichier reçu'); return;
+        }
+        if ($_FILES['login_img']['error'] !== UPLOAD_ERR_OK) {
+            $errors = [0=>'OK',1=>'Taille dépassée',2=>'Taille HTML dépassée',3=>'Partiel',4=>'Aucun fichier',6=>'Dossier tmp manquant',7=>'Écriture impossible',8=>'Extension bloquée'];
+            $this->json_error('Erreur PHP: ' . ($errors[$_FILES['login_img']['error']] ?? 'Inconnue')); return;
+        }
+        $upload_dir = FCPATH . 'assets/uploads/logo/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        $ext = strtolower(pathinfo($_FILES['login_img']['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg','jpeg','png','gif','svg','webp'])) {
+            $this->json_error('Format non autorisé'); return;
+        }
+        $new_name = 'login_img_' . md5(uniqid()) . '.' . $ext;
+        $dest = $upload_dir . $new_name;
+        if (move_uploaded_file($_FILES['login_img']['tmp_name'], $dest)) {
+            $path = 'assets/uploads/logo/' . $new_name;
+            $this->Model->setValueStore('login_img', $path);
+            $this->json_success(['path' => $path], 'Image de connexion mise à jour');
+        } else {
+            $this->json_error('Erreur lors de la sauvegarde du fichier');
+        }
+    }
 }
