@@ -130,7 +130,9 @@ class MY_Controller extends MX_Controller
         $this->output
             ->set_content_type('application/json')
             ->set_status_header($status_code)
-            ->set_output(json_encode($data));
+            ->set_output(json_encode($data))
+            ->_display();
+        exit;
     }
 
     protected function json_success($data = null, $message = 'Succès')
