@@ -105,7 +105,7 @@ class MY_Controller extends MX_Controller
         $model_name = $class . '_model';
         $model_file = APPPATH . 'modules/' . $class . '/models/' . $model_name . '.php';
         if (file_exists($model_file)) {
-            $this->load->model($class . '/' . $model_name);
+            $this->load->model($model_name);
         }
     }
 

@@ -45,7 +45,9 @@ class Dashboard_model extends Model
         $this->db->where('e.deleted_at', null);
         $this->db->group_by('e.id_etudiant');
         $this->db->having('COALESCE(SUM(p.montant), 0) < COALESCE(SUM(f.montant), 0)');
-        return $this->db->get()->num_rows();
+        $q = $this->db->get();
+        if ($q === false) return 0;
+        return $q->num_rows();
     }
 
     public function get_stock_alerte()
