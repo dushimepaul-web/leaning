@@ -61,32 +61,10 @@
             <button type="submit" class="btn btn-primary-600 text-sm btn-sm px-12 py-16 w-100 radius-8">Se connecter</button>
           </div>
           <div class="text-center text-sm text-secondary-light">ou connectez-vous en tant que</div>
-          <div class="d-grid sm-grid-cols-3 grid-cols-2 gap-16">
-            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-success text-white py-10 px-8">
-              <span class="d-flex"><img src="<?= base_url('assets/images/icons/sheild-icon.png') ?>" alt="Icon"></span>
-              <span>Super Admin</span>
-            </a>
-            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-info-600 text-white py-10 px-8">
-              <span class="d-flex"><img src="<?= base_url('assets/images/icons/dashboard-icon.png') ?>" alt="Icon"></span>
-              <span>Admin</span>
-            </a>
-            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-warning-600 text-white py-10 px-8">
-              <span class="d-flex"><img src="<?= base_url('assets/images/icons/student-icon.png') ?>" alt="Icon"></span>
-              <span>Eleve</span>
-            </a>
-            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-purple-600 text-white py-10 px-8">
-              <span class="d-flex"><img src="<?= base_url('assets/images/icons/teacher-icon.png') ?>" alt="Icon"></span>
-              <span>Enseignant</span>
-            </a>
-            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-primary-600 text-white py-10 px-8">
-              <span class="d-flex"><img src="<?= base_url('assets/images/icons/guardian-icon.png') ?>" alt="Icon"></span>
-              <span>Parent</span>
-            </a>
-            <a href="<?= base_url('Admin') ?>" class="d-flex align-items-center gap-8 fw-semibold text-sm radius-6 justify-content-center flex-grow-1 bg-pink text-white py-10 px-8">
-              <span class="d-flex"><img src="<?= base_url('assets/images/icons/library-icon.png') ?>" alt="Icon"></span>
-              <span>Bibliothecaire</span>
-            </a>
-          </div>
+
+          
+
+
         </form>
         <div class="mt-32 text-center text-sm">
           Vous n'avez pas de compte ?
