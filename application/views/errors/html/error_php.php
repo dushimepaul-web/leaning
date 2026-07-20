@@ -14,6 +14,14 @@
     <h1 class="display-1 fw-bold text-danger">Erreur</h1>
     <h4 class="mb-3">Une erreur PHP s'est produite</h4>
     <p class="text-secondary-light mb-4">Veuillez contacter l'administrateur du site.</p>
+    <?php if (isset($message) && $message): ?>
+    <div class="alert alert-danger text-start mx-auto mt-3" style="max-width:600px;font-size:13px;">
+      <strong>Message :</strong> <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?><br>
+      <strong>Fichier :</strong> <?= htmlspecialchars($filepath ?? '', ENT_QUOTES, 'UTF-8') ?><br>
+      <strong>Ligne :</strong> <?= htmlspecialchars($line ?? '', ENT_QUOTES, 'UTF-8') ?><br>
+      <strong>Type :</strong> <?= htmlspecialchars($severity ?? '', ENT_QUOTES, 'UTF-8') ?>
+    </div>
+    <?php endif; ?>
     <a href="<?= base_url('Admin') ?>" class="btn btn-primary">
       <i class="ri-home-4-line me-1"></i> Retour à l'accueil
     </a>
