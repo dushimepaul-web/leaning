@@ -1,5 +1,4 @@
-
-
+<?php if (defined('FOOTER_INCLUDED')) return; define('FOOTER_INCLUDED', true); ?>
   <footer class="d-footer">
   <div class="">
     <p class="mb-0 text-center"> &copy; <span class="current-year"></span> Made with ❤️ by AbeLab</p>
