@@ -163,7 +163,7 @@ async function loadData() {
           <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
             <li><a href="${BASE_URL}Etudiants/details/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-user-3-line"></i> View</a></li>
             <li><a href="${BASE_URL}Etudiants/edit/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-edit-2-line"></i> Edit</a></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteRecord(${e.uuid})"><i class="ri-delete-bin-6-line"></i> Delete</button></li>
+            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteRecord('${e.uuid}')"><i class="ri-delete-bin-6-line"></i> Delete</button></li>
           </ul>
         </div>
       </td>

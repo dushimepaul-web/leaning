@@ -72,12 +72,12 @@
             <td><?= htmlspecialchars($p['type_frais'] ?? '-') ?></td>
             <td><?= htmlspecialchars(ucfirst($p['mode_paiement'] ?? '-')) ?></td>
             <td><?= htmlspecialchars($p['reference'] ?? '-') ?></td>
-            <td><?= number_format($p['montant'], 2) ?> FC</td>
+            <td><?= number_format($p['montant'], 2) ?> <?= $devise ?></td>
           </tr>
           <?php endforeach; ?>
           <tr class="total">
             <td colspan="3" style="text-align:right;">Total :</td>
-            <td><?= number_format($recu['montant_total'], 2) ?> FC</td>
+            <td><?= number_format($recu['montant_total'], 2) ?> <?= $devise ?></td>
           </tr>
         </tbody>
       </table>

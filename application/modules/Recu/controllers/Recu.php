@@ -109,6 +109,7 @@ class Recu extends MY_Controller {
         $data['recu'] = $recu;
         $data['paiements'] = $paiements;
         $data['ecole'] = $ecole;
+        $data['devise'] = $this->Model->get_setting('devise', 'FC');
         $this->load->view('print', $data);
     }
 }

@@ -96,6 +96,6 @@ class Stock_Mouvements extends MY_Controller {
         $this->json_success([
             'created' => $created,
             'total' => number_format($total, 2)
-        ], "$created produit(s) vendu(s) — Total: " . number_format($total, 2) . " FCFA");
+        ], "$created produit(s) vendu(s) — Total: " . number_format($total, 2) . " " . $this->Model->get_setting('devise', 'BIF'));
     }
 }

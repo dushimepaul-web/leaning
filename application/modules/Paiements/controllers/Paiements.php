@@ -66,6 +66,7 @@ class Paiements extends MY_Controller {
             'montant' => $data['montant'],
             'mode_paiement' => $data['mode_paiement'] ?? 'especes',
             'reference' => $data['reference'] ?? null,
+            'preuve_paiement' => $data['preuve_paiement'] ?? null,
             'date_paiement' => $data['date_paiement'] ?? date('Y-m-d'),
             'statut' => $data['statut'] ?? 'partiel',
             'notes' => $data['notes'] ?? null,
@@ -126,6 +127,23 @@ class Paiements extends MY_Controller {
         if ($this->Model->update('paiements', ['uuid' => $id], $data))
             $this->json_success(null, 'Paiement mis à jour');
         else $this->json_error('Erreur de mise à jour');
+    }
+
+    public function api_upload_preuve() {
+        $config['upload_path'] = FCPATH . 'assets/uploads/paiements/';
+        $config['allowed_types'] = 'jpg|jpeg|png|gif|webp|pdf';
+        $config['max_size'] = 5120;
+        $config['encrypt_name'] = true;
+        if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
+        $this->load->library('upload', $config);
+        if (!$this->upload->do_upload('preuve')) {
+            $this->json_error($this->upload->display_errors('', ''));
+            return;
+        }
+        $data = $this->upload->data();
+        $path = 'assets/uploads/paiements/' . $data['file_name'];
+        $is_image = in_array($data['file_type'], ['image/jpeg','image/png','image/gif','image/webp']);
+        $this->json_success(['path' => $path, 'is_image' => $is_image], 'Fichier uploadé');
     }
 
     public function api_delete($id) {

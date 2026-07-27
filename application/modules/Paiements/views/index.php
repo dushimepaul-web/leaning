@@ -167,8 +167,14 @@
       </select>
     </div>
     <div class="mb-3">
-      <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Référence</label>
+      <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Référence <small class="text-secondary-light fw-normal">(optionnel)</small></label>
       <input type="text" class="form-control" id="payReference" placeholder="N° de transaction">
+    </div>
+    <div class="mb-3">
+      <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Preuve de paiement <small class="text-secondary-light fw-normal">(optionnel)</small></label>
+      <input type="file" class="form-control" id="payPreuve" accept="image/*,.pdf" onchange="uploadPreuve(this)">
+      <input type="hidden" id="payPreuvePath">
+      <div id="payPreuvePreview" class="mt-8"></div>
     </div>
     <div class="mb-3">
       <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Statut</label>
@@ -326,16 +332,26 @@ async function loadData() {
 function voirPaiement(uuid) {
   var p = allPaiements.find(function(x) { return x.uuid === uuid; });
   if (!p) return;
+  var preuveHtml = '';
+  if (p.preuve_paiement) {
+    var ext = p.preuve_paiement.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1) {
+      preuveHtml = '<p><strong>Preuve:</strong></p><img src="' + BASE_URL + p.preuve_paiement + '" class="radius-8 w-100" style="max-width:200px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')">';
+    } else {
+      preuveHtml = '<p><strong>Preuve:</strong> <a href="' + BASE_URL + p.preuve_paiement + '" target="_blank" class="text-primary-600"><i class="ri-file-pdf-line"></i> Voir le document</a></p>';
+    }
+  }
   Swal.fire({
     title: 'Détail du paiement',
     html: '<div class="text-start">' +
       '<p><strong>Étudiant:</strong> ' + (p.nom||'') + ' ' + (p.prenom||'') + ' (' + (p.matricule||'') + ')</p>' +
       '<p><strong>Type:</strong> ' + (p.type_frais||'-') + '</p>' +
-      '<p><strong>Montant:</strong> ' + parseFloat(p.montant||0).toLocaleString() + ' FCFA</p>' +
+      '<p><strong>Montant:</strong> ' + parseFloat(p.montant||0).toLocaleString() + ' ' + DEVISE + '</p>' +
       '<p><strong>Date:</strong> ' + (p.date_paiement||'-') + '</p>' +
       '<p><strong>Mode:</strong> ' + (p.mode_paiement||'-') + '</p>' +
       '<p><strong>Référence:</strong> ' + (p.reference||'-') + '</p>' +
       '<p><strong>Statut:</strong> ' + (p.statut||'-') + '</p>' +
+      preuveHtml +
       '</div>',
     icon: 'info', confirmButtonText: 'Fermer'
   });
@@ -360,7 +376,7 @@ async function voirRecu(uuid) {
     currentRecuUuid = found.uuid;
     document.getElementById('recuContent').innerHTML =
       '<div class="text-center mb-3"><h5>REÇU N° ' + (found.numero_recu||'-') + '</h5></div>' +
-      '<div class="row"><div class="col-6"><p><strong>Date:</strong> ' + (found.date_edition||'-') + '</p></div><div class="col-6"><p><strong>Montant:</strong> ' + parseFloat(found.montant_total||0).toLocaleString() + ' FCFA</p></div></div>';
+      '<div class="row"><div class="col-6"><p><strong>Date:</strong> ' + (found.date_edition||'-') + '</p></div><div class="col-6"><p><strong>Montant:</strong> ' + parseFloat(found.montant_total||0).toLocaleString() + ' ' + DEVISE + '</p></div></div>';
     new bootstrap.Modal(document.getElementById('recuModal')).show();
   } catch(e) { Swal.fire({icon:'error',title:'Erreur',text:e.message}); }
 }
@@ -406,6 +422,25 @@ function closeSidebar() {
   document.getElementById('formSidebar').classList.add('translate-x-full');
 }
 
+async function uploadPreuve(input) {
+  if (!input.files || !input.files[0]) return;
+  var fd = new FormData();
+  fd.append('preuve', input.files[0]);
+  try {
+    var res = await fetch(API.base_url + 'api/paiements/upload_preuve', { method: 'POST', body: fd });
+    var r = await res.json();
+    if (r.success) {
+      document.getElementById('payPreuvePath').value = r.data.path;
+      var preview = document.getElementById('payPreuvePreview');
+      if (r.data.is_image) {
+        preview.innerHTML = '<img src="' + BASE_URL + r.data.path + '" class="radius-8" style="max-width:150px;max-height:100px;object-fit:cover;">';
+      } else {
+        preview.innerHTML = '<a href="' + BASE_URL + r.data.path + '" target="_blank" class="text-primary-600"><i class="ri-file-pdf-line text-xl"></i> Voir le PDF</a>';
+      }
+    } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); }
+  } catch(e) { Swal.fire({ icon: 'error', title: 'Erreur', text: 'Erreur de connexion' }); }
+}
+
 document.getElementById('paiementForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   var data = {
@@ -414,6 +449,7 @@ document.getElementById('paiementForm').addEventListener('submit', async functio
     montant: document.getElementById('payMontant').value,
     mode_paiement: document.getElementById('payMode').value,
     reference: document.getElementById('payReference').value,
+    preuve_paiement: document.getElementById('payPreuvePath').value || null,
     statut: document.getElementById('payStatut').value,
     notes: document.getElementById('payNotes').value,
     id_classe: document.getElementById('payClasseId').value || null,

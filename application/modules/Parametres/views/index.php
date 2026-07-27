@@ -86,7 +86,7 @@
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label class="form-label fw-semibold text-primary-light text-sm mb-8">Devise</label>
-                    <input type="text" class="form-control radius-8" id="devise" placeholder="Ex: FC, USD, EUR">
+                    <input type="text" class="form-control radius-8" id="devise" placeholder="Ex: FC, USD, EUR" oninput="this.value=this.value.replace(/[^a-zA-Z]/g,'')" maxlength="10">
                   </div>
                   <div class="col-md-4">
                     <label class="form-label fw-semibold text-primary-light text-sm mb-8">TVA (%)</label>

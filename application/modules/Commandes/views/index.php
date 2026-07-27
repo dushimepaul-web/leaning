@@ -303,7 +303,7 @@ function renderProduitList(filter) {
         <span class="d-flex align-items-center justify-content-center bg-success-100 text-success-600 radius-4" style="width:36px;height:36px;flex-shrink:0;"><i class="ri-stack-line"></i></span>
         <div class="text-start">
           <span class="fw-medium text-sm">${p.libelle}</span>
-          <small class="d-block text-secondary-light text-xs">${p.code} - ${parseFloat(p.prix_unitaire).toLocaleString()} FCFA</small>
+          <small class="d-block text-secondary-light text-xs">${p.code} - ${parseFloat(p.prix_unitaire).toLocaleString()} ${DEVISE}</small>
         </div>
       </button>`
     ).join('');
@@ -462,7 +462,7 @@ async function viewDetail(id) {
     <div class="col-md-6"><strong>Étudiant:</strong> ${c.nom || ''} ${c.prenom || ''} (${c.matricule || ''})</div>
     <div class="col-md-6"><strong>Date:</strong> ${c.date_commande || ''}</div>
     <div class="col-md-6"><strong>Statut:</strong> ${c.statut || ''}</div>
-    <div class="col-md-6"><strong>Total:</strong> ${parseFloat(c.total).toLocaleString()} FCFA</div>
+    <div class="col-md-6"><strong>Total:</strong> ${parseFloat(c.total).toLocaleString()} ${DEVISE}</div>
   </div>
   <table class="table table-sm bordered-table"><thead><tr><th>Produit</th><th>Prix unit.</th><th>Qté</th><th>Sous-total</th></tr></thead><tbody>`;
   (c.details || []).forEach(d => {
@@ -497,7 +497,7 @@ async function loadData() {
       <td><span class="fw-semibold">${c.nom || ''} ${c.prenom || ''}</span></td>
       <td>${c.matricule || '-'}</td>
       <td>${c.date_commande || '-'}</td>
-      <td>${parseFloat(c.total).toLocaleString()} FCFA</td>
+      <td>${parseFloat(c.total).toLocaleString()} ${DEVISE}</td>
       <td><span class="${statutBadges[c.statut] || ''} px-24 py-4 radius-4 fw-medium text-sm">${statutLabels[c.statut] || c.statut}</span></td>
       <td>
         <div class="btn-group">

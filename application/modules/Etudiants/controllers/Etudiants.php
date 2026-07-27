@@ -66,7 +66,7 @@ class Etudiants extends MY_Controller {
         $etudiants = $q_e !== false ? $q_e->result_array() : array();
 
         foreach ($etudiants as &$et) {
-            $et['nom_complet'] = trim(($et['nom'] ?? '') . ' ' . ($et['postnom'] ?? '') . ' ' . ($et['prenom'] ?? ''));
+            $et['nom_complet'] = $et['nom'] ?? '';
         }
         $this->json_success($etudiants);
     }
@@ -82,8 +82,8 @@ class Etudiants extends MY_Controller {
 
     public function api_create() {
         $data = $this->get_json_input();
-        if (empty($data['nom']) || empty($data['prenom'])) {
-            $this->json_error('Nom et prénom obligatoires');
+        if (empty($data['nom'])) {
+            $this->json_error('Le nom complet est obligatoire');
             return;
         }
         $data['matricule'] = $data['matricule'] ?? $this->_generate_matricule();
@@ -99,12 +99,7 @@ class Etudiants extends MY_Controller {
         $id_classe = $data['id_classe'] ?? null;
         $id_section = $data['id_section'] ?? null;
         $id_annee = $data['id_annee'] ?? $this->id_annee_active;
-        $parent_nom = $data['parent_nom'] ?? null;
-        $parent_telephone = $data['parent_telephone'] ?? null;
-        $parent_profession = $data['parent_profession'] ?? null;
-        $parent_adresse = $data['parent_adresse'] ?? null;
-
-        $cols_etudiant = ['nom','postnom','prenom','date_naissance','sexe','telephone','email','adresse','adresse_permanente','photo','matricule','lieu_naissance','parent_nom','parent_telephone','parent_profession','parent_adresse'];
+        $cols_etudiant = ['nom','date_naissance','sexe','telephone','email','adresse','adresse_permanente','photo','matricule','lieu_naissance','pere_nom','pere_telephone','pere_profession','pere_adresse','mere_nom','mere_telephone','mere_profession','mere_adresse'];
         $clean = [];
         foreach ($cols_etudiant as $col) {
             if (isset($data[$col]) && $data[$col] !== '') {

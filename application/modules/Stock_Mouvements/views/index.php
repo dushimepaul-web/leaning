@@ -257,7 +257,7 @@ setupAutocomplete('produitSearch', 'id_produit', 'produitList', produitsList, {
   html: function(p) {
     return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + p.id_produit + '" data-label="' + p.libelle + '" data-prix="' + (p.prix_unitaire || 0) + '">' +
       '<span class="fw-medium text-sm">' + p.libelle + '</span>' +
-      '<small class="d-block text-secondary-light text-xs">Code: ' + (p.code || '-') + ' | Stock: ' + (p.stock_actuel || 0) + ' | Prix: ' + parseFloat(p.prix_unitaire || 0).toLocaleString() + ' FCFA</small>' +
+      '<small class="d-block text-secondary-light text-xs">Code: ' + (p.code || '-') + ' | Stock: ' + (p.stock_actuel || 0) + ' | Prix: ' + parseFloat(p.prix_unitaire || 0).toLocaleString() + ' ' + DEVISE + '</small>' +
     '</button>';
   },
   onSelect: function(data) {
@@ -352,7 +352,7 @@ setupAutocomplete('venteEtudiantSearch', 'venteEtudiant', 'venteEtudiantList', e
 setupAutocomplete('venteProduitSearch', 'venteProduit', 'venteProduitList', produitsList, {
   filter: function(p) { return true; },
   match: function(p, q) { return (p.libelle + ' ' + (p.code || '')).toLowerCase().includes(q); },
-  html: function(p) { return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + p.id_produit + '" data-label="' + p.libelle + '" data-prix="' + (p.prix_unitaire || 0) + '"><span class="fw-medium text-sm">' + p.libelle + '</span><small class="d-block text-secondary-light text-xs">Stock: ' + (p.stock_actuel || 0) + ' | Prix: ' + parseFloat(p.prix_unitaire || 0).toLocaleString() + ' FCFA</small></button>'; },
+  html: function(p) { return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + p.id_produit + '" data-label="' + p.libelle + '" data-prix="' + (p.prix_unitaire || 0) + '"><span class="fw-medium text-sm">' + p.libelle + '</span><small class="d-block text-secondary-light text-xs">Stock: ' + (p.stock_actuel || 0) + ' | Prix: ' + parseFloat(p.prix_unitaire || 0).toLocaleString() + ' ' + DEVISE + '</small></button>'; },
   onSelect: function(data) { document.getElementById('ventePrix').value = data.prix; }
 });
 

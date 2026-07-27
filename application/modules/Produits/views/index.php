@@ -109,7 +109,7 @@
         </select>
       </div>
       <div class="col-md-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (FCFA)</label>
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (<?= get_setting('devise', 'BIF') ?>)</label>
         <input type="number" class="form-control" id="prix_unitaire" step="0.01" placeholder="0.00">
       </div>
       <div class="col-md-6">
@@ -196,7 +196,7 @@ async function loadData() {
       <td><span class="fw-semibold">${p.code || '-'}</span></td>
       <td>${p.libelle}</td>
       <td>${p.categorie || '-'}</td>
-      <td><strong>${parseFloat(p.prix_unitaire || 0).toLocaleString()} FCFA</strong></td>
+      <td><strong>${parseFloat(p.prix_unitaire || 0).toLocaleString()} ${DEVISE}</strong></td>
       <td><span class="${stockRatio} px-24 py-4 radius-4 fw-medium text-sm">${p.stock_actuel || 0}</span></td>
       <td>${p.stock_mini || 0}</td>
       <td>

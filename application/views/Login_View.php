@@ -19,10 +19,12 @@
     </div>
     <div class="lg-w-50 px-24 py-32 d-flex justify-content-center align-items-center">
       <div class="max-w-540-px mx-auto w-100">
+        <div class="text-center">
         <a href="<?= base_url() ?>">
           <?php $logo = $this->Model->get_setting('logo_ecole', 'assets/images/logo.png'); ?>
-          <img src="<?= base_url($logo) ?>" alt="Logo">
+          <img src="<?= base_url($logo) ?>" alt="Logo" style="max-width:320px;max-height:140px;height:auto;object-fit:contain;">
         </a>
+        </div>
         <div class="mt-32 mb-32">
           <h1 class="h6 fw-bold text-primary-light mb-8">Bienvenue !</h1>
           <p class="text-sm text-secondary-light mb-0">Connectez-vous a votre compte pour continuer</p>

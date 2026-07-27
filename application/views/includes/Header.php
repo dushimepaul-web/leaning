@@ -194,14 +194,14 @@
     <iconify-icon icon="radix-icons:cross-2"></iconify-icon>
   </button>
   <div class="">
-    <div class="sidebar-logo d-flex align-items-center justify-content-between">
-      <a href="<?= base_url('Dashboard') ?>" class="">
+    <div class="sidebar-logo d-flex align-items-center justify-content-center position-relative">
+      <a href="<?= base_url('Dashboard') ?>" class="d-block mx-auto">
         <?php $l = $this->Model->get_setting('logo_ecole', 'assets/images/logo.png'); ?>
-        <img src="<?= base_url($l) ?>" alt="site logo" class="light-logo">
-        <img src="<?= base_url($l) ?>" alt="site logo" class="dark-logo">
+        <img src="<?= base_url($l) ?>" alt="site logo" class="light-logo" style="max-height:70px;width:auto;">
+        <img src="<?= base_url($l) ?>" alt="site logo" class="dark-logo" style="max-height:70px;width:auto;">
         <img src="<?= base_url($l) ?>" alt="site logo" class="logo-icon">
       </a>
-      <button type="button" class="text-xxl d-xl-flex d-none line-height-1 sidebar-toggle text-neutral-500"
+      <button type="button" class="text-xxl d-xl-flex d-none line-height-1 sidebar-toggle text-neutral-500 position-absolute end-0"
         aria-label="Collapse Sidebar">
         <i class="ri-contract-left-line"></i>
       </button>

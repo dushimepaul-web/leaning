@@ -20,7 +20,7 @@
             <figure class="mb-24 w-120-px h-120-px mx-auto rounded-circle overflow-hidden">
               <img src="<?= $etudiant['photo'] ? base_url($etudiant['photo']) : base_url('assets/images/thumbs/student-details-img.png') ?>" alt="Photo" class="w-100 h-100 object-fit-cover">
             </figure>
-            <h2 class="h6 text-primary-light mb-16 fw-semibold"><?= htmlspecialchars(trim($etudiant['nom'] . ' ' . ($etudiant['postnom'] ?? '') . ' ' . ($etudiant['prenom'] ?? ''))) ?></h2>
+            <h2 class="h6 text-primary-light mb-16 fw-semibold"><?= htmlspecialchars($etudiant['nom'] ?? '') ?></h2>
             <p class="mb-0">Matricule : <span class="text-primary-600 fw-semibold"><?= $etudiant['matricule'] ?? '-' ?></span></p>
             <p class="mb-0">N° ordre : <span class="text-primary-light fw-semibold"><?= $etudiant['numero_ordre'] ?? '-' ?></span></p>
             <p class="mt-8 text-sm text-secondary-light">Adresse : <?= nl2br(htmlspecialchars($etudiant['adresse'] ?? '-')) ?></p>
@@ -54,27 +54,58 @@
 
     <div class="row gy-4 mt-16">
       <div class="col-12">
-        <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
-          <div class="card-header border-bottom bg-base py-16 px-24">
-            <h6 class="text-lg fw-semibold mb-0">Informations Parent / Tuteur</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
+              <div class="card-header border-bottom bg-base py-16 px-24">
+                <h6 class="text-lg fw-semibold mb-0">Informations Père</h6>
+              </div>
+              <div class="card-body p-20">
+                <div class="row gy-4">
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Nom complet</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['pere_nom'] ?? '-') ?></span>
+                  </div>
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Téléphone</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['pere_telephone'] ?? '-') ?></span>
+                  </div>
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Profession</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['pere_profession'] ?? '-') ?></span>
+                  </div>
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Adresse</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['pere_adresse'] ?? '-') ?></span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="card-body p-20">
-            <div class="row gy-4">
-              <div class="col-lg-3 col-sm-6">
-                <h6 class="text-md mb-2 fw-medium">Nom complet</h6>
-                <span class="text-sm"><?= htmlspecialchars($etudiant['parent_nom'] ?? '-') ?></span>
+          <div class="col-md-6">
+            <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
+              <div class="card-header border-bottom bg-base py-16 px-24">
+                <h6 class="text-lg fw-semibold mb-0">Informations Mère</h6>
               </div>
-              <div class="col-lg-3 col-sm-6">
-                <h6 class="text-md mb-2 fw-medium">Téléphone</h6>
-                <span class="text-sm"><?= htmlspecialchars($etudiant['parent_telephone'] ?? '-') ?></span>
-              </div>
-              <div class="col-lg-3 col-sm-6">
-                <h6 class="text-md mb-2 fw-medium">Occupation</h6>
-                <span class="text-sm"><?= htmlspecialchars($etudiant['parent_profession'] ?? '-') ?></span>
-              </div>
-              <div class="col-lg-3 col-sm-6">
-                <h6 class="text-md mb-2 fw-medium">Adresse</h6>
-                <span class="text-sm"><?= htmlspecialchars($etudiant['parent_adresse'] ?? '-') ?></span>
+              <div class="card-body p-20">
+                <div class="row gy-4">
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Nom complet</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['mere_nom'] ?? '-') ?></span>
+                  </div>
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Téléphone</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['mere_telephone'] ?? '-') ?></span>
+                  </div>
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Profession</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['mere_profession'] ?? '-') ?></span>
+                  </div>
+                  <div class="col-lg-6 col-sm-6">
+                    <h6 class="text-md mb-2 fw-medium">Adresse</h6>
+                    <span class="text-sm"><?= htmlspecialchars($etudiant['mere_adresse'] ?? '-') ?></span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

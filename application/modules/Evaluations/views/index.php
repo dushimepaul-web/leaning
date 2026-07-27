@@ -1,3 +1,6 @@
+<?php include VIEWPATH.'includes/Header.php'; ?>
+<?php include VIEWPATH.'includes/Sidebar.php'; ?>
+<div class="dashboard-main-body">
 <div class="page-header">
     <h1 class="page-title">Évaluations</h1>
     <ol class="breadcrumb">
@@ -154,3 +157,5 @@ async function delEval(id) {
 
 loadData();
 </script>
+</div>
+<?php include VIEWPATH.'includes/Footer.php'; ?>

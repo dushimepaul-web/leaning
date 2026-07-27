@@ -79,15 +79,7 @@
               </div>
               <div class="col-sm-12">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Nom complet <span class="text-danger-600">*</span></label>
-                <input type="text" class="form-control" id="nom" value="<?= $etudiant['nom'] ?? '' ?>" placeholder="Nom">
-              </div>
-              <div class="col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Post-nom</label>
-                <input type="text" class="form-control" id="postnom" value="<?= $etudiant['postnom'] ?? '' ?>" placeholder="Post-nom">
-              </div>
-              <div class="col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prénom <span class="text-danger-600">*</span></label>
-                <input type="text" class="form-control" id="prenom" value="<?= $etudiant['prenom'] ?? '' ?>" placeholder="Prénom">
+                <input type="text" class="form-control" id="nom" value="<?= $etudiant['nom'] ?? '' ?>" placeholder="Nom et prénom(s)">
               </div>
               <div class="col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Genre</label>
@@ -113,28 +105,55 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-12">
+      <div class="col-lg-6">
         <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
           <div class="card-header border-bottom bg-base py-16 px-24">
-            <h6 class="text-lg fw-semibold mb-0">Informations Parent / Tuteur</h6>
+            <h6 class="text-lg fw-semibold mb-0">Informations Père</h6>
           </div>
           <div class="card-body p-20">
             <div class="row gy-3">
-              <div class="col-lg-3 col-sm-6">
+              <div class="col-lg-6 col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Nom complet</label>
-                <input type="text" class="form-control" id="parent_nom" value="<?= $etudiant['parent_nom'] ?? '' ?>" placeholder="Nom complet du parent/tuteur">
+                <input type="text" class="form-control" id="pere_nom" value="<?= $etudiant['pere_nom'] ?? '' ?>" placeholder="Nom complet du père">
               </div>
-              <div class="col-lg-3 col-sm-6">
+              <div class="col-lg-6 col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Téléphone</label>
-                <input type="tel" class="form-control" id="parent_telephone" value="<?= $etudiant['parent_telephone'] ?? '' ?>" placeholder="Téléphone">
+                <input type="tel" class="form-control" id="pere_telephone" value="<?= $etudiant['pere_telephone'] ?? '' ?>" placeholder="Téléphone du père">
               </div>
-              <div class="col-lg-3 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Occupation</label>
-                <input type="text" class="form-control" id="parent_profession" value="<?= $etudiant['parent_profession'] ?? '' ?>" placeholder="Profession / Occupation">
+              <div class="col-lg-6 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Profession</label>
+                <input type="text" class="form-control" id="pere_profession" value="<?= $etudiant['pere_profession'] ?? '' ?>" placeholder="Profession du père">
               </div>
-              <div class="col-lg-3 col-sm-6">
+              <div class="col-lg-6 col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Adresse</label>
-                <input type="text" class="form-control" id="parent_adresse" value="<?= $etudiant['parent_adresse'] ?? '' ?>" placeholder="Adresse du parent">
+                <input type="text" class="form-control" id="pere_adresse" value="<?= $etudiant['pere_adresse'] ?? '' ?>" placeholder="Adresse du père">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
+          <div class="card-header border-bottom bg-base py-16 px-24">
+            <h6 class="text-lg fw-semibold mb-0">Informations Mère</h6>
+          </div>
+          <div class="card-body p-20">
+            <div class="row gy-3">
+              <div class="col-lg-6 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Nom complet</label>
+                <input type="text" class="form-control" id="mere_nom" value="<?= $etudiant['mere_nom'] ?? '' ?>" placeholder="Nom complet de la mère">
+              </div>
+              <div class="col-lg-6 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Téléphone</label>
+                <input type="tel" class="form-control" id="mere_telephone" value="<?= $etudiant['mere_telephone'] ?? '' ?>" placeholder="Téléphone de la mère">
+              </div>
+              <div class="col-lg-6 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Profession</label>
+                <input type="text" class="form-control" id="mere_profession" value="<?= $etudiant['mere_profession'] ?? '' ?>" placeholder="Profession de la mère">
+              </div>
+              <div class="col-lg-6 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Adresse</label>
+                <input type="text" class="form-control" id="mere_adresse" value="<?= $etudiant['mere_adresse'] ?? '' ?>" placeholder="Adresse de la mère">
               </div>
             </div>
           </div>
@@ -213,8 +232,6 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   const id = document.getElementById('id_etudiant').value;
   const data = {
     nom: document.getElementById('nom').value,
-    postnom: document.getElementById('postnom').value,
-    prenom: document.getElementById('prenom').value,
     date_naissance: document.getElementById('date_naissance').value,
     sexe: document.getElementById('sexe').value,
     telephone: document.getElementById('telephone').value,
@@ -224,13 +241,17 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     id_classe: document.getElementById('id_classe').value || null,
     id_section: document.getElementById('id_section').value || null,
     id_annee: document.getElementById('id_annee').value || null,
-    parent_nom: document.getElementById('parent_nom').value,
-    parent_telephone: document.getElementById('parent_telephone').value,
-    parent_profession: document.getElementById('parent_profession').value,
-    parent_adresse: document.getElementById('parent_adresse').value
+    pere_nom: document.getElementById('pere_nom').value,
+    pere_telephone: document.getElementById('pere_telephone').value,
+    pere_profession: document.getElementById('pere_profession').value,
+    pere_adresse: document.getElementById('pere_adresse').value,
+    mere_nom: document.getElementById('mere_nom').value,
+    mere_telephone: document.getElementById('mere_telephone').value,
+    mere_profession: document.getElementById('mere_profession').value,
+    mere_adresse: document.getElementById('mere_adresse').value
   };
-  if (!data.nom || !data.prenom) {
-    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Le nom et le prénom sont obligatoires' });
+  if (!data.nom) {
+    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Le nom complet est obligatoire' });
     return;
   }
   let res;

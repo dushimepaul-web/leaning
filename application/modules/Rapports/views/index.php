@@ -171,7 +171,7 @@ async function loadMinervalesCharts() {
       rapportsData.paiementsClasse = r1.data;
       createBarChart('#chartPaiementsClasse',
         r1.data.map(function(d) { return d.classe; }),
-        [{ name: 'Nb paiements', data: r1.data.map(function(d) { return parseInt(d.total); }) }, { name: 'Montant (FCFA)', data: r1.data.map(function(d) { return parseFloat(d.montant_total); }) }],
+        [{ name: 'Nb paiements', data: r1.data.map(function(d) { return parseInt(d.total); }) }, { name: 'Montant (' + DEVISE + ')', data: r1.data.map(function(d) { return parseFloat(d.montant_total); }) }],
         'Paiements par classe'
       );
     }
@@ -180,7 +180,7 @@ async function loadMinervalesCharts() {
       rapportsData.paiementsSection = r2.data;
       createBarChart('#chartPaiementsSection',
         r2.data.map(function(d) { return d.section; }),
-        [{ name: 'Nb paiements', data: r2.data.map(function(d) { return parseInt(d.total); }) }, { name: 'Montant (FCFA)', data: r2.data.map(function(d) { return parseFloat(d.montant_total); }) }],
+        [{ name: 'Nb paiements', data: r2.data.map(function(d) { return parseInt(d.total); }) }, { name: 'Montant (' + DEVISE + ')', data: r2.data.map(function(d) { return parseFloat(d.montant_total); }) }],
         'Paiements par section'
       );
     }

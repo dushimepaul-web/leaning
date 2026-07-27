@@ -187,6 +187,7 @@ $route['api/evenements/(:any)/delete'] = 'Evenements/Evenements/api_delete/$1';
 $route['api/paiements_data'] = 'Paiements/Paiements/api_list';
 $route['api/paiements_data/create'] = 'Paiements/Paiements/api_create';
 $route['api/paiements_data/(:any)/update'] = 'Paiements/Paiements/api_update/$1';
+$route['api/paiements_data/upload_preuve'] = 'Paiements/Paiements/api_upload_preuve';
 $route['api/paiements_data/(:any)/delete'] = 'Paiements/Paiements/api_delete/$1';
 $route['api/paiements_data/(:any)'] = 'Paiements/Paiements/api_get/$1';
 
