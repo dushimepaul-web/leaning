@@ -110,6 +110,8 @@
     </div>
 </div>
 
+</div>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 BASE_URL = '<?= base_url() ?>';
 
@@ -124,8 +126,8 @@ async function loadData() {
             <td>${e.matiere || '-'}</td>
             <td>${e.classe || '-'}</td>
             <td>${e.periode || '-'}</td>
-            <td>${e.date_evaluation || '-'}</td>
-            <td>${e.note_max || 20}</td>
+            <td>${e.date_eval || '-'}</td>
+            <td>${e.sur || 20}</td>
             <td>${e.coefficient || 1}</td>
             <td><button class="btn btn-sm btn-outline-danger" onclick="delEval('${e.uuid}')"><i class="ri-delete-bin-line"></i></button></td>
         </tr>`;
@@ -155,7 +157,12 @@ async function delEval(id) {
     }
 }
 
-loadData();
+(function() {
+  var wait = setInterval(function() {
+    if (typeof jQuery !== 'undefined' && typeof API !== 'undefined' && typeof bootstrap !== 'undefined') {
+      clearInterval(wait);
+      loadData();
+    }
+  }, 50);
+})();
 </script>
-</div>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
