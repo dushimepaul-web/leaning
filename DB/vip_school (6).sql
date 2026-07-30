@@ -1190,27 +1190,22 @@ CREATE TABLE IF NOT EXISTS `produits` (
   `id_produit` int NOT NULL AUTO_INCREMENT,
   `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `id_categorie` int NOT NULL,
-  `code` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `libelle` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `taille` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `prix_achat` decimal(12,2) NOT NULL DEFAULT '0.00',
   `editeur` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `annee_edition` year DEFAULT NULL,
-  `id_matiere` int DEFAULT NULL,
-  `id_classe` int DEFAULT NULL,
   `prix_unitaire` decimal(12,2) NOT NULL DEFAULT '0.00',
   `stock_mini` int NOT NULL DEFAULT '0',
   `stock_actuel` int NOT NULL DEFAULT '0',
-  `unite` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pi??ce',
+  `unite` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pièce',
   `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modifie_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id_produit`),
   UNIQUE KEY `uuid` (`uuid`),
-  KEY `idx_produits_categorie` (`id_categorie`),
-  KEY `idx_matiere` (`id_matiere`),
-  KEY `idx_classe` (`id_classe`)
+  KEY `idx_produits_categorie` (`id_categorie`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
