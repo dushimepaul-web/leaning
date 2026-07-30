@@ -9,7 +9,7 @@ class Evaluations extends MY_Controller {
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
         $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null]);
         $data['enseignants'] = $this->Model->read('enseignants', ['deleted_at' => null]);
-        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null, 'id_annee' => $this->id_annee_active]);
+        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null]);
         $this->load->view('evaluations', $data);
     }
 

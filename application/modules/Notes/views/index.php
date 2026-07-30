@@ -3,72 +3,67 @@
 <style>
 :root {
   --clr-excellent: #059669; --clr-bon: #2563eb; --clr-moyen: #d97706; --clr-faible: #dc2626;
-  --clr-absent: #6b7280; --clr-empty: #9ca3af;
+  --clr-absent: #6b7280;
   --bg-excellent: #ecfdf5; --bg-bon: #eff6ff; --bg-moyen: #fffbeb; --bg-faible: #fef2f2;
   --bg-absent: #f9fafb;
-  --cell-w: 82px; --cell-h: 38px; --radius: 8px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.04); --shadow-md: 0 4px 12px rgba(0,0,0,.06);
-  --shadow-focus: 0 0 0 3px rgba(99,102,241,.15);
+  --cell-w: 82px; --cell-h: 34px;
+  --excel-border: #d4d4d4; --excel-header: #e8e8e8; --excel-sticky: #dcdcdc;
+  --excel-grid: #e0e0e0; --excel-focus: #217346;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
 }
 *{box-sizing:border-box}
-.notes-app{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-.notes-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:12px 16px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm)}
-.notes-toolbar .btn-group{display:flex;gap:8px}
-.notes-toolbar button{height:36px;padding:0 14px;font-size:13px;font-weight:500;border-radius:var(--radius);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;border:1px solid #e5e7eb;background:#fff;color:#374151}
-.notes-toolbar button:hover{background:#f9fafb;border-color:#d1d5db}
-.notes-toolbar button.primary{background:#6366f1;color:#fff;border-color:#6366f1}
-.notes-toolbar button.primary:hover{background:#4f46e5}
-.notes-toolbar button.success{background:#059669;color:#fff;border-color:#059669}
-.notes-toolbar button.success:hover{background:#047857}
-.notes-grid-container{overflow-x:auto;max-height:62vh;border:1px solid #e5e7eb;border-radius:var(--radius);background:#fff;box-shadow:var(--shadow-md)}
-.notes-table{border-collapse:collapse;width:100%;min-width:900px;table-layout:auto}
+.notes-app{font-family:'Segoe UI','Calibri','Inter',sans-serif;font-size:13px}
+.notes-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#f8f9fa;border:1px solid #ddd;border-radius:4px}
+.notes-toolbar .btn-group{display:flex;gap:4px}
+.notes-toolbar button{height:30px;padding:0 10px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid #c0c0c0;background:linear-gradient(to bottom,#fff,#f0f0f0);color:#333;border-radius:3px}
+.notes-toolbar button:hover{background:linear-gradient(to bottom,#f0f0f0,#e0e0e0)}
+.notes-toolbar button.primary{background:#217346;color:#fff;border-color:#1a5c38}
+.notes-toolbar button.primary:hover{background:#1a5c38}
+.notes-grid-container{overflow-x:auto;max-height:65vh;border:1px solid #c0c0c0;background:#fff}
+.notes-table{border-collapse:collapse;width:100%;min-width:900px;table-layout:auto;font-size:12px}
 .notes-table thead{position:sticky;top:0;z-index:5}
-.notes-table thead th{background:#217346;color:#fff;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:10px 6px;border-right:1px solid #1a5c38;white-space:nowrap;text-align:center}
-.notes-table thead th:last-child{border-right:none}
-.notes-table thead th.sticky-left{position:sticky;z-index:6;background:#217346}
-.notes-table thead th.col-no{left:0;width:36px;min-width:36px}
-.notes-table thead th.col-matricule{left:36px;width:80px;min-width:80px}
-.notes-table thead th.col-nom{left:116px;min-width:150px}
-.notes-table thead th.col-eval{min-width:var(--cell-w)}
-.notes-table thead th .eval-sur{display:block;font-size:10px;font-weight:400;color:#b7dfc5;margin-top:2px}
-.notes-table tbody td{padding:4px 4px;border:1px solid #f1f5f9;vertical-align:middle;height:42px}
-.notes-table tbody td.sticky-left{position:sticky;z-index:3}
-.notes-table tbody td.col-no{left:0;background:#f8fafc;text-align:center;font-size:12px;color:#94a3b8;font-weight:500}
-.notes-table tbody td.col-matricule{left:36px;background:#f8fafc;font-size:12px;color:#6366f1;font-weight:500;text-align:center}
-.notes-table tbody td.col-nom{left:116px;background:#f8fafc;font-size:13px;font-weight:600;color:#1e293b}
-.notes-table tbody tr:nth-child(even) td{background:#fff}
-.notes-table tbody tr:nth-child(even) td.sticky-left{background:#f1f5f9}
-.notes-table tbody tr:hover td{background:#f8fafc}
-.notes-table tbody tr:hover td.sticky-left{background:#e2e8f0}
+.notes-table thead th{background:var(--excel-header);color:#333;font-size:11px;font-weight:600;padding:6px 4px;border:1px solid var(--excel-border);white-space:nowrap;text-align:center}
+.notes-table thead th.sticky-left{position:sticky;z-index:6;background:var(--excel-sticky)}
+.notes-table thead th.col-no{left:0;width:32px;min-width:32px}
+.notes-table thead th.col-matricule{left:32px;width:70px;min-width:70px}
+.notes-table thead th.col-nom{left:102px;min-width:160px;text-align:left;padding-left:8px}
+.notes-table thead th .eval-sur{display:block;font-size:10px;font-weight:400;color:#666;margin-top:1px}
+.notes-table tbody td{padding:2px;border:1px solid var(--excel-grid);vertical-align:middle;height:34px}
+.notes-table tbody td.sticky-left{position:sticky;z-index:3;background:#f5f5f5}
+.notes-table tbody td.col-no{left:0;text-align:center;font-size:11px;color:#999;font-weight:400}
+.notes-table tbody td.col-matricule{left:32px;font-size:11px;color:#555;text-align:center}
+.notes-table tbody td.col-nom{left:102px;font-size:12px;font-weight:500;color:#222;padding-left:8px;text-align:left}
+.notes-table tbody tr:nth-child(even) td{background:#fafafa}
+.notes-table tbody tr:nth-child(even) td.sticky-left{background:#f0f0f0}
+.notes-table tbody tr:hover td{background:#e8f0fe}
+.notes-table tbody tr:hover td.sticky-left{background:#dce6f5}
+.notes-table tbody tr.selected td{background:#d4e3fd}
 .note-cell{position:relative;display:flex;align-items:center;justify-content:center}
-.note-input{width:var(--cell-w);height:var(--cell-h);text-align:center;border:1.5px solid #e5e7eb;border-radius:6px;font-size:13px;font-weight:600;padding:2px 4px;background:#fff;outline:none;transition:all .12s;color:#374151;font-family:inherit;-moz-appearance:textfield}
+.note-input{width:var(--cell-w);height:var(--cell-h);text-align:center;border:1px solid #d0d0d0;border-radius:0;font-size:12px;font-weight:500;padding:1px 2px;background:#fff;outline:none;font-family:inherit;-moz-appearance:textfield}
 .note-input::-webkit-inner-spin-button,.note-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.note-input:hover{border-color:#cbd5e1}
-.note-input:focus{border-color:#6366f1;background:#eef2ff;box-shadow:var(--shadow-focus)}
-.note-input.error{border-color:#ef4444!important;background:#fef2f2!important;box-shadow:0 0 0 3px rgba(239,68,68,.12)!important}
+.note-input:hover{border-color:#999}
+.note-input:focus{border:2px solid var(--excel-focus);background:#fff;box-shadow:none}
+.note-input.error{border-color:#ef4444!important;background:#fef2f2!important}
 .note-input.error+.err-msg{display:block!important}
-.err-msg{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap;z-index:10;margin-top:2px;font-weight:400}
+.err-msg{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;white-space:nowrap;z-index:10;font-weight:400}
 .note-input.excellent{color:var(--clr-excellent);background:var(--bg-excellent);border-color:#a7f3d0}
 .note-input.bon{color:var(--clr-bon);background:var(--bg-bon);border-color:#bfdbfe}
 .note-input.moyen{color:var(--clr-moyen);background:var(--bg-moyen);border-color:#fde68a}
 .note-input.faible{color:var(--clr-faible);background:var(--bg-faible);border-color:#fecaca}
 .note-input.absent{color:var(--clr-absent);background:var(--bg-absent);border-color:#e5e7eb}
-.cell-total,.cell-moy,.cell-rang,.cell-obs{font-size:13px;text-align:center;font-weight:600}
-.cell-total{color:#6366f1}.cell-moy{color:#059669}.cell-rang{color:#1e293b}
-.cell-obs{min-width:120px;padding:2px 4px}
-.cell-obs input{border:1px solid transparent;background:transparent;font-size:12px;padding:4px 6px;border-radius:6px;width:100%;outline:none;transition:all .15s}
-.cell-obs input:hover{border-color:#e5e7eb}.cell-obs input:focus{border-color:#6366f1;background:#eef2ff}
-.notes-table tfoot td{padding:8px 6px;background:#f1f5f9;font-weight:600;font-size:12px;text-align:center;color:#475569;border:1px solid #e5e7eb}
-.notes-table tfoot td.sticky-left{position:sticky;z-index:3;background:#e2e8f0}
-.notes-table tfoot td.col-no{left:0}.notes-table tfoot td.col-matricule{left:36px}.notes-table tfoot td.col-nom{left:116px}
-.add-eval-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#f8fafc;border-radius:var(--radius);margin-bottom:12px;border:1px dashed #d1d5db}
-.add-eval-bar input,.add-eval-bar select{height:34px;border:1px solid #e5e7eb;border-radius:6px;padding:0 10px;font-size:13px;outline:none;transition:all .15s}
-.add-eval-bar input:focus,.add-eval-bar select:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.1)}
-.notes-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
-.stat-card{background:#fff;border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;min-width:120px}
-.stat-card .stat-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
-.stat-card .stat-val{font-size:18px;font-weight:700}.stat-card .stat-lbl{font-size:11px;color:#6b7280}
-@media(max-width:768px){.notes-toolbar{flex-direction:column;align-items:stretch}.notes-toolbar .btn-group{flex-wrap:wrap}}
+.cell-total,.cell-moy{font-size:12px;text-align:center;font-weight:600}
+.cell-total{color:#217346}.cell-moy{color:#2563eb}
+.notes-table tfoot td{padding:4px 6px;background:#f0f0f0;font-weight:600;font-size:11px;text-align:center;color:#444;border:1px solid var(--excel-border)}
+.notes-table tfoot td.sticky-left{position:sticky;z-index:3;background:#e0e0e0}
+.notes-table tfoot td.col-no{left:0}.notes-table tfoot td.col-matricule{left:32px}.notes-table tfoot td.col-nom{left:102px}
+.add-eval-bar{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#f8f9fa;margin-bottom:8px;border:1px solid #ddd}
+.add-eval-bar input,.add-eval-bar select{height:28px;border:1px solid #d0d0d0;border-radius:2px;padding:0 8px;font-size:12px;outline:none}
+.add-eval-bar input:focus,.add-eval-bar select:focus{border-color:#217346}
+.notes-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.stat-card{background:#f8f9fa;border:1px solid #ddd;border-radius:3px;padding:6px 12px;display:flex;align-items:center;gap:8px}
+.stat-card .stat-icon{width:28px;height:28px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.stat-card .stat-val{font-size:16px;font-weight:700}.stat-card .stat-lbl{font-size:10px;color:#666}
+@media(max-width:768px){.notes-toolbar{flex-direction:column;align-items:stretch}}
 </style>
 <div class="dashboard-main-body notes-app">
   <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
@@ -85,7 +80,10 @@
     <div class="notes-toolbar">
       <div class="btn-group">
         <button onclick="backToClasses()"><i class="ri-arrow-left-line"></i> Classes</button>
-        <span style="font-weight:600;color:#1e293b;font-size:14px;padding:0 8px" id="grilleTitle">—</span>
+        <div style="display:flex;flex-direction:column;padding:0 12px">
+          <span style="font-weight:600;color:#1e293b;font-size:14px" id="grilleTitle">—</span>
+          <span style="font-size:11px;color:#6b7280" id="grilleSubtitle">—</span>
+        </div>
       </div>
       <div class="btn-group">
         <button onclick="showAddEval()"><i class="ri-add-line"></i> Ajouter une évaluation</button>
@@ -93,6 +91,7 @@
       </div>
     </div>
     <div class="add-eval-bar" id="addEvalRow" style="display:none">
+      <span class="badge bg-primary-100 text-primary-600 px-12 py-6 radius-4 fw-semibold text-sm" id="evalCoursBadge">—</span>
       <input type="text" id="addEvalLibelle" placeholder="Libellé (ex: Interro 2)" style="width:180px">
       <select id="addEvalType"><option value="devoir">Devoir</option><option value="interrogation">Interro</option><option value="controle">Contrôle</option><option value="composition">Compo</option><option value="examen">Examen</option></select>
       <input type="number" id="addEvalSur" value="20" min="1" max="999" style="width:65px" title="Note maximale">
@@ -112,6 +111,24 @@
 </div>
 
 <div class="modal fade" id="coursModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content radius-16 bg-base"><div class="modal-header border-bottom px-24 py-16"><h6 class="text-lg fw-semibold mb-0" id="coursModalTitle">Choisir un cours</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-24 py-16"><p class="text-sm text-secondary-light mb-16">Classe : <strong id="coursModalClasse"></strong></p><div class="d-flex flex-column gap-8" id="coursList"></div></div></div></div></div>
+
+<div class="modal fade" id="addEvalModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content radius-16 bg-base"><div class="modal-header border-bottom px-24 py-16"><h6 class="text-lg fw-semibold mb-0">Nouvelle évaluation</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-24 py-16">
+<form id="evalForm">
+  <div class="row g-3">
+    <div class="col-md-6"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe</label><input type="text" class="form-control" id="evalClasse" readonly></div>
+    <div class="col-md-6"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Matière</label><input type="text" class="form-control" id="evalMatiere" readonly></div>
+    <div class="col-md-8"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label><input type="text" class="form-control" id="evalLibelle" placeholder="Ex: Interrogation 1"></div>
+    <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Type</label>
+      <select class="form-control form-select" id="evalType"><option value="devoir">Devoir</option><option value="interrogation">Interrogation</option><option value="controle">Contrôle</option><option value="composition">Composition</option><option value="examen">Examen</option></select>
+    </div>
+    <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Note max.</label><input type="number" class="form-control" id="evalSur" step="0.1" value="20"></div>
+    <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Période</label>
+      <select class="form-control form-select" id="evalPeriode"><?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['est_en_cours']?'selected':''?>><?=$p['libelle']?></option><?php endforeach; ?></select>
+    </div>
+    <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date</label><input type="date" class="form-control" id="evalDate" value="<?=date('Y-m-d')?>"></div>
+  </div>
+</form>
+</div><div class="modal-footer border-top px-24 py-16"><button type="button" class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-40 py-11 radius-8" data-bs-dismiss="modal">Annuler</button><button type="button" class="btn btn-primary-600 border border-primary-600 text-md px-28 py-12 radius-8" onclick="saveNewEval()">Enregistrer</button></div></div></div></div>
 
 <script id="classes_data" type="application/json"><?=json_encode($classes)?></script>
 <script id="matieres_data" type="application/json"><?=json_encode($matieres)?></script>
@@ -164,7 +181,7 @@ function openEvalForClass(id,cn){gCId=id;pickCours(id,cn,true)}
 function pickCours(id,cn,isEval){
   fetch(API.base_url+'api/notes/matieres_by_classe/'+id).then(r=>r.json()).then(r=>{
     if(!r.success||!r.data.length){Swal.fire({icon:'warning',title:'Aucun cours',text:'Aucun cours lié à cette classe.'});return}
-    if(r.data.length===1){gMid=r.data[0].id_matiere;gMName=r.data[0].libelle;loadGrilleNotes();if(isEval)setTimeout(()=>document.getElementById('addEvalRow').style.display='flex',200);return}
+    if(r.data.length===1){gMid=r.data[0].id_matiere;gMName=r.data[0].libelle;if(isEval){showEvalModal(id,gMName);return}loadGrilleNotes();return}
     document.getElementById('coursModalTitle').textContent='Choisir un cours — '+(isEval?'Évaluation':'Notes');
     document.getElementById('coursModalClasse').textContent=cn;
     document.getElementById('coursList').innerHTML=r.data.map(m=>`<button class="btn border border-neutral-300 bg-hover-neutral-100 text-start px-16 py-12 radius-8 d-flex align-items-center gap-12 w-100" onclick="${isEval?'selectEval':'selectNotes'}('${id}','${m.id_matiere}','${m.libelle.replace(/'/g,"\\'")}',${isEval})"><span class="d-flex align-items-center justify-content-center bg-primary-100 text-primary-600 radius-4" style="width:40px;height:40px"><i class="ri-book-open-line"></i></span><div><span class="fw-semibold text-sm">${m.libelle}</span><small class="d-block text-secondary-light text-xs">${m.code||''}</small></div><i class="ri-arrow-right-s-line ms-auto text-secondary-light"></i></button>`).join('');
@@ -172,12 +189,16 @@ function pickCours(id,cn,isEval){
   }).catch(()=>Swal.fire({icon:'error',title:'Erreur',text:'Chargement impossible'}));
 }
 function selectNotes(id,mid,mn,isEval){bootstrap.Modal.getInstance(document.getElementById('coursModal')).hide();gCId=id;gMid=mid;gMName=mn;loadGrilleNotes()}
-function selectEval(id,mid,mn,isEval){bootstrap.Modal.getInstance(document.getElementById('coursModal')).hide();gCId=id;gMid=mid;gMName=mn;loadGrilleNotes();setTimeout(()=>document.getElementById('addEvalRow').style.display='flex',200)}
+function selectEval(id,mid,mn,isEval){bootstrap.Modal.getInstance(document.getElementById('coursModal')).hide();gMid=mid;showEvalModal(id,mn)}
 
 /* ==== GRILLE EXCEL ==== */
 async function loadGrilleNotes(){
   document.getElementById('classesGrid').style.display='none';document.getElementById('grilleCard').style.display='';
-  document.getElementById('grilleTitle').textContent=gMName+' | Chargement...';
+  document.getElementById('grilleTitle').textContent=gMName;
+  var anneeLabel='',periodeLabel='';
+  if(typeof aL!=='undefined'&&aL.length){var ay=aL.find(function(x){return x.id_annee==ACTIVE_ANNEE_ID});if(ay)anneeLabel=ay.libelle}
+  if(typeof pL!=='undefined'&&pL.length){var pp=pL.find(function(x){return x.id_periode==ACTIVE_PERIODE_ID});if(pp)periodeLabel=pp.libelle}
+  document.getElementById('grilleSubtitle').textContent='Chargement... '+(anneeLabel?'('+anneeLabel+(periodeLabel?' | '+periodeLabel:'')+')':'');
   const r=await fetch(API.base_url+'api/notes/grille/'+gCId+'/'+gMid).then(r=>r.json());
   if(!r.success){Swal.fire({icon:'error',text:r.message});return}
   gData=r.data;
@@ -219,7 +240,11 @@ async function loadGrilleNotes(){
   document.getElementById('grilleFoot').innerHTML='<tr><td class="sticky-left col-no" colspan="3">Moyennes</td>'+r.data.evaluations.map(ev=>`<td data-cm="${ev.id_evaluation}">—</td>`).join('')+'<td id="ft">—</td><td id="fm">—</td><td id="fmoy">—</td></tr>';
   computeStats();
   colorCells();
-  document.getElementById('grilleTitle').textContent=gMName;
+  document.getElementById('grilleTitle').textContent=gData.matiere;
+  var anneeLabel='',periodeLabel='';
+  if(typeof aL!=='undefined'&&aL.length){var ay=aL.find(function(x){return x.id_annee==ACTIVE_ANNEE_ID});if(ay)anneeLabel=ay.libelle}
+  if(typeof pL!=='undefined'&&pL.length){var pp=pL.find(function(x){return x.id_periode==ACTIVE_PERIODE_ID});if(pp)periodeLabel=pp.libelle}
+  document.getElementById('grilleSubtitle').textContent=gData.classe+' | '+anneeLabel+(periodeLabel?' | '+periodeLabel:'');
 
   /* Stats */
   let ne=r.data.eleves.length,nev=r.data.evaluations.length;
@@ -320,7 +345,7 @@ async function saveGrilleNotes(){
 async function saveObs(inp){if(!inp.dataset.obs||!inp.value.trim())return;await fetch(API.base_url+'api/notes/create',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({id_etudiant:inp.dataset.obs,note:0,appreciation:inp.value.trim()})}).then(r=>r.json())}
 
 /* ==== ADD EVAL ==== */
-function showAddEval(){document.getElementById('addEvalRow').style.display='flex';document.getElementById('addEvalLibelle').focus()}
+function showAddEval(){document.getElementById('addEvalRow').style.display='flex';document.getElementById('evalCoursBadge').textContent=gMName;document.getElementById('addEvalLibelle').focus()}
 async function addEvaluation(){
   let lib=document.getElementById('addEvalLibelle').value.trim();
   if(!lib){Swal.fire({icon:'warning',text:'Libellé obligatoire'});return}
@@ -330,6 +355,24 @@ async function addEvaluation(){
 }
 
 function backToClasses(){gCId=null;gMid=null;document.getElementById('grilleCard').style.display='none';document.getElementById('classesGrid').style.display=''}
+
+function showEvalModal(classeId,matiereNom){
+  var c=cList.find(function(x){return x.id_classe==classeId});
+  document.getElementById('evalClasse').value=c?c.libelle:'';
+  document.getElementById('evalMatiere').value=matiereNom;
+  document.getElementById('evalClasse').dataset.id=classeId;
+  document.getElementById('evalMatiere').dataset.id=gMid;
+  new bootstrap.Modal(document.getElementById('addEvalModal')).show();
+}
+async function saveNewEval(){
+  var lib=document.getElementById('evalLibelle').value.trim();
+  var cid=document.getElementById('evalClasse').dataset.id,mid=document.getElementById('evalMatiere').dataset.id;
+  if(!lib){Swal.fire({icon:'warning',text:'Libellé obligatoire'});return}
+  if(!cid||!mid||cid==='null'||mid==='null'){Swal.fire({icon:'error',text:'Classe ou matière invalide'});return}
+  var d={libelle:lib,id_classe:cid,id_matiere:mid,id_periode:document.getElementById('evalPeriode').value,id_annee:ACTIVE_ANNEE_ID,date_eval:document.getElementById('evalDate').value,type:document.getElementById('evalType').value,sur:document.getElementById('evalSur').value||20};
+  var r=await API.evaluations.create(d);
+  if(r.success){bootstrap.Modal.getInstance(document.getElementById('addEvalModal')).hide();document.getElementById('evalLibelle').value='';Toast.fire({icon:'success',title:'Évaluation créée'})}else Swal.fire({icon:'error',text:r.message});
+}
 
 (function(){var w=setInterval(function(){if(typeof jQuery!=='undefined'&&$.fn&&$.fn.DataTable&&typeof API!=='undefined'){clearInterval(w);loadClassesGrid()}},50)})();
 </script>

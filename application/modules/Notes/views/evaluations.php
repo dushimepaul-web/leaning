@@ -144,6 +144,14 @@ document.getElementById('confirmDeleteBtn').addEventListener('click',async funct
 
 function exportCSV(){var t=$('#dataTable').DataTable(),d=t.rows({filter:'applied'}).data(),csv='\uFEFF#;Libelle;Classe;Matiere;Enseignant;Type;Coeff;Sur;Periode;Date\n';d.each(function(r){var c=[];for(var j=0;j<10;j++)c.push('"'+($(r[j]).text().trim()||'').replace(/"/g,'""')+'"');csv+=c.join(';')+'\n';});var b=new Blob([csv],{type:'text/csv;charset=utf-8;'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='evaluations.csv';a.click();}
 
-(function(){var wait=setInterval(function(){if(typeof jQuery!=='undefined'&&$.fn&&$.fn.DataTable&&typeof API!=='undefined'&&API.evaluations){clearInterval(wait);loadData();autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;});autoSetup('id_matiere_search','id_matiere','id_matiere_results',matieresList.map(function(m){return{id:m.id_matiere,libelle:m.libelle};}),function(m){return m.libelle;});$('#dtSearch').on('keyup',function(){$('#dataTable').DataTable().search(this.value).draw();});$('#dtLength').on('change',function(){$('#dataTable').DataTable().page.len(+this.value).draw();});}},50);})();
+(function(){var wait=setInterval(function(){if(typeof jQuery!=='undefined'&&$.fn&&$.fn.DataTable&&typeof API!=='undefined'&&API.evaluations){clearInterval(wait);loadData();autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;});autoSetup('id_matiere_search','id_matiere','id_matiere_results',matieresList.map(function(m){return{id:m.id_matiere,libelle:m.libelle};}),function(m){return m.libelle;});$('#dtSearch').on('keyup',function(){$('#dataTable').DataTable().search(this.value).draw();});$('#dtLength').on('change',function(){$('#dataTable').DataTable().page.len(+this.value).draw();});
+
+  var params=new URLSearchParams(location.search);
+  var pClasse=params.get('classe'),pMatiere=params.get('matiere');
+  if(pClasse||pMatiere){setTimeout(function(){
+    openAddSidebar();
+    if(pClasse&&classesList.length){var c=classesList.find(function(x){return x.id_classe==pClasse});if(c){document.getElementById('id_classe').value=c.id_classe;document.getElementById('id_classe_search').value=c.libelle}}
+    if(pMatiere&&matieresList.length){var m=matieresList.find(function(x){return x.id_matiere==pMatiere});if(m){document.getElementById('id_matiere').value=m.id_matiere;document.getElementById('id_matiere_search').value=m.libelle}}
+  },600)}},50);})();
 </script>
 <?php include VIEWPATH.'includes/Footer.php'; ?>

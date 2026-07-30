@@ -8,7 +8,7 @@ class Notes extends MY_Controller {
         $data['title'] = 'Gestion des notes';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
         $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null]);
-        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null, 'id_annee' => $this->id_annee_active]);
+        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null]);
         $data['annees'] = $this->Model->read('annees_scolaires');
         $data['id_periode_active'] = $this->id_periode_active;
         $data['id_annee_active'] = $this->id_annee_active;
@@ -105,19 +105,15 @@ class Notes extends MY_Controller {
     }
 
     public function api_matieres_by_classe($id_classe) {
-        $sql = "
-            SELECT DISTINCT m.id_matiere, m.libelle, m.code
-            FROM matieres_classes mc
-            JOIN matieres m ON mc.id_matiere = m.id_matiere
-            WHERE mc.id_classe = ? AND mc.deleted_at IS NULL
-            UNION
-            SELECT DISTINCT m.id_matiere, m.libelle, m.code
-            FROM enseignements e
-            JOIN matieres m ON e.id_matiere = m.id_matiere
-            WHERE e.id_classe = ? AND e.deleted_at IS NULL
-            ORDER BY libelle
-        ";
-        $matieres = $this->db->query($sql, [$id_classe, $id_classe])->result_array();
+        $matieres = $this->db
+            ->distinct()
+            ->select('m.id_matiere, m.libelle, m.code')
+            ->from('matieres_classes mc')
+            ->join('matieres m', 'mc.id_matiere = m.id_matiere')
+            ->where('mc.id_classe', $id_classe)
+            ->where('mc.deleted_at', null)
+            ->order_by('m.libelle')
+            ->get()->result_array();
         $this->json_success($matieres);
     }
 
@@ -187,13 +183,10 @@ class Notes extends MY_Controller {
                 ->where('i.deleted_at', null)
                 ->count_all_results('inscriptions i');
 
-            $cl['nb_matieres'] = $this->db->query(
-                "SELECT COUNT(*) as cnt FROM (
-                    SELECT id_matiere FROM matieres_classes WHERE id_classe = ? AND deleted_at IS NULL
-                    UNION
-                    SELECT id_matiere FROM enseignements WHERE id_classe = ? AND deleted_at IS NULL
-                ) t", [$cl['id_classe'], $cl['id_classe']]
-            )->row()->cnt;
+            $cl['nb_matieres'] = $this->db
+                ->where('mc.id_classe', $cl['id_classe'])
+                ->where('mc.deleted_at', null)
+                ->count_all_results('matieres_classes mc');
         }
         $this->json_success($classes);
     }
