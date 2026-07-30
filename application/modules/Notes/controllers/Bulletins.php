@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Bulletins extends MY_Controller {
-    public function __construct() { parent::__construct(); $this->load->model('Notes/Bulletins_model', 'BulletinsModel'); }
+    public function __construct() { parent::__construct(); $this->load->model('Bulletins_model', 'BulletinsModel'); }
 
     public function index() {
         $data['title'] = 'Bulletins & Fiches de points';
