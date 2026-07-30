@@ -90,7 +90,8 @@ window.API = {
     create: (d) => API.post('api/librairie/create', d), 
     update: (id, d) => API.post('api/librairie/' + id + '/update', d), 
     delete: (id) => API.get('api/librairie/' + id + '/delete'), 
-    initialiser: () => API.post('api/librairie/initialiser') 
+    initialiser: () => API.post('api/librairie/initialiser'),
+    approvisionner: (d) => API.post('api/librairie/approvisionner', d) 
   },
 };
 

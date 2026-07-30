@@ -18,7 +18,6 @@ class Produits_model extends Model
         if (!empty($filters['search'])) {
             $this->db->group_start()
                 ->like('p.libelle', $filters['search'])
-                ->or_like('p.code', $filters['search'])
                 ->group_end();
         }
         $this->db->order_by('p.libelle', 'ASC');
@@ -41,7 +40,7 @@ class Produits_model extends Model
 
     public function create_record($data)
     {
-        $required = ['code', 'libelle', 'id_categorie', 'prix_unitaire'];
+        $required = ['libelle', 'id_categorie', 'prix_unitaire'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 return ['success' => false, 'message' => "Champ requis manquant: $field"];
@@ -80,7 +79,7 @@ class Produits_model extends Model
     public function get_mouvements($filters = [])
     {
         $this->db->where('m.deleted_at', null);
-        $this->db->select('m.*, p.libelle as produit_libelle, p.code as produit_code, u.nom, u.prenom');
+        $this->db->select('m.*, p.libelle as produit_libelle, u.nom, u.prenom');
         $this->db->from('mouvements_stock m');
         $this->db->join('produits p', 'm.id_produit = p.id_produit', 'left');
         $this->db->join('utilisateurs u', 'm.id_utilisateur = u.id_utilisateur', 'left');

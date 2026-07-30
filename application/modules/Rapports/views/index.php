@@ -19,6 +19,7 @@
     <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabEleves" type="button">Élèves</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMinervales" type="button">Minervales</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMateriels" type="button">Matériels</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabVentes" type="button">Ventes & Achats</button></li>
   </ul>
 
   <div class="tab-content">
@@ -96,6 +97,37 @@
               <h6 class="text-lg fw-semibold mb-0">Consommation du stock (top 10)</h6>
             </div>
             <div class="card-body p-20"><div id="chartConsommation" style="min-height:320px;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="tabVentes">
+      <div class="row g-3 mb-24" id="resumeCards"></div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header border-bottom bg-base py-16 px-24">
+              <h6 class="text-lg fw-semibold mb-0">Ventes par mois</h6>
+            </div>
+            <div class="card-body p-20"><div id="chartVentes" style="min-height:320px;"></div></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header border-bottom bg-base py-16 px-24">
+              <h6 class="text-lg fw-semibold mb-0">Achats par mois</h6>
+            </div>
+            <div class="card-body p-20"><div id="chartAchats" style="min-height:320px;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3 mt-0">
+        <div class="col-md-12">
+          <div class="card h-100">
+            <div class="card-header border-bottom bg-base py-16 px-24">
+              <h6 class="text-lg fw-semibold mb-0">Bénéfice net par mois</h6>
+            </div>
+            <div class="card-body p-20"><div id="chartBenefice" style="min-height:320px;"></div></div>
           </div>
         </div>
       </div>
@@ -228,6 +260,47 @@ async function loadMaterielsCharts() {
   } catch(e) { console.error(e); }
 }
 
+async function loadVentesCharts() {
+  try {
+    var r0 = await fetch(BASE_URL + 'api/rapports/resume_ventes').then(r => r.json());
+    if (r0.success && r0.data) {
+      var d = r0.data;
+      var devise = typeof DEVISE !== 'undefined' ? DEVISE : 'BIF';
+      document.getElementById('resumeCards').innerHTML =
+        '<div class="col-md-4"><div class="card h-100 border-start border-4 border-success"><div class="card-body p-20"><h6 class="text-sm text-secondary-light mb-4">Chiffre d\'affaires</h6><h4 class="fw-bold text-success">' + parseFloat(d.ca_total).toLocaleString() + ' ' + devise + '</h4></div></div></div>' +
+        '<div class="col-md-4"><div class="card h-100 border-start border-4 border-info"><div class="card-body p-20"><h6 class="text-sm text-secondary-light mb-4">Bénéfice total</h6><h4 class="fw-bold text-info">' + parseFloat(d.benefice_total).toLocaleString() + ' ' + devise + '</h4></div></div></div>' +
+        '<div class="col-md-4"><div class="card h-100 border-start border-4 border-warning"><div class="card-body p-20"><h6 class="text-sm text-secondary-light mb-4">Total achats</h6><h4 class="fw-bold text-warning">' + parseFloat(d.achats_total).toLocaleString() + ' ' + devise + '</h4></div></div></div>';
+    }
+    var r1 = await fetch(BASE_URL + 'api/rapports/ventes_par_mois').then(r => r.json());
+    if (r1.success && r1.data) {
+      rapportsData.ventes = r1.data;
+      var mois = r1.data.map(function(d) { return d.mois; });
+      createBarChart('#chartVentes', mois,
+        [{ name: 'CA', data: r1.data.map(function(d) { return parseFloat(d.total_ventes); }) }, { name: 'Bénéfice', data: r1.data.map(function(d) { return parseFloat(d.benefice); }) }],
+        'Ventes par mois'
+      );
+    }
+    var r2 = await fetch(BASE_URL + 'api/rapports/achats_par_mois').then(r => r.json());
+    if (r2.success && r2.data) {
+      rapportsData.achats = r2.data;
+      createBarChart('#chartAchats', r2.data.map(function(d) { return d.mois; }),
+        [{ name: 'Achats', data: r2.data.map(function(d) { return parseFloat(d.total_achats); }) }],
+        'Achats par mois'
+      );
+    }
+    if (r1.success && r1.data && r2.success && r2.data) {
+      var ventesMap = {}, achatsMap = {};
+      r1.data.forEach(function(d) { ventesMap[d.mois] = parseFloat(d.benefice); });
+      r2.data.forEach(function(d) { achatsMap[d.mois] = parseFloat(d.total_achats); });
+      var allMois = [...new Set([...Object.keys(ventesMap), ...Object.keys(achatsMap)])].sort();
+      createBarChart('#chartBenefice', allMois,
+        [{ name: 'Bénéfice', data: allMois.map(function(m) { return ventesMap[m] || 0; }) }],
+        'Bénéfice net par mois'
+      );
+    }
+  } catch(e) { console.error(e); }
+}
+
 function exportPDF() {
   var activeTab = document.querySelector('.tab-pane.active');
   var content = activeTab ? activeTab.cloneNode(true) : document.body.cloneNode(true);
@@ -279,6 +352,15 @@ function exportExcel() {
       csv += '\nÉtat du stock\nProduit,Stock actuel,Stock minimum,Stock\n';
       rapportsData.consommation.forEach(function(d) { csv += d.libelle + ',' + d.stock_actuel + ',' + d.stock_mini + '\n'; });
     }
+  } else if (activeTabId === 'tabVentes') {
+    if (rapportsData.ventes) {
+      csv += '\nVentes par mois\nMois,Total,Bénéfice\n';
+      rapportsData.ventes.forEach(function(d) { csv += d.mois + ',' + d.total_ventes + ',' + d.benefice + '\n'; });
+    }
+    if (rapportsData.achats) {
+      csv += '\nAchats par mois\nMois,Total\n';
+      rapportsData.achats.forEach(function(d) { csv += d.mois + ',' + d.total_achats + '\n'; });
+    }
   }
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var link = document.createElement('a');
@@ -294,6 +376,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.querySelector('#tabMateriels').addEventListener('shown.bs.tab', function() {
     if (!charts['#chartProduitsClasse']) loadMaterielsCharts();
+  });
+  document.querySelector('#tabVentes').addEventListener('shown.bs.tab', function() {
+    if (!charts['#chartVentes']) loadVentesCharts();
   });
   document.querySelector('#tabEleves').addEventListener('shown.bs.tab', function() {
     if (!charts['#chartElevesClasse']) loadElevesCharts();

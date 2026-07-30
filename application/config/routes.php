@@ -217,11 +217,7 @@ $route['api/types_frais/(:any)/delete'] = 'Type_frais/Type_frais/api_delete/$1';
 $route['api/types_frais/(:any)'] = 'Type_frais/Type_frais/api_get/$1';
 
 // API - Détails commandes
-$route['api/commandes_details'] = 'Commande_detail/Commande_detail/api_list';
-$route['api/commandes_details/create'] = 'Commande_detail/Commande_detail/api_create';
-$route['api/commandes_details/(:any)/update'] = 'Commande_detail/Commande_detail/api_update/$1';
-$route['api/commandes_details/(:any)/delete'] = 'Commande_detail/Commande_detail/api_delete/$1';
-$route['api/commandes_details/(:any)'] = 'Commande_detail/Commande_detail/api_get/$1';
+
 
 // API - Reçus de paiement
 $route['api/paiements_recus'] = 'Paiement_recu/Paiement_recu/api_list';
@@ -261,6 +257,7 @@ $route['api/toilettes/(:any)/delete'] = 'Toilettes/Toilettes/api_delete/$1';
 $route['api/librairie'] = 'Librairie/Librairie/api_list';
 $route['api/librairie/create'] = 'Librairie/Librairie/api_create';
 $route['api/librairie/initialiser'] = 'Librairie/Librairie/api_initialiser';
+$route['api/librairie/approvisionner'] = 'Librairie/Librairie/api_approvisionner';
 $route['api/librairie/(:any)'] = 'Librairie/Librairie/api_get/$1';
 $route['api/librairie/(:any)/update'] = 'Librairie/Librairie/api_update/$1';
 $route['api/librairie/(:any)/delete'] = 'Librairie/Librairie/api_delete/$1';
@@ -338,7 +335,7 @@ $route['Recus'] = 'Recu/Recu/index';
 $route['Echeance'] = 'Echeance/Echeance/index';
 $route['Echeances'] = 'Echeance/Echeance/index';
 $route['Types_frais'] = 'Type_frais/Type_frais/index';
-$route['Commande_details'] = 'Commande_detail/Commande_detail/index';
+
 $route['Paiement_recus'] = 'Paiement_recu/Paiement_recu/index';
 $route['Recus/imprimer/(:any)'] = 'Recu/Recu/imprimer/$1';
 $route['Toilettes'] = 'Toilettes/Toilettes/index';
@@ -383,6 +380,9 @@ $route['api/rapports/paiements_statuts'] = 'Rapports/Rapports/api_paiements_stat
 $route['api/rapports/produits_par_classe'] = 'Rapports/Rapports/api_produits_par_classe';
 $route['api/rapports/produits_par_section'] = 'Rapports/Rapports/api_produits_par_section';
 $route['api/rapports/consommation_stock'] = 'Rapports/Rapports/api_consommation_stock';
+$route['api/rapports/ventes_par_mois'] = 'Rapports/Rapports/api_ventes_par_mois';
+$route['api/rapports/achats_par_mois'] = 'Rapports/Rapports/api_achats_par_mois';
+$route['api/rapports/resume_ventes'] = 'Rapports/Rapports/api_resume_ventes';
 
 // API - Menus
 $route['api/menus/all'] = 'Administration/Roles/api_menus';

@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Toilettes extends MY_Controller {
-    public function __construct() { parent::__construct(); }
+    public function __construct() { parent::__construct(); $this->not_logged_in(); }
 
     public function index() {
         $data['title'] = 'Matériels de Toilettes';
@@ -39,6 +39,7 @@ class Toilettes extends MY_Controller {
             'libelle' => $data['libelle'],
             'id_categorie' => $categorie ? $categorie['id_categorie'] : null,
             'prix_unitaire' => $data['prix_unitaire'] ?? 0,
+            'prix_achat' => $data['prix_achat'] ?? 0,
             'stock_actuel' => $data['stock_actuel'] ?? $data['stock'] ?? 0,
             'stock_mini' => $data['stock_mini'] ?? 0,
             'description' => $data['description'] ?? null,
@@ -50,6 +51,7 @@ class Toilettes extends MY_Controller {
             if (!empty($data['stock_actuel']) && $data['stock_actuel'] > 0) {
                 $this->Model->create('mouvements_stock', [
                     'id_produit' => $id, 'type' => 'entree', 'quantite' => $data['stock_actuel'],
+                    'prix_unitaire' => $data['prix_achat'] ?? 0,
                     'motif' => 'Stock initial'
                 ]);
             }
@@ -60,7 +62,7 @@ class Toilettes extends MY_Controller {
     public function api_update($id) {
         $data = $this->get_json_input();
         $update = ['modifie_le' => date('Y-m-d H:i:s')];
-        foreach (['libelle', 'code', 'prix_unitaire', 'stock_actuel', 'stock_mini', 'description'] as $f) {
+        foreach (['libelle', 'code', 'prix_unitaire', 'prix_achat', 'stock_actuel', 'stock_mini', 'description'] as $f) {
             if (isset($data[$f])) $update[$f] = $data[$f];
         }
         if (isset($data['stock'])) $update['stock_actuel'] = $data['stock'];

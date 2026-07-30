@@ -2,14 +2,11 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Librairie extends MY_Controller {
-    public function __construct() { parent::__construct(); }
+    public function __construct() { parent::__construct(); $this->not_logged_in(); }
 
     public function index() {
         $data['title'] = 'Librairie';
         $data['categories'] = $this->Model->read('categories_produits', ['deleted_at' => null]);
-        $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null], 'libelle');
-        $data['classes'] = $this->Model->read('classes', ['deleted_at' => null], 'libelle');
-        $data['etudiants'] = $this->Model->read('etudiants', ['deleted_at' => null]);
         $this->load->view('index', $data);
     }
 
@@ -48,7 +45,7 @@ class Librairie extends MY_Controller {
         $mouvements = [];
         try {
             if (!empty($p['id_produit'])) {
-                $mouvements = $this->Model->read('mouvements_stock', ['id_produit' => $p['id_produit']], 'date_mvt DESC');
+                $mouvements = $this->Model->read('mouvements_stock', ['id_produit' => $p['id_produit']], 'date_mvt', 'DESC');
             }
         } catch (Exception $e) {
             $mouvements = [];
@@ -64,14 +61,12 @@ class Librairie extends MY_Controller {
         $insert = [
             'uuid' => generate_uuid(),
             'id_categorie' => $data['id_categorie'] ?? null,
-            'code' => $data['code'] ?? null,
             'libelle' => $data['libelle'],
             'description' => $data['description'] ?? null,
             'taille' => $data['taille'] ?? null,
             'editeur' => $data['editeur'] ?? null,
             'annee_edition' => $data['annee_edition'] ?? null,
-            'id_matiere' => $data['id_matiere'] ?? null,
-            'id_classe' => $data['id_classe'] ?? null,
+            'prix_achat' => $data['prix_achat'] ?? 0,
             'prix_unitaire' => $data['prix_unitaire'] ?? 0,
             'stock_mini' => $data['stock_mini'] ?? 0,
             'stock_actuel' => $data['stock_actuel'] ?? $data['stock'] ?? 0,
@@ -94,7 +89,7 @@ class Librairie extends MY_Controller {
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        $allowed = ['id_categorie','code','libelle','description','taille','editeur','annee_edition','id_matiere','id_classe','prix_unitaire','stock_mini','stock_actuel','unite'];
+        $allowed = ['id_categorie','libelle','description','taille','editeur','annee_edition','prix_achat','prix_unitaire','stock_mini','stock_actuel','unite'];
         if (isset($data['stock'])) $data['stock_actuel'] = $data['stock'];
         $update = array_intersect_key($data, array_flip($allowed));
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
@@ -115,25 +110,25 @@ class Librairie extends MY_Controller {
         if (!$cat) { $this->json_error('Catégorie MATERIEL introuvable'); return; }
         $this->load->helper('uuid');
         $articles = [
-            ['code' => 'CRAYON', 'libelle' => 'Crayons', 'prix_unitaire' => 500],
-            ['code' => 'TAILLECRAY', 'libelle' => 'Taille-crayons', 'prix_unitaire' => 300],
-            ['code' => 'RAMPAPIER', 'libelle' => 'Rame de papiers', 'prix_unitaire' => 15000],
-            ['code' => 'CRAYCOULEUR', 'libelle' => 'Crayons de couleurs', 'prix_unitaire' => 2500],
-            ['code' => 'GOMME', 'libelle' => 'Gommes', 'prix_unitaire' => 200],
-            ['code' => 'STYLO', 'libelle' => 'Stylos', 'prix_unitaire' => 400],
-            ['code' => 'CAHIER', 'libelle' => 'Cahiers', 'prix_unitaire' => 1500],
-            ['code' => 'REGLE', 'libelle' => 'Règles', 'prix_unitaire' => 500],
+            ['libelle' => 'Crayons', 'prix' => 500],
+            ['libelle' => 'Taille-crayons', 'prix' => 300],
+            ['libelle' => 'Rame de papiers', 'prix' => 15000],
+            ['libelle' => 'Crayons de couleurs', 'prix' => 2500],
+            ['libelle' => 'Gommes', 'prix' => 200],
+            ['libelle' => 'Stylos', 'prix' => 400],
+            ['libelle' => 'Cahiers', 'prix' => 1500],
+            ['libelle' => 'Règles', 'prix' => 500],
         ];
         $created = 0;
         foreach ($articles as $a) {
-            $exists = $this->Model->readOne('produits', ['code' => $a['code'], 'id_categorie' => $cat['id_categorie'], 'deleted_at' => null]);
+            $exists = $this->Model->readOne('produits', ['libelle' => $a['libelle'], 'id_categorie' => $cat['id_categorie'], 'deleted_at' => null]);
             if ($exists) continue;
             $this->Model->create('produits', [
                 'uuid' => generate_uuid(),
-                'code' => $a['code'],
                 'libelle' => $a['libelle'],
                 'id_categorie' => $cat['id_categorie'],
-                'prix_unitaire' => $a['prix_unitaire'],
+                'prix_achat' => 0,
+                'prix_unitaire' => $a['prix'],
                 'stock_actuel' => 0, 'stock_mini' => 0,
                 'unite' => 'pièce',
                 'cree_le' => date('Y-m-d H:i:s'),
@@ -142,5 +137,48 @@ class Librairie extends MY_Controller {
             $created++;
         }
         $this->json_success(['created' => $created], "$created article(s) créé(s)");
+    }
+
+    public function api_approvisionner() {
+        $data = $this->get_json_input();
+        $uuid = $data['uuid'] ?? null;
+        $quantite = intval($data['quantite'] ?? 0);
+        $prix_achat_lot = floatval($data['prix_achat'] ?? 0);
+        $motif = trim($data['motif'] ?? 'Approvisionnement');
+        if (!$uuid || $quantite <= 0) { $this->json_error('UUID produit et quantité requis'); return; }
+        $produit = $this->Model->readOne('produits', ['uuid' => $uuid, 'deleted_at' => null]);
+        if (!$produit) { $this->json_error('Produit introuvable'); return; }
+
+        $stock_actuel = intval($produit['stock_actuel']);
+        $prix_achat_actuel = floatval($produit['prix_achat']);
+        $nouveau_stock = $stock_actuel + $quantite;
+        $prix_achat_moyen = ($stock_actuel > 0)
+            ? round(($stock_actuel * $prix_achat_actuel + $quantite * $prix_achat_lot) / $nouveau_stock, 2)
+            : $prix_achat_lot;
+
+        $this->db->trans_start();
+        $this->Model->update('produits', ['uuid' => $uuid], [
+            'stock_actuel' => $nouveau_stock,
+            'prix_achat' => $prix_achat_moyen,
+            'modifie_le' => date('Y-m-d H:i:s'),
+        ]);
+        $this->load->helper('uuid');
+        $this->Model->create('mouvements_stock', [
+            'uuid' => generate_uuid(),
+            'id_produit' => $produit['id_produit'],
+            'type' => 'entree',
+            'quantite' => $quantite,
+            'prix_unitaire' => $prix_achat_lot ?: null,
+            'motif' => $motif,
+            'date_mvt' => date('Y-m-d H:i:s'),
+            'id_utilisateur' => $this->session->userdata('id_utilisateur') ?? null,
+            'cree_le' => date('Y-m-d H:i:s'),
+        ]);
+        $this->db->trans_complete();
+        if ($this->db->trans_status() === false) {
+            $this->json_error('Erreur lors de l\'approvisionnement');
+        } else {
+            $this->json_success(['stock_actuel' => $nouveau_stock], "Approvisionnement de $quantite effectué");
+        }
     }
 }

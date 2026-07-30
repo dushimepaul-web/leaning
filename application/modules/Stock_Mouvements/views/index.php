@@ -14,9 +14,9 @@
       <button type="button" class="btn btn-primary-600 d-flex align-items-center gap-6" onclick="openAddSidebar()">
         <span class="d-flex text-md"><i class="ri-add-large-line"></i></span> Nouveau mouvement
       </button>
-      <button type="button" class="btn btn-success-600 d-flex align-items-center gap-6" onclick="openVenteSidebar()">
+      <a href="<?= base_url('Commandes') ?>" class="btn btn-success-600 d-flex align-items-center gap-6">
         <span class="d-flex text-md"><i class="ri-shopping-bag-line"></i></span> Nouvelle vente
-      </button>
+      </a>
     </div>
   </div>
 
@@ -252,12 +252,12 @@ function setupAutocomplete(searchId, hiddenId, listId, dataItems, renderFn) {
 setupAutocomplete('produitSearch', 'id_produit', 'produitList', produitsList, {
   filter: function(p) { return true; },
   match: function(p, q) {
-    return (p.libelle + ' ' + (p.code || '')).toLowerCase().includes(q);
+    return p.libelle.toLowerCase().includes(q);
   },
   html: function(p) {
     return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + p.id_produit + '" data-label="' + p.libelle + '" data-prix="' + (p.prix_unitaire || 0) + '">' +
       '<span class="fw-medium text-sm">' + p.libelle + '</span>' +
-      '<small class="d-block text-secondary-light text-xs">Code: ' + (p.code || '-') + ' | Stock: ' + (p.stock_actuel || 0) + ' | Prix: ' + parseFloat(p.prix_unitaire || 0).toLocaleString() + ' ' + DEVISE + '</small>' +
+      '<small class="d-block text-secondary-light text-xs">Stock: ' + (p.stock_actuel || 0) + ' | Prix: ' + parseFloat(p.prix_unitaire || 0).toLocaleString() + ' ' + DEVISE + '</small>' +
     '</button>';
   },
   onSelect: function(data) {
@@ -351,7 +351,7 @@ setupAutocomplete('venteEtudiantSearch', 'venteEtudiant', 'venteEtudiantList', e
 });
 setupAutocomplete('venteProduitSearch', 'venteProduit', 'venteProduitList', produitsList, {
   filter: function(p) { return true; },
-  match: function(p, q) { return (p.libelle + ' ' + (p.code || '')).toLowerCase().includes(q); },
+  match: function(p, q) { return p.libelle.toLowerCase().includes(q); },
   html: function(p) { return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + p.id_produit + '" data-label="' + p.libelle + '" data-prix="' + (p.prix_unitaire || 0) + '"><span class="fw-medium text-sm">' + p.libelle + '</span><small class="d-block text-secondary-light text-xs">Stock: ' + (p.stock_actuel || 0) + ' | Prix: ' + parseFloat(p.prix_unitaire || 0).toLocaleString() + ' ' + DEVISE + '</small></button>'; },
   onSelect: function(data) { document.getElementById('ventePrix').value = data.prix; }
 });

@@ -85,6 +85,7 @@
               <th>Matricule</th>
               <th>Date</th>
               <th>Total</th>
+              <th>Bénéfice</th>
               <th>Statut</th>
               <th>Actions</th>
             </tr>
@@ -136,17 +137,17 @@
         <input type="text" class="form-control" id="id_produit_search" placeholder="Rechercher un produit..." autocomplete="off">
         <div id="id_produit_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-3">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire</label>
         <input type="number" class="form-control" id="prix_unitaire" step="0.01" min="0" value="0">
       </div>
       <div class="col-md-2">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Quantité</label>
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Qté</label>
         <input type="number" class="form-control" id="quantite" min="1" value="1">
       </div>
-      <div class="col-md-3">
-        <button type="button" class="btn btn-primary-600 w-100" onclick="addProduct()">
-          <i class="ri-add-line"></i> Ajouter
+      <div class="col-md-2">
+        <button type="button" class="btn btn-primary-600 w-100 d-flex align-items-center justify-content-center gap-1" onclick="addProduct()" title="Ajouter">
+          <i class="ri-add-line"></i>
         </button>
       </div>
     </div>
@@ -229,15 +230,15 @@ try { const el = document.getElementById('produits_data'); if (el) produitsList 
 function renderStudentList(filter) {
   const container = document.getElementById('id_etudiant_results');
   const q = (filter || '').toLowerCase().trim();
-  const matches = q ? etudiantsList.filter(e => (e.nom+' '+(e.matricule||'')).toLowerCase().includes(q)) : etudiantsList;
+  const matches = q ? etudiantsList.filter(e => (e.fullname+' '+(e.matricule||'')).toLowerCase().includes(q)) : etudiantsList;
   if (!matches.length) {
     container.innerHTML = '<div class="list-group-item text-secondary-light text-center py-3"><i class="ri-user-search-line me-1"></i>Aucun étudiant trouvé</div>';
   } else {
     container.innerHTML = matches.map(e =>
-      `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${e.id_etudiant}" data-nom="${e.nom}" data-matricule="${e.matricule||''}">
+      `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${e.id_etudiant}" data-nom="${e.fullname}" data-matricule="${e.matricule||''}">
         <span class="d-flex align-items-center justify-content-center bg-primary-100 text-primary-600 radius-4" style="width:36px;height:36px;flex-shrink:0;"><i class="ri-user-3-line"></i></span>
         <div class="text-start">
-          <span class="fw-medium text-sm">${e.nom} ${e.prenom}</span>
+          <span class="fw-medium text-sm">${e.fullname}</span>
           <small class="d-block text-secondary-light text-xs">${e.matricule||'Sans matricule'}</small>
         </div>
       </button>`
@@ -294,26 +295,27 @@ document.addEventListener('click', function(e) {
 function renderProduitList(filter) {
   const container = document.getElementById('id_produit_results');
   const q = (filter || '').toLowerCase().trim();
-  const matches = q ? produitsList.filter(p => (p.libelle+' '+p.code).toLowerCase().includes(q)) : produitsList;
+  const matches = q ? produitsList.filter(p => p.libelle.toLowerCase().includes(q)) : produitsList;
   if (!matches.length) {
     container.innerHTML = '<div class="list-group-item text-secondary-light text-center py-3"><i class="ri-shopping-bag-line me-1"></i>Aucun produit trouvé</div>';
   } else {
-    container.innerHTML = matches.map(p =>
-      `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${p.id_produit}" data-libelle="${p.libelle}" data-prix="${p.prix_unitaire}" data-code="${p.code}">
+    container.innerHTML = matches.map(p => {
+      const stockClass = parseInt(p.stock_actuel) > 0 ? 'text-success' : 'text-danger';
+      return `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${p.id_produit}" data-libelle="${p.libelle}" data-prix="${p.prix_unitaire}" data-prix-achat="${p.prix_achat || 0}">
         <span class="d-flex align-items-center justify-content-center bg-success-100 text-success-600 radius-4" style="width:36px;height:36px;flex-shrink:0;"><i class="ri-stack-line"></i></span>
         <div class="text-start">
           <span class="fw-medium text-sm">${p.libelle}</span>
-          <small class="d-block text-secondary-light text-xs">${p.code} - ${parseFloat(p.prix_unitaire).toLocaleString()} ${DEVISE}</small>
+          <small class="d-block text-secondary-light text-xs">${parseFloat(p.prix_unitaire).toLocaleString()} ${DEVISE} - Stock: <span class="${stockClass}">${p.stock_actuel || 0}</span></small>
         </div>
-      </button>`
-    ).join('');
+      </button>`;
+    }).join('');
   }
   container.style.display = 'block';
 }
 
 function selectProduit(el) {
   document.getElementById('id_produit').value = el.dataset.id;
-  document.getElementById('id_produit_search').value = el.dataset.libelle + ' (' + el.dataset.code + ')';
+  document.getElementById('id_produit_search').value = el.dataset.libelle;
   document.getElementById('prix_unitaire').value = el.dataset.prix;
   document.getElementById('id_produit_results').style.display = 'none';
 }
@@ -464,9 +466,13 @@ async function viewDetail(id) {
     <div class="col-md-6"><strong>Statut:</strong> ${c.statut || ''}</div>
     <div class="col-md-6"><strong>Total:</strong> ${parseFloat(c.total).toLocaleString()} ${DEVISE}</div>
   </div>
-  <table class="table table-sm bordered-table"><thead><tr><th>Produit</th><th>Prix unit.</th><th>Qté</th><th>Sous-total</th></tr></thead><tbody>`;
+  <table class="table table-sm bordered-table"><thead><tr><th>Produit</th><th>Prix unit.</th><th>Qté</th><th>Sous-total</th><th>Coût</th><th>Bénéfice</th></tr></thead><tbody>`;
   (c.details || []).forEach(d => {
-    html += `<tr><td>${d.produit_libelle || ''} <small class="text-secondary-light">(${d.produit_code || ''})</small></td><td>${parseFloat(d.prix_unitaire).toLocaleString()}</td><td>${d.quantite}</td><td>${(d.prix_unitaire * d.quantite).toLocaleString()}</td></tr>`;
+    const pa = parseFloat(d.prix_achat || 0);
+    const pv = parseFloat(d.prix_unitaire || 0);
+    const cout = (pa * d.quantite);
+    const benefice = ((pv - pa) * d.quantite);
+    html += `<tr><td>${d.produit_libelle || ''}</td><td>${pv.toLocaleString()}</td><td>${d.quantite}</td><td>${(pv * d.quantite).toLocaleString()}</td><td>${cout.toLocaleString()}</td><td class="${benefice >= 0 ? 'text-success' : 'text-danger'} fw-semibold">${benefice.toLocaleString()}</td></tr>`;
   });
   html += '</tbody></table>';
   document.getElementById('detailContent').innerHTML = html;
@@ -482,7 +488,7 @@ function changeStatut(id, newStatut) {
 
 async function loadData() {
   const r = await API.commandes.list();
-  if (!r.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
+  if (!r.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
   let rows = '';
   const statutBadges = {
     en_attente: 'bg-warning-100 text-warning-600',
@@ -498,6 +504,7 @@ async function loadData() {
       <td>${c.matricule || '-'}</td>
       <td>${c.date_commande || '-'}</td>
       <td>${parseFloat(c.total).toLocaleString()} ${DEVISE}</td>
+      <td class="${parseFloat(c.benefice) >= 0 ? 'text-success' : 'text-danger'} fw-semibold">${parseFloat(c.benefice || 0).toLocaleString()} ${DEVISE}</td>
       <td><span class="${statutBadges[c.statut] || ''} px-24 py-4 radius-4 fw-medium text-sm">${statutLabels[c.statut] || c.statut}</span></td>
       <td>
         <div class="btn-group">
@@ -537,11 +544,11 @@ function exportCSV() {
   const table = $('#dataTable').DataTable();
   const data = table.rows({ filter: 'applied' }).data();
   let csv = '\uFEFF';
-  const headers = ['#', 'Étudiant', 'Matricule', 'Date', 'Total', 'Statut'];
+  const headers = ['#', 'Étudiant', 'Matricule', 'Date', 'Total', 'Bénéfice', 'Statut'];
   csv += headers.join(',') + '\n';
   data.each(function(row) {
     const cols = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
       let val = $(row[i]).text().trim() || row[i] || '';
       val = '"' + val.replace(/"/g, '""') + '"';
       cols.push(val);

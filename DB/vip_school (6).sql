@@ -255,6 +255,7 @@ CREATE TABLE IF NOT EXISTS `commandes_details` (
   `id_produit` int NOT NULL,
   `quantite` int NOT NULL DEFAULT '1',
   `prix_unitaire` decimal(12,2) NOT NULL,
+  `prix_achat` decimal(12,2) NOT NULL DEFAULT '0.00',
   `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_detail`),
   UNIQUE KEY `uuid` (`uuid`),
@@ -266,9 +267,9 @@ CREATE TABLE IF NOT EXISTS `commandes_details` (
 -- Déchargement des données de la table `commandes_details`
 --
 
-INSERT INTO `commandes_details` (`id_detail`, `uuid`, `id_commande`, `id_produit`, `quantite`, `prix_unitaire`, `cree_le`) VALUES
-(1, '066c7634-77a1-4456-8346-136722925f1c', 1, 1, 1, 23.00, '2026-06-18 15:22:08'),
-(2, 'b0d80885-6611-473a-9c1b-56bee2da9b88', 2, 1, 1, 23.00, '2026-06-29 12:00:24');
+INSERT INTO `commandes_details` (`id_detail`, `uuid`, `id_commande`, `id_produit`, `quantite`, `prix_unitaire`, `prix_achat`, `cree_le`) VALUES
+(1, '066c7634-77a1-4456-8346-136722925f1c', 1, 1, 1, 23.00, 0.00, '2026-06-18 15:22:08'),
+(2, 'b0d80885-6611-473a-9c1b-56bee2da9b88', 2, 1, 1, 23.00, 0.00, '2026-06-29 12:00:24');
 
 -- --------------------------------------------------------
 
@@ -1193,6 +1194,7 @@ CREATE TABLE IF NOT EXISTS `produits` (
   `libelle` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `taille` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `prix_achat` decimal(12,2) NOT NULL DEFAULT '0.00',
   `editeur` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `annee_edition` year DEFAULT NULL,
   `id_matiere` int DEFAULT NULL,
@@ -1206,7 +1208,6 @@ CREATE TABLE IF NOT EXISTS `produits` (
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id_produit`),
   UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `code` (`code`),
   KEY `idx_produits_categorie` (`id_categorie`),
   KEY `idx_matiere` (`id_matiere`),
   KEY `idx_classe` (`id_classe`)
@@ -1216,8 +1217,8 @@ CREATE TABLE IF NOT EXISTS `produits` (
 -- Déchargement des données de la table `produits`
 --
 
-INSERT INTO `produits` (`id_produit`, `uuid`, `id_categorie`, `code`, `libelle`, `description`, `taille`, `editeur`, `annee_edition`, `id_matiere`, `id_classe`, `prix_unitaire`, `stock_mini`, `stock_actuel`, `unite`, `cree_le`, `modifie_le`, `deleted_at`) VALUES
-(1, '59625ff8-a2f2-4874-9769-e5c407b73b9f', 3, 'siue', 'ddsilfjiow', NULL, NULL, NULL, NULL, NULL, NULL, 23.00, 5, 20, 'pi??ce', '2026-06-18 15:18:19', '2026-06-29 12:00:24', NULL);
+INSERT INTO `produits` (`id_produit`, `uuid`, `id_categorie`, `libelle`, `description`, `taille`, `prix_achat`, `editeur`, `annee_edition`, `id_matiere`, `id_classe`, `prix_unitaire`, `stock_mini`, `stock_actuel`, `unite`, `cree_le`, `modifie_le`, `deleted_at`) VALUES
+(1, '59625ff8-a2f2-4874-9769-e5c407b73b9f', 3, 'ddsilfjiow', NULL, NULL, 0.00, NULL, NULL, NULL, NULL, 23.00, 5, 20, 'pi??ce', '2026-06-18 15:18:19', '2026-06-29 12:00:24', NULL);
 
 -- --------------------------------------------------------
 

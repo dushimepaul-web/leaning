@@ -69,10 +69,11 @@
           <thead>
             <tr>
               <th>S.L</th>
-              <th>Code</th>
               <th>Libellé</th>
               <th>Catégorie</th>
-              <th>Prix</th>
+              <th>Prix Vente</th>
+              <th>Prix Achat</th>
+              <th>Bénéfice</th>
               <th>Stock</th>
               <th>Stock Min</th>
               <th>Actions</th>
@@ -95,10 +96,6 @@
     <input type="hidden" id="recordId">
     <div class="row g-3">
       <div class="col-md-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Code</label>
-        <input type="text" class="form-control" id="code" placeholder="Ex: PROD001">
-      </div>
-      <div class="col-md-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label>
         <input type="text" class="form-control" id="libelle" required placeholder="Nom du produit">
       </div>
@@ -108,11 +105,15 @@
           <option value="">Sélectionner</option>
         </select>
       </div>
-      <div class="col-md-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (<?= get_setting('devise', 'BIF') ?>)</label>
+      <div class="col-md-4">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix vente (<?= get_setting('devise', 'BIF') ?>)</label>
         <input type="number" class="form-control" id="prix_unitaire" step="0.01" placeholder="0.00">
       </div>
-      <div class="col-md-6">
+      <div class="col-md-4">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix achat (<?= get_setting('devise', 'BIF') ?>)</label>
+        <input type="number" class="form-control" id="prix_achat" step="0.01" placeholder="0.00">
+      </div>
+      <div class="col-md-4">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Taille</label>
         <input type="text" class="form-control" id="taille" placeholder="Ex: S, M, L, XL (uniformes)">
       </div>
@@ -185,18 +186,20 @@ async function loadCategories() {
 
 async function loadData() {
   const res = await API.produits.list();
-  if (!res.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur</td></tr>'); return; }
+  if (!res.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur</td></tr>'); return; }
   let rows = '';
   const filtreCat = document.getElementById('filterCategory').value;
   res.data.forEach((p, i) => {
     if (filtreCat && String(p.id_categorie) !== filtreCat) return;
     const stockRatio = p.stock_actuel <= p.stock_mini ? 'bg-danger-100 text-danger-600' : 'bg-success-100 text-success-600';
+    const benefice = parseFloat(p.prix_unitaire || 0) - parseFloat(p.prix_achat || 0);
     rows += `<tr>
       <td>${i + 1}</td>
-      <td><span class="fw-semibold">${p.code || '-'}</span></td>
       <td>${p.libelle}</td>
       <td>${p.categorie || '-'}</td>
       <td><strong>${parseFloat(p.prix_unitaire || 0).toLocaleString()} ${DEVISE}</strong></td>
+      <td>${parseFloat(p.prix_achat || 0).toLocaleString()} ${DEVISE}</td>
+      <td><strong class="${benefice > 0 ? 'text-success-600' : 'text-danger-600'}">${benefice.toLocaleString()} ${DEVISE}</strong></td>
       <td><span class="${stockRatio} px-24 py-4 radius-4 fw-medium text-sm">${p.stock_actuel || 0}</span></td>
       <td>${p.stock_mini || 0}</td>
       <td>
@@ -237,10 +240,10 @@ function openEditSidebar(data) {
   editingId = data.uuid;
   document.getElementById('sidebarTitle').textContent = 'Modifier le produit';
   document.getElementById('recordId').value = data.uuid;
-  document.getElementById('code').value = data.code || '';
   document.getElementById('libelle').value = data.libelle || '';
   document.getElementById('id_categorie').value = data.id_categorie || '';
   document.getElementById('prix_unitaire').value = data.prix_unitaire || '';
+  document.getElementById('prix_achat').value = data.prix_achat || '';
   document.getElementById('stock_mini').value = data.stock_mini || 5;
   document.getElementById('unite').value = data.unite || 'pièce';
   document.getElementById('taille').value = data.taille || '';
@@ -256,10 +259,10 @@ async function editRecord(id) {
 
 async function saveRecord() {
   const data = {
-    code: document.getElementById('code').value,
     libelle: document.getElementById('libelle').value,
     id_categorie: document.getElementById('id_categorie').value || null,
     prix_unitaire: document.getElementById('prix_unitaire').value || 0,
+    prix_achat: document.getElementById('prix_achat').value || 0,
     stock_actuel: document.getElementById('stock_initial').value || 0,
     stock_mini: document.getElementById('stock_mini').value || 5,
     unite: document.getElementById('unite').value || 'pièce',
@@ -310,10 +313,10 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 function exportCSV() {
   const table = $('#dataTable').DataTable();
   const data = table.rows({ filter: 'applied' }).data();
-  let csv = '\uFEFFCode,Libellé,Catégorie,Prix,Stock,Stock Min\n';
+  let csv = '\uFEFFLibellé,Catégorie,Prix Vente,Prix Achat,Bénéfice,Stock,Stock Min\n';
   data.each(function(row) {
     const cols = [];
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 8; i++) {
       let val = $(row[i]).text().trim() || row[i] || '';
       val = '"' + val.replace(/"/g, '""') + '"';
       cols.push(val);

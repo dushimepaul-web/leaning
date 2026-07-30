@@ -8,7 +8,7 @@ class Stock_Mouvements_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('m.deleted_at', null);
-        $this->db->select('m.*, p.libelle as produit_libelle, p.code as produit_code');
+        $this->db->select('m.*, p.libelle as produit_libelle');
         $this->db->from('mouvements_stock m');
         $this->db->join('produits p', 'm.id_produit = p.id_produit', 'left');
         if (!empty($filters['id_produit'])) $this->db->where('m.id_produit', $filters['id_produit']);

@@ -7,7 +7,7 @@ class Fiches extends MY_Controller {
     public function index() {
         $data['title'] = 'Fiches de points';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
-        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null, 'id_annee' => $this->id_annee_active]);
+        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null]);
         $data['annees'] = $this->Model->read('annees_scolaires', ['deleted_at' => null]);
         $this->load->view('fiches', $data);
     }

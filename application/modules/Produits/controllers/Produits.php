@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Produits extends MY_Controller {
-    public function __construct() { parent::__construct(); }
+    public function __construct() { parent::__construct(); $this->not_logged_in(); }
 
     public function index() {
         $data['title'] = 'Gestion des Stocks';
@@ -44,7 +44,7 @@ class Produits extends MY_Controller {
             $first = $this->Model->readOne('categories_produits', ['deleted_at' => null]);
             $data['id_categorie'] = $first ? $first['id_categorie'] : null;
         }
-        $cols = ['code','libelle','id_categorie','prix_unitaire','stock_actuel','stock_mini','unite','description','taille'];
+        $cols = ['libelle','id_categorie','prix_unitaire','prix_achat','stock_actuel','stock_mini','unite','description','taille'];
         $clean = [];
         foreach ($cols as $col) {
             if (isset($data[$col]) && $data[$col] !== '') {
@@ -59,7 +59,7 @@ class Produits extends MY_Controller {
                     'id_produit' => $id,
                     'type' => 'entree',
                     'quantite' => $stock_initial,
-                    'prix_unitaire' => $data['prix_unitaire'] ?? 0,
+                    'prix_unitaire' => $data['prix_achat'] ?? $data['prix_unitaire'] ?? 0,
                     'motif' => 'Stock initial',
                     'id_utilisateur' => $this->session->userdata('id_utilisateur')
                 ]);

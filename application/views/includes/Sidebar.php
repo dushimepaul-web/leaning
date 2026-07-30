@@ -132,21 +132,39 @@
         </a>
         <ul class="sidebar-submenu">
           <li>
-            <a href="<?=base_url('Librairie')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Librairie
-            </a>
-          </li>
-          <li>
             <a href="<?=base_url('Stock_Categories')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Catégories
             </a>
           </li>
           <li>
+            <a href="<?=base_url('Produits')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Produits
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Toilettes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Toilettes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Librairie')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Librairie
+            </a>
+          </li>
+          <li>
             <a href="<?=base_url('Commandes')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Commandes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Stock_Mouvements')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Historique
             </a>
           </li>
           <li>

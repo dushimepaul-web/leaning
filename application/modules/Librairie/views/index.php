@@ -23,8 +23,9 @@
     <div class="card-header py-12 px-20 border-bottom border-neutral-200 d-flex flex-wrap align-items-center gap-12">
       <div class="nav nav-tabs border-0 gap-8" id="categoryTabs" role="tablist">
         <button class="btn btn-sm rounded-pill fw-medium px-16 active" data-category="" onclick="switchCategory(this)">Tous</button>
-        <button class="btn btn-sm rounded-pill fw-medium px-16" data-category="LIVRE" onclick="switchCategory(this)">Livres</button>
-        <button class="btn btn-sm rounded-pill fw-medium px-16" data-category="MATERIEL" onclick="switchCategory(this)">Fournitures</button>
+        <?php foreach ($categories as $cat): ?>
+        <button class="btn btn-sm rounded-pill fw-medium px-16" data-category="<?= $cat['code'] ?>" onclick="switchCategory(this)"><?= $cat['libelle'] ?></button>
+        <?php endforeach; ?>
       </div>
     </div>
     <div class="card-body p-0 dataTable-wrapper">
@@ -49,9 +50,10 @@
           <tr>
             <th>#</th>
             <th>Type</th>
-            <th>Code</th>
             <th>Libellé / Titre</th>
-            <th>Prix unitaire</th>
+            <th>Prix d'achat</th>
+            <th>Prix de vente</th>
+            <th>Bénéfice</th>
             <th>Stock</th>
             <th>Actions</th>
           </tr>
@@ -76,17 +78,11 @@
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Type <span class="text-danger-600">*</span></label>
           <select class="form-control form-select" id="fCategorie" onchange="toggleBookFields()">
             <?php foreach ($categories as $cat): ?>
-            <?php if (in_array($cat['code'], ['LIVRE','MATERIEL','FOURNITURE'])): ?>
             <option value="<?= $cat['id_categorie'] ?>" data-code="<?= $cat['code'] ?>"><?= $cat['libelle'] ?></option>
-            <?php endif; ?>
             <?php endforeach; ?>
           </select>
         </div>
         <div class="col-md-6">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Code</label>
-          <input type="text" class="form-control" id="fCode" placeholder="Code unique">
-        </div>
-        <div class="col-md-12">
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé / Titre <span class="text-danger-600">*</span></label>
           <input type="text" class="form-control" id="fLibelle" placeholder="Nom du produit ou titre du livre">
         </div>
@@ -98,26 +94,13 @@
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Année d'édition</label>
           <input type="number" class="form-control" id="fAnnee" placeholder="2026" min="1900" max="2099">
         </div>
-        <div class="col-md-6 book-field" style="display:none">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Matière</label>
-          <select class="form-control form-select" id="fMatiere">
-            <option value="">-- Sélectionner --</option>
-            <?php foreach ($matieres as $m): ?>
-            <option value="<?= $m['id_matiere'] ?>"><?= $m['libelle'] ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col-md-6 book-field" style="display:none">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe</label>
-          <select class="form-control form-select" id="fClasse">
-            <option value="">-- Sélectionner --</option>
-            <?php foreach ($classes as $cl): ?>
-            <option value="<?= $cl['id_classe'] ?>"><?= $cl['libelle'] ?></option>
-            <?php endforeach; ?>
-          </select>
+
+        <div class="col-md-6">
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix d'achat (<span class="devise-label">FC</span>)</label>
+          <input type="number" class="form-control" id="fPrixAchat" step="0.01" placeholder="0.00">
         </div>
         <div class="col-md-6">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (<span class="devise-label">FC</span>) <span class="text-danger-600">*</span></label>
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix de vente (<span class="devise-label">FC</span>) <span class="text-danger-600">*</span></label>
           <input type="number" class="form-control" id="fPrix" step="0.01" placeholder="0.00">
         </div>
         <div class="col-md-6">
@@ -161,9 +144,10 @@ function toggleBookFields() {
 }
 
 async function loadData() {
+  try {
   const endpoint = currentCategory ? currentCategory : '';
   const r = await API.librairie.list(endpoint);
-  if (!r.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur</td></tr>'); return; }
+  if (!r.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur</td></tr>'); return; }
   let rows = '';
   r.data.forEach(function(d, i) {
     const catLabel = d.code_categorie === 'LIVRE' ? '<span class="badge bg-primary-100 text-primary-600">Livre</span>' : '<span class="badge bg-info-100 text-info-600">Fourniture</span>';
@@ -172,15 +156,18 @@ async function loadData() {
     rows += `<tr>
       <td>${i + 1}</td>
       <td>${catLabel}</td>
-      <td><span class="fw-semibold">${d.code || '-'}</span></td>
       <td>${d.libelle}</td>
+      <td><strong>${parseFloat(d.prix_achat || 0).toLocaleString()} ${typeof DEVISE !== 'undefined' ? DEVISE : 'FC'}</strong></td>
       <td><strong>${parseFloat(d.prix_unitaire || 0).toLocaleString()} ${typeof DEVISE !== 'undefined' ? DEVISE : 'FC'}</strong></td>
+      <td><strong>${(parseFloat(d.prix_unitaire || 0) - parseFloat(d.prix_achat || 0)).toLocaleString()} ${typeof DEVISE !== 'undefined' ? DEVISE : 'FC'}</strong></td>
       <td><span class="${stockBadge} px-16 py-4 radius-4 fw-medium text-sm">${stock}</span></td>
       <td>
         <div class="btn-group">
           <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
           <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
             <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editProduct('${d.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
+            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="approvisionner('${d.uuid}','${d.libelle}')"><i class="ri-add-box-line"></i> Approvisionner</button></li>
+            <li><hr class="dropdown-divider"></li>
             <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteProduct('${d.uuid}')"><i class="ri-delete-bin-line"></i> Supprimer</button></li>
           </ul>
         </div>
@@ -195,6 +182,7 @@ async function loadData() {
     language: { search: '', searchPlaceholder: 'Rechercher...', lengthMenu: 'Lignes par page: _MENU_', info: '', zeroRecords: 'Aucun produit trouvé', infoEmpty: '', infoFiltered: '' },
     dom: 't<"d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-top border-neutral-200"<"d-flex align-items-center gap-8 text-secondary-light"i><"d-flex align-items-center gap-2"p>>'
   });
+  } catch(e) { console.error('loadData error:', e); }
 }
 
 function switchCategory(btn) {
@@ -217,12 +205,10 @@ function openForm(data) {
     document.getElementById('recordId').value = data.uuid;
     document.getElementById('formTitle').textContent = 'Modifier le produit';
     document.getElementById('fCategorie').value = data.id_categorie || '';
-    document.getElementById('fCode').value = data.code || '';
     document.getElementById('fLibelle').value = data.libelle || '';
     document.getElementById('fEditeur').value = data.editeur || '';
     document.getElementById('fAnnee').value = data.annee_edition || '';
-    document.getElementById('fMatiere').value = data.id_matiere || '';
-    document.getElementById('fClasse').value = data.id_classe || '';
+    document.getElementById('fPrixAchat').value = data.prix_achat || 0;
     document.getElementById('fPrix').value = data.prix_unitaire || 0;
     document.getElementById('fStock').value = data.stock_actuel || 0;
     document.getElementById('fStockMin').value = data.stock_mini || 0;
@@ -248,12 +234,10 @@ async function editProduct(uuid) {
 async function saveProduct() {
   const data = {
     id_categorie: document.getElementById('fCategorie').value,
-    code: document.getElementById('fCode').value,
     libelle: document.getElementById('fLibelle').value,
     editeur: document.getElementById('fEditeur').value,
     annee_edition: document.getElementById('fAnnee').value,
-    id_matiere: document.getElementById('fMatiere').value || null,
-    id_classe: document.getElementById('fClasse').value || null,
+    prix_achat: document.getElementById('fPrixAchat').value || 0,
     prix_unitaire: document.getElementById('fPrix').value || 0,
     stock_actuel: document.getElementById('fStock').value || 0,
     stock_mini: document.getElementById('fStockMin').value || 0,
@@ -280,6 +264,28 @@ async function initArticles() {
   if (!c.isConfirmed) return;
   const r = await API.librairie.initialiser();
   if (r.success) { Toast.fire({ icon: 'success', title: r.message }); loadData(); }
+  else Swal.fire({ icon: 'error', title: 'Erreur', text: r.message });
+}
+
+async function approvisionner(uuid, libelle) {
+  const { value: form } = await Swal.fire({
+    title: 'Approvisionner : ' + libelle,
+    html: '<label class="text-sm fw-semibold mb-8 d-block">Quantité</label><input id="swal-qte" type="number" class="form-control" min="1" step="1" value="1">' +
+          '<label class="text-sm fw-semibold mb-8 d-block mt-12">Prix d\'achat du lot (unitaire)</label><input id="swal-prix" type="number" class="form-control" min="0" step="0.01" placeholder="0.00">' +
+          '<label class="text-sm fw-semibold mb-8 d-block mt-12">Motif</label><input id="swal-motif" type="text" class="form-control" value="Approvisionnement">',
+    showCancelButton: true, confirmButtonText: 'Valider', cancelButtonText: 'Annuler',
+    preConfirm: () => {
+      const q = parseInt(document.getElementById('swal-qte').value);
+      if (!q || q <= 0) { Swal.showValidationMessage('Quantité invalide'); return false; }
+      return true;
+    }
+  });
+  if (!form) return;
+  const qte = parseInt(document.getElementById('swal-qte').value);
+  const prix_achat = parseFloat(document.getElementById('swal-prix').value) || 0;
+  const motif = document.getElementById('swal-motif').value || 'Approvisionnement';
+  const r = await API.librairie.approvisionner({ uuid, quantite: qte, prix_achat, motif });
+  if (r.success) { Toast.fire({ icon: 'success', title: r.message }); setTimeout(function(){ location.reload(); }, 500); }
   else Swal.fire({ icon: 'error', title: 'Erreur', text: r.message });
 }
 

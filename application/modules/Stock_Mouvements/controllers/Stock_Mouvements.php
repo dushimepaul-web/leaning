@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Stock_Mouvements extends MY_Controller {
-    public function __construct() { parent::__construct(); }
+    public function __construct() { parent::__construct(); $this->not_logged_in(); }
 
     public function index() {
         $data['title'] = 'Mouvements de Stock';
@@ -12,7 +12,7 @@ class Stock_Mouvements extends MY_Controller {
     }
 
     public function api_list() {
-        $this->db->select("m.*, p.libelle as produit_libelle, p.code as produit_code, u.nom_complet as utilisateur, e.fullname as etudiant_nom, '' as etudiant_prenom");
+        $this->db->select("m.*, p.libelle as produit_libelle, u.nom_complet as utilisateur, e.fullname as etudiant_nom, '' as etudiant_prenom");
         $this->db->from('mouvements_stock m');
         $this->db->join('produits p', 'm.id_produit = p.id_produit', 'left');
         $this->db->join('utilisateurs u', 'm.id_utilisateur = u.id_utilisateur', 'left');
@@ -34,6 +34,12 @@ class Stock_Mouvements extends MY_Controller {
         $qty = intval($data['quantite']);
         $prix = floatval($data['prix_unitaire'] ?? 0);
 
+        if ($data['type'] === 'sortie' && intval($produit['stock_actuel']) < $qty) {
+            $this->json_error('Stock insuffisant pour "' . $produit['libelle'] . '" (stock: ' . $produit['stock_actuel'] . ')');
+            return;
+        }
+
+        $this->db->trans_start();
         $mouvement = [
             'id_produit' => $data['id_produit'],
             'type' => $data['type'],
@@ -46,14 +52,14 @@ class Stock_Mouvements extends MY_Controller {
 
         if ($data['type'] === 'entree') {
             $nouveau_stock = intval($produit['stock_actuel']) + $qty;
-            $this->Model->update('produits', ['id_produit' => $data['id_produit']], ['stock_actuel' => $nouveau_stock]);
         } else {
-            $nouveau_stock = max(0, intval($produit['stock_actuel']) - $qty);
-            $this->Model->update('produits', ['id_produit' => $data['id_produit']], ['stock_actuel' => $nouveau_stock]);
+            $nouveau_stock = intval($produit['stock_actuel']) - $qty;
         }
-
+        $this->Model->update('produits', ['id_produit' => $data['id_produit']], ['stock_actuel' => $nouveau_stock]);
         $id = $this->Model->create('mouvements_stock', $mouvement);
-        if ($id) {
+        $this->db->trans_complete();
+
+        if ($id && $this->db->trans_status() !== false) {
             $this->json_success(['id_mouvement' => $id], 'Mouvement enregistré');
         } else {
             $this->json_error('Erreur lors de l\'enregistrement');
@@ -67,6 +73,19 @@ class Stock_Mouvements extends MY_Controller {
 
         $id_etudiant = intval($data['id_etudiant']);
         $id_user = $this->session->userdata('id_utilisateur');
+
+        foreach ($data['produits'] as $item) {
+            if (empty($item['id_produit']) || intval($item['quantite']) <= 0) continue;
+            $produit = $this->Model->readOne('produits', ['id_produit' => $item['id_produit']]);
+            if (!$produit) { $this->json_error('Produit introuvable (#' . $item['id_produit'] . ')'); return; }
+            $qty = intval($item['quantite']);
+            if (intval($produit['stock_actuel']) < $qty) {
+                $this->json_error('Stock insuffisant pour "' . $produit['libelle'] . '" (stock: ' . $produit['stock_actuel'] . ')');
+                return;
+            }
+        }
+
+        $this->db->trans_start();
         $created = 0;
         $total = 0;
 
@@ -77,7 +96,7 @@ class Stock_Mouvements extends MY_Controller {
 
             $qty = intval($item['quantite']);
             $prix = floatval($item['prix_unitaire'] ?? $produit['prix_unitaire'] ?? 0);
-            $nouveau_stock = max(0, intval($produit['stock_actuel']) - $qty);
+            $nouveau_stock = intval($produit['stock_actuel']) - $qty;
 
             $this->Model->create('mouvements_stock', [
                 'id_produit' => $item['id_produit'],
@@ -93,9 +112,14 @@ class Stock_Mouvements extends MY_Controller {
             $created++;
         }
 
-        $this->json_success([
-            'created' => $created,
-            'total' => number_format($total, 2)
-        ], "$created produit(s) vendu(s) — Total: " . number_format($total, 2) . " " . $this->Model->get_setting('devise', 'BIF'));
+        $this->db->trans_complete();
+        if ($this->db->trans_status() === false) {
+            $this->json_error('Erreur lors de la vente');
+        } else {
+            $this->json_success([
+                'created' => $created,
+                'total' => number_format($total, 2)
+            ], "$created produit(s) vendu(s) — Total: " . number_format($total, 2) . " " . $this->Model->get_setting('devise', 'BIF'));
+        }
     }
 }

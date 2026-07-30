@@ -39,7 +39,9 @@
             <th>#</th>
             <th>Code</th>
             <th>Libellé</th>
-            <th>Prix unitaire</th>
+            <th>Prix vente</th>
+            <th>Prix achat</th>
+            <th>Bénéfice</th>
             <th>Stock</th>
             <th>Actions</th>
           </tr>
@@ -69,11 +71,15 @@
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé <span class="text-danger-600">*</span></label>
           <input type="text" class="form-control" id="fLibelle" placeholder="Nom du produit">
         </div>
-        <div class="col-md-6">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (FC)</label>
+        <div class="col-md-4">
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix vente (FC)</label>
           <input type="number" class="form-control" id="fPrix" step="0.01" placeholder="0.00">
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix achat (FC)</label>
+          <input type="number" class="form-control" id="fPrixAchat" step="0.01" placeholder="0.00">
+        </div>
+        <div class="col-md-4">
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Stock</label>
           <input type="number" class="form-control" id="fStock" placeholder="0">
         </div>
@@ -98,16 +104,19 @@ let editId = null;
 
 async function loadData() {
   const r = await API.toilettes.list();
-  if (!r.success) { $('#dataBody').html('<tr><td colspan="6" class="text-center text-danger">Erreur</td></tr>'); return; }
+  if (!r.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur</td></tr>'); return; }
   let rows = '';
   r.data.forEach((d, i) => {
     const stock = d.stock_actuel || 0;
     const stockBadge = stock > 0 ? 'bg-success-100 text-success-600' : 'bg-danger-100 text-danger-600';
+    const benefice = parseFloat(d.prix_unitaire || 0) - parseFloat(d.prix_achat || 0);
     rows += `<tr>
       <td>${i + 1}</td>
       <td><span class="fw-semibold">${d.code || '-'}</span></td>
       <td>${d.libelle}</td>
       <td><strong>${parseFloat(d.prix_unitaire || 0).toLocaleString()} FC</strong></td>
+      <td>${parseFloat(d.prix_achat || 0).toLocaleString()} FC</td>
+      <td><strong class="${benefice > 0 ? 'text-success-600' : 'text-danger-600'}">${benefice.toLocaleString()} FC</strong></td>
       <td><span class="${stockBadge} px-16 py-4 radius-4 fw-medium text-sm">${stock || 0}</span></td>
       <td>
         <div class="btn-group">
@@ -143,6 +152,7 @@ async function editRecord(uuid) {
   document.getElementById('fCode').value = d.code || '';
   document.getElementById('fLibelle').value = d.libelle;
   document.getElementById('fPrix').value = d.prix_unitaire || 0;
+  document.getElementById('fPrixAchat').value = d.prix_achat || 0;
   document.getElementById('fStock').value = d.stock_actuel || 0;
   document.getElementById('fDescription').value = d.description || '';
   document.getElementById('sidebarTitle').textContent = 'Modifier le produit';
@@ -155,6 +165,7 @@ async function saveRecord() {
     code: document.getElementById('fCode').value,
     libelle: document.getElementById('fLibelle').value,
     prix_unitaire: document.getElementById('fPrix').value,
+    prix_achat: document.getElementById('fPrixAchat').value,
     stock: document.getElementById('fStock').value,
     description: document.getElementById('fDescription').value
   };

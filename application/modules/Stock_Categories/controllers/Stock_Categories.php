@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Stock_Categories extends MY_Controller {
-    public function __construct() { parent::__construct(); }
+    public function __construct() { parent::__construct(); $this->not_logged_in(); }
 
     public function index() {
         $data['title'] = 'Gestion des Catégories';
