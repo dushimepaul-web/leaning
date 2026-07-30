@@ -36,9 +36,8 @@ class Bulletins_model extends Model
 
         if (empty($matieres)) return null;
 
-        // Pass 3: Périodes — TOUJOURS toutes les périodes de l'année pour l'affichage complet
+        // Pass 3: Périodes — toutes les périodes (sans filtre année pour éviter DB vide)
         $toutes_periodes = $this->db
-            ->where('id_annee', $id_annee)
             ->where('deleted_at', null)
             ->order_by('id_periode ASC')
             ->get('periodes')->result_array();
