@@ -153,7 +153,7 @@ class MY_Controller extends MX_Controller
 
     protected function _create_linked_user($table, $record_id, $data, $role_code = 'lecture')
     {
-        $nom_complet = trim(($data['nom'] ?? '') . ' ' . ($data['postnom'] ?? '') . ' ' . ($data['prenom'] ?? ''));
+        $nom_complet = trim($data['fullname'] ?? '');
         if (empty(trim($nom_complet))) {
             $nom_complet = $data['matricule'] ?? 'Compte-' . uniqid();
         }
@@ -186,7 +186,7 @@ class MY_Controller extends MX_Controller
             return;
         }
         $user_update = [];
-        $nom_complet = trim(($data['nom'] ?? $record['nom'] ?? '') . ' ' . ($data['postnom'] ?? $record['postnom'] ?? '') . ' ' . ($data['prenom'] ?? $record['prenom'] ?? ''));
+        $nom_complet = trim($data['fullname'] ?? $record['fullname'] ?? '');
         $user_update['nom_complet'] = trim($nom_complet);
         if (isset($data['email']) && $data['email'] !== $record['email']) {
             $user_update['email'] = $data['email'];

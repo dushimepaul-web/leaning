@@ -12,7 +12,7 @@ class Recu extends MY_Controller {
 
     public function api_list() {
         $this->db->where('r.deleted_at', null);
-        $this->db->select('r.*, e.nom, e.prenom, e.matricule');
+        $this->db->select("r.*, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('recus r');
         $this->db->join('etudiants e', 'r.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('r.id_recu', 'DESC');
@@ -22,7 +22,7 @@ class Recu extends MY_Controller {
 
     public function api_get($id) {
         $this->db->where('r.uuid', $id);
-        $this->db->select('r.*, e.nom, e.prenom, e.matricule');
+        $this->db->select("r.*, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('recus r');
         $this->db->join('etudiants e', 'r.id_etudiant = e.id_etudiant', 'left');
         $q = $this->db->get();
@@ -60,7 +60,7 @@ class Recu extends MY_Controller {
         if (!$recu) { show_404(); return; }
 
         $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $recu['id_etudiant']]);
-        $recu['etudiant_nom'] = $etudiant ? trim($etudiant['nom'] . ' ' . ($etudiant['postnom'] ?? '') . ' ' . ($etudiant['prenom'] ?? '')) : '-';
+        $recu['etudiant_nom'] = $etudiant ? ($etudiant['fullname'] ?? '-') : '-';
         $recu['matricule'] = $etudiant['matricule'] ?? '-';
 
         $inscription = $this->Model->readOne('inscriptions', ['id_etudiant' => $recu['id_etudiant'], 'id_annee' => $recu['id_annee'], 'deleted_at' => null]);

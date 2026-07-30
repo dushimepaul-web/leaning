@@ -15,13 +15,13 @@ class Evaluations extends MY_Controller {
 
     public function api_list() {
         $this->db->where('ev.deleted_at', null);
-        $this->db->select('ev.*, c.libelle as classe, m.libelle as matiere, p.libelle as periode, CONCAT(e.nom," ",e.prenom) as enseignant');
+        $this->db->select('ev.*, c.libelle as classe, m.libelle as matiere, p.libelle as periode, e.fullname as enseignant');
         $this->db->from('evaluations ev');
         $this->db->join('classes c', 'ev.id_classe = c.id_classe', 'left');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
         $this->db->join('periodes p', 'ev.id_periode = p.id_periode', 'left');
-        $this->db->join('enseignements en', 'ev.id_classe = en.id_classe AND ev.id_matiere = en.id_matiere AND en.deleted_at IS NULL', 'left');
-        $this->db->join('enseignants e', 'en.id_enseignant = e.id_enseignant', 'left');
+        $this->db->join('matieres_classes mc', 'ev.id_classe = mc.id_classe AND ev.id_matiere = mc.id_matiere AND mc.deleted_at IS NULL', 'left');
+        $this->db->join('enseignants e', 'mc.id_enseignant = e.id_enseignant', 'left');
         $this->db->order_by('ev.date_eval', 'DESC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());

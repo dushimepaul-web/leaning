@@ -12,7 +12,7 @@ class Assurances extends MY_Controller {
 
     public function api_list() {
         $this->db->where('a.deleted_at', null);
-        $this->db->select('a.*, e.nom, e.prenom, e.matricule');
+        $this->db->select("a.*, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('assurances a');
         $this->db->join('etudiants e', 'a.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('a.id_assurance', 'DESC');

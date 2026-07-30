@@ -13,7 +13,7 @@ class Commandes extends MY_Controller {
 
     public function api_list() {
         $this->db->where('c.deleted_at', null);
-        $this->db->select('c.*, e.nom, e.prenom, e.matricule');
+        $this->db->select("c.*, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('commandes c');
         $this->db->join('etudiants e', 'c.id_etudiant = e.id_etudiant', 'left');
         $this->db->order_by('c.date_commande', 'DESC');

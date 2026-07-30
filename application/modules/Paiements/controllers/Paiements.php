@@ -6,7 +6,7 @@ class Paiements extends MY_Controller {
 
     public function index() {
         $data['title'] = 'Gestion des paiements';
-        $this->db->select('e.*, i.id_classe, i.id_section, c.libelle as classe_libelle, s.libelle as section_libelle');
+        $this->db->select('e.*, e.fullname, i.id_classe, i.id_section, c.libelle as classe_libelle, s.libelle as section_libelle');
         $this->db->from('etudiants e');
         $this->db->join('inscriptions i', 'e.id_etudiant = i.id_etudiant AND i.deleted_at IS NULL AND i.id_annee = '.(int)$this->id_annee_active, 'left');
         $this->db->join('classes c', 'i.id_classe = c.id_classe', 'left');
@@ -20,7 +20,7 @@ class Paiements extends MY_Controller {
 
     public function api_list() {
         $this->db->where('p.deleted_at', null);
-        $this->db->select('p.*, e.nom, e.prenom, e.matricule, tf.libelle as type_frais, tf.code as type_code, i.id_classe, i.id_section');
+        $this->db->select("p.*, e.fullname AS nom, '' AS prenom, e.matricule, tf.libelle as type_frais, tf.code as type_code, i.id_classe, i.id_section");
         $this->db->from('paiements p');
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('frais f', 'p.id_frais = f.id_frais', 'left');
@@ -33,7 +33,7 @@ class Paiements extends MY_Controller {
 
     public function api_get($id) {
         $this->db->where('p.uuid', $id);
-        $this->db->select('p.*, e.nom, e.prenom, e.matricule, tf.libelle as type_frais');
+        $this->db->select("p.*, e.fullname AS nom, '' AS prenom, e.matricule, tf.libelle as type_frais");
         $this->db->from('paiements p');
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('frais f', 'p.id_frais = f.id_frais', 'left');
@@ -46,17 +46,26 @@ class Paiements extends MY_Controller {
 
     public function api_create() {
         $data = $this->get_json_input();
-        if (empty($data['id_etudiant']) || empty($data['montant']) || empty($data['id_frais'])) {
-            $this->json_error('Étudiant, frais et montant obligatoires'); return;
+        if (empty($data['id_etudiant']) || empty($data['montant'])) {
+            $this->json_error('Étudiant et montant obligatoires'); return;
         }
 
-        // Vérifier que le frais existe
-        $frais_existe = $this->Model->readOne('frais', ['id_frais' => $data['id_frais'], 'deleted_at' => null]);
-        if (!$frais_existe) {
-            $this->json_error('Frais sélectionné inexistant (id_frais=' . $data['id_frais'] . ')'); return;
+        $frais_id = null;
+        if (!empty($data['id_frais'])) {
+            $frais_existe = $this->Model->readOne('frais', ['id_frais' => $data['id_frais'], 'deleted_at' => null]);
+            if ($frais_existe) {
+                $frais_id = $data['id_frais'];
+            }
         }
 
-        $frais_id = $data['id_frais'];
+        if (!$frais_id) {
+            $frais_defaut = $this->Model->readOne('frais', ['id_annee' => $this->id_annee_active, 'deleted_at' => null]);
+            if ($frais_defaut) {
+                $frais_id = $frais_defaut['id_frais'];
+            } else {
+                $this->json_error('Aucun frais configuré pour cette année. Veuillez créer un frais d\'abord.'); return;
+            }
+        }
 
         $id_utilisateur = $this->session->userdata('id_utilisateur') ?? null;
         $insert = [

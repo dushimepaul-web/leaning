@@ -126,6 +126,8 @@ $route['api/evaluations/(:any)/delete'] = 'Evaluations/Evaluations/api_delete/$1
 $route['api/bulletins'] = 'Notes/Bulletins/api_list';
 $route['api/bulletins/create'] = 'Notes/Bulletins/api_create';
 $route['api/bulletins/generer'] = 'Notes/Bulletins/api_generer';
+$route['api/bulletins/complet'] = 'Notes/Bulletins/api_bulletin_complet';
+$route['api/bulletins/complet/(:any)'] = 'Notes/Bulletins/api_bulletin_complet/$1';
 $route['api/bulletins/(:any)/detail'] = 'Notes/Bulletins/api_detail/$1';
 $route['api/bulletins/(:any)/update'] = 'Notes/Bulletins/api_update/$1';
 $route['api/bulletins/(:any)/delete'] = 'Notes/Bulletins/api_delete/$1';
@@ -136,7 +138,8 @@ $route['Evaluations'] = 'Evaluations/Evaluations/index';
 $route['api/fiches/fiche'] = 'Notes/Fiches/api_fiche';
 $route['api/fiches/fiche_par_cours/(:any)'] = 'Notes/Fiches/api_fiche_par_cours/$1';
 $route['api/fiches/fiche_par_cours'] = 'Notes/Fiches/api_fiche_par_cours';
-
+$route['Notes/Fiches/export/(:any)'] = 'Notes/Fiches/export_fiche_classe/$1';
+ 
 // API - Produits
 $route['api/produits/categories'] = 'Produits/Produits/api_categories';
 $route['api/produits'] = 'Produits/Produits/api_list';
@@ -352,6 +355,7 @@ $route['Frais/Paiements'] = 'Frais/Frais/index';
 $route['Frais/Recus'] = 'Frais/Frais/index';
 $route['Frais/Echeances'] = 'Frais/Frais/index';
 $route['Notes/Bulletins'] = 'Notes/Bulletins/index';
+$route['Notes/Bulletins/export/(:any)'] = 'Notes/Bulletins/export_bulletins_classe/$1';
 $route['Classes/Matieres_classes'] = 'Enseignants/Programmes/index';
 $route['Produits/Stock'] = 'Produits/Produits/index';
 $route['Stock_Categories'] = 'Stock_Categories/Stock_Categories/index';
@@ -411,3 +415,9 @@ $route['Profile'] = 'Profile/index';
 $route['api/profile/update'] = 'Profile/api_update';
 $route['api/profile/change_password'] = 'Profile/api_change_password';
 $route['api/profile/upload_photo'] = 'Profile/api_upload_photo';
+$route['Jours'] = 'Jours/Jours/index';
+$route['api/jours'] = 'Jours/Jours/api_list';
+$route['api/jours/create'] = 'Jours/Jours/api_create';
+$route['api/jours/(:any)'] = 'Jours/Jours/api_get/$1';
+$route['api/jours/(:any)/update'] = 'Jours/Jours/api_update/$1';
+$route['api/jours/(:any)/delete'] = 'Jours/Jours/api_delete/$1';

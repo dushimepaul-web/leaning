@@ -14,7 +14,7 @@ class Disponibilites extends MY_Controller {
 
     public function api_list() {
         $this->db->where('d.deleted_at', null);
-        $this->db->select('d.*, CONCAT(e.nom, " ", e.prenom) as enseignant, c.libelle as creneau, j.libelle as jour');
+        $this->db->select('d.*, e.fullname as enseignant, c.libelle as creneau, j.libelle as jour');
         $this->db->from('disponibilites_enseignants d');
         $this->db->join('enseignants e', 'd.id_enseignant = e.id_enseignant', 'left');
         $this->db->join('creneaux c', 'd.id_creneau = c.id_creneau', 'left');

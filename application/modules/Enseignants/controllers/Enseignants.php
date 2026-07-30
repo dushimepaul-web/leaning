@@ -17,48 +17,32 @@ class Enseignants extends MY_Controller {
         $data['teacher'] = null;
         $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null]);
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
+        $data['matieres_classes'] = $this->Model->read('matieres_classes', ['deleted_at' => null]);
         $this->load->view('form', $data);
     }
 
     public function edit($id) {
         $e = $this->Model->readOne('enseignants', ['uuid' => $id]);
         if (!$e) { show_404(); return; }
-        $e['enseignements'] = $this->Model->read('enseignements', ['id_enseignant' => $e['id_enseignant']]);
-        foreach ($e['enseignements'] as &$ens) {
-            $mc = $this->Model->readOne('matieres_classes', [
-                'id_matiere' => $ens['id_matiere'],
-                'id_classe' => $ens['id_classe']
-            ]);
-            if ($mc) {
-                $ens['coefficient'] = $mc['coefficient'];
-                $ens['nb_heures_par_jour'] = $mc['nb_heures_par_jour'];
-                $ens['nb_heures_par_semaine'] = $mc['nb_heures_par_semaine'];
-            }
-        }
-        $data['title'] = 'Edit Teacher';
+        $e['fullname'] = $e['fullname'] ?? '';
+        $e['enseignements'] = $this->Model->read('matieres_classes', ['id_enseignant' => $e['id_enseignant'], 'deleted_at' => null]);
+        $data['title'] = 'Modifier l\'enseignant';
         $data['teacher'] = $e;
         $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null]);
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
+        $data['matieres_classes'] = $this->Model->read('matieres_classes', ['deleted_at' => null]);
         $this->load->view('form', $data);
     }
 
     public function details($id) {
         $e = $this->Model->readOne('enseignants', ['uuid' => $id]);
         if (!$e) { show_404(); return; }
-        $enseignements = $this->Model->read('enseignements', ['id_enseignant' => $e['id_enseignant'], 'deleted_at' => null]);
-        foreach ($enseignements as &$ens) {
-            $m = $this->Model->readOne('matieres', ['id_matiere' => $ens['id_matiere']]);
-            $ens['matiere_libelle'] = $m ? $m['libelle'] : '-';
-            $c = $this->Model->readOne('classes', ['id_classe' => $ens['id_classe']]);
-            $ens['classe_libelle'] = $c ? $c['libelle'] : '-';
-            $mc = $this->Model->readOne('matieres_classes', [
-                'id_matiere' => $ens['id_matiere'],
-                'id_classe' => $ens['id_classe']
-            ]);
-            $ens['id_matiere_classe'] = $mc['id_matiere_classe'] ?? null;
-            $ens['coefficient'] = $mc['coefficient'] ?? '-';
-            $ens['nb_heures_par_jour'] = $mc['nb_heures_par_jour'] ?? '-';
-            $ens['nb_heures_par_semaine'] = $mc['nb_heures_par_semaine'] ?? '-';
+        $enseignements = $this->Model->read('matieres_classes', ['id_enseignant' => $e['id_enseignant'], 'deleted_at' => null]);
+        foreach ($enseignements as &$mc) {
+            $m = $this->Model->readOne('matieres', ['id_matiere' => $mc['id_matiere']]);
+            $c = $this->Model->readOne('classes', ['id_classe' => $mc['id_classe']]);
+            $mc['matiere_libelle'] = $m ? $m['libelle'] : '-';
+            $mc['classe_libelle'] = $c ? $c['libelle'] : '-';
         }
         $e['enseignements'] = $enseignements;
         $matiere_ids = array_unique(array_column($e['enseignements'], 'id_matiere'));
@@ -73,7 +57,7 @@ class Enseignants extends MY_Controller {
             $c = $this->Model->readOne('classes', ['id_classe' => $cid]);
             if ($c) $e['classes_list'][] = $c['libelle'];
         }
-        $data['title'] = 'Teacher Details';
+        $data['title'] = 'Détails de l\'enseignant';
         $data['teacher'] = $e;
         $this->load->view('details', $data);
     }
@@ -98,12 +82,12 @@ class Enseignants extends MY_Controller {
         if (!empty($enseignants)) {
             $ids_enseignant = array_column($enseignants, 'id_enseignant');
             $ens = $this->db->query(
-                "SELECT ens.id_enseignant, m.libelle AS matiere, c.libelle AS classe
-                 FROM enseignements ens
-                 JOIN matieres m ON m.id_matiere = ens.id_matiere
-                 JOIN classes c ON c.id_classe = ens.id_classe
-                 WHERE ens.id_enseignant IN (" . implode(',', array_fill(0, count($ids_enseignant), '?')) . ")
-                 AND ens.deleted_at IS NULL",
+                "SELECT mc.id_enseignant, m.libelle AS matiere, c.libelle AS classe
+                 FROM matieres_classes mc
+                 JOIN matieres m ON m.id_matiere = mc.id_matiere
+                 JOIN classes c ON c.id_classe = mc.id_classe
+                 WHERE mc.id_enseignant IN (" . implode(',', array_fill(0, count($ids_enseignant), '?')) . ")
+                 AND mc.deleted_at IS NULL",
                 $ids_enseignant
             )->result_array();
 
@@ -129,25 +113,20 @@ class Enseignants extends MY_Controller {
     public function api_get($id) {
         $e = $this->Model->readOne('enseignants', ['uuid' => $id]);
         if (!$e) { $this->json_error('Enseignant non trouvé', 404); return; }
-        $e['enseignements'] = $this->Model->read('enseignements', ['id_enseignant' => $e['id_enseignant'], 'deleted_at' => null]);
+        $e['enseignements'] = $this->Model->read('matieres_classes', ['id_enseignant' => $e['id_enseignant'], 'deleted_at' => null]);
         foreach ($e['enseignements'] as &$ens) {
-            $mc = $this->Model->readOne('matieres_classes', [
-                'id_matiere' => $ens['id_matiere'],
-                'id_classe' => $ens['id_classe']
-            ]);
-            if ($mc) {
-                $ens['coefficient'] = $mc['coefficient'];
-                $ens['nb_heures_par_jour'] = $mc['nb_heures_par_jour'];
-                $ens['nb_heures_par_semaine'] = $mc['nb_heures_par_semaine'];
-            }
+            $m = $this->Model->readOne('matieres', ['id_matiere' => $ens['id_matiere']]);
+            $c = $this->Model->readOne('classes', ['id_classe' => $ens['id_classe']]);
+            $ens['matiere_libelle'] = $m ? $m['libelle'] : '-';
+            $ens['classe_libelle'] = $c ? $c['libelle'] : '-';
         }
         $this->json_success($e);
     }
 
     public function api_create() {
         $data = $this->get_json_input();
-        if (empty($data['nom']) || empty($data['prenom'])) {
-            $this->json_error('Nom et prénom obligatoires'); return;
+        if (empty($data['fullname'])) {
+            $this->json_error('Le nom complet est obligatoire'); return;
         }
         $data['matricule'] = $data['matricule'] ?? 'ENS-' . strtoupper(uniqid());
         if (!empty($data['email'])) {
@@ -158,7 +137,7 @@ class Enseignants extends MY_Controller {
             }
         }
 
-        $allowed = ['matricule', 'nom', 'postnom', 'prenom', 'sexe', 'date_naissance', 'telephone', 'email', 'adresse', 'specialite', 'qualification', 'experience', 'date_embauche'];
+        $allowed = ['matricule', 'fullname', 'sexe', 'date_naissance', 'telephone', 'email', 'adresse', 'specialite', 'qualification', 'experience', 'date_embauche'];
         $teacher_data = array_intersect_key($data, array_flip($allowed));
         $id = $this->Model->createLastId('enseignants', $teacher_data);
         if ($id) {
@@ -190,7 +169,7 @@ class Enseignants extends MY_Controller {
             }
         }
 
-        $allowed = ['matricule', 'nom', 'postnom', 'prenom', 'sexe', 'date_naissance', 'telephone', 'email', 'adresse', 'specialite', 'qualification', 'experience', 'date_embauche', 'actif'];
+        $allowed = ['matricule', 'fullname', 'sexe', 'date_naissance', 'telephone', 'email', 'adresse', 'specialite', 'qualification', 'experience', 'date_embauche', 'actif'];
         $teacher_data = array_intersect_key($data, array_flip($allowed));
         if ($this->Model->update('enseignants', ['uuid' => $id], $teacher_data)) {
             if (isset($data['enseignements']) && is_array($data['enseignements'])) {
@@ -204,43 +183,85 @@ class Enseignants extends MY_Controller {
     }
 
     private function _sync_enseignements($id_enseignant, $enseignements) {
-        $this->db->where('id_enseignant', $id_enseignant)->delete('enseignements');
+        // 1. Clear previous assignments for this teacher
+        $this->db->where('id_enseignant', $id_enseignant)
+            ->update('matieres_classes', ['id_enseignant' => null]);
+
+        // 2. Assign teacher to selected matieres_classes
         foreach ($enseignements as $ens) {
-            if (!empty($ens['id_matiere'])) {
-                $this->Model->create('enseignements', [
-                    'id_enseignant' => $id_enseignant,
+            if (empty($ens['id_matiere']) || empty($ens['id_classe'])) continue;
+            
+            $mc = $this->Model->readOne('matieres_classes', [
+                'id_matiere' => $ens['id_matiere'],
+                'id_classe' => $ens['id_classe'],
+                'deleted_at' => null
+            ]);
+
+            if ($mc) {
+                $this->Model->update('matieres_classes', [
+                    'id_matiere_classe' => $mc['id_matiere_classe']
+                ], ['id_enseignant' => $id_enseignant]);
+            } else {
+                // If it doesn't exist in matieres_classes yet, create it
+                $this->load->helper('uuid');
+                $this->Model->createLastId('matieres_classes', [
                     'id_matiere' => $ens['id_matiere'],
-                    'id_classe' => $ens['id_classe'] ?? null
+                    'id_classe' => $ens['id_classe'],
+                    'id_enseignant' => $id_enseignant,
+                    'coefficient' => 1.0,
+                    'nb_heures_par_jour' => 0.0,
+                    'nb_heures_par_semaine' => 0.0
                 ]);
-                $this->_sync_matieres_classes($id_enseignant, $ens);
             }
         }
     }
 
-    private function _sync_matieres_classes($id_enseignant, $ens) {
+    private function _ensure_matiere_classe($ens) {
         $id_matiere = $ens['id_matiere'];
         $id_classe = $ens['id_classe'] ?? null;
-        if (!$id_classe) return;
+        if (!$id_classe) return null;
 
-        $existing = $this->Model->readOne('matieres_classes', [
+        // Réactiver si soft-deleted
+        $softDeleted = $this->Model->readOne('matieres_classes', [
             'id_matiere' => $id_matiere,
-            'id_classe' => $id_classe
+            'id_classe' => $id_classe,
+            'deleted_at !=' => null
         ]);
+        if ($softDeleted) {
+            $this->Model->update('matieres_classes', [
+                'id_matiere_classe' => $softDeleted['id_matiere_classe']
+            ], ['deleted_at' => null]);
+            $existing = $softDeleted;
+        } else {
+            $existing = $this->Model->readOne('matieres_classes', [
+                'id_matiere' => $id_matiere,
+                'id_classe' => $id_classe,
+                'deleted_at' => null
+            ]);
+        }
 
-        $data = [
-            'id_enseignant' => $id_enseignant,
+        if ($existing) {
+            $update = [];
+            if (isset($ens['coefficient'])) $update['coefficient'] = $ens['coefficient'];
+            if (isset($ens['nb_heures_par_jour'])) $update['nb_heures_par_jour'] = $ens['nb_heures_par_jour'];
+            if (isset($ens['nb_heures_par_semaine'])) $update['nb_heures_par_semaine'] = $ens['nb_heures_par_semaine'];
+            if (!empty($update)) {
+                $this->Model->update('matieres_classes', ['id_matiere_classe' => $existing['id_matiere_classe']], $update);
+            }
+            return $existing['id_matiere_classe'];
+        }
+
+        $create = [
+            'id_matiere' => $id_matiere,
+            'id_classe' => $id_classe,
             'coefficient' => $ens['coefficient'] ?? 1.0,
             'nb_heures_par_jour' => $ens['nb_heures_par_jour'] ?? 0.0,
             'nb_heures_par_semaine' => $ens['nb_heures_par_semaine'] ?? 0.0,
         ];
+        if (!empty($ens['id_enseignant'])) $create['id_enseignant'] = $ens['id_enseignant'];
 
-        if ($existing) {
-            $this->Model->update('matieres_classes', ['id_matiere_classe' => $existing['id_matiere_classe']], $data);
-        } else {
-            $data['id_matiere'] = $id_matiere;
-            $data['id_classe'] = $id_classe;
-            $this->Model->createLastId('matieres_classes', $data);
-        }
+        $this->load->helper('uuid');
+        return $this->Model->createLastId('matieres_classes', $create);
     }
 
     public function api_upload_photo() {

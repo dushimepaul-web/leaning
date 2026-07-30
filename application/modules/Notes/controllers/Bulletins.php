@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Bulletins extends MY_Controller {
-    public function __construct() { parent::__construct(); }
+    public function __construct() { parent::__construct(); $this->load->model('Notes/Bulletins_model', 'BulletinsModel'); }
 
     public function index() {
         $data['title'] = 'Bulletins & Fiches de points';
@@ -16,7 +16,7 @@ class Bulletins extends MY_Controller {
 
     public function api_list() {
         $this->db->where('b.deleted_at', null);
-        $this->db->select('b.*, e.nom, e.prenom, e.matricule, c.libelle as classe, p.libelle as periode, a.libelle as annee');
+        $this->db->select("b.*, e.fullname AS nom, '' AS prenom, e.matricule, c.libelle as classe, p.libelle as periode, a.libelle as annee");
         $this->db->from('bulletins b');
         $this->db->join('etudiants e', 'b.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('classes c', 'b.id_classe = c.id_classe', 'left');
@@ -79,7 +79,7 @@ class Bulletins extends MY_Controller {
         $classe = $this->Model->readOne('classes', ['id_classe' => $b['id_classe']]);
         $periode = $this->Model->readOne('periodes', ['id_periode' => $b['id_periode']]);
         $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $b['id_annee']]);
-        $b['etudiant_nom'] = $etudiant ? $etudiant['nom'].' '.$etudiant['prenom'] : '';
+        $b['etudiant_nom'] = $etudiant ? $etudiant['fullname'] : '';
         $b['classe'] = $classe ? $classe['libelle'] : '';
         $b['periode'] = $periode ? $periode['libelle'] : '';
         $b['annee'] = $annee ? $annee['libelle'] : '';
@@ -120,7 +120,7 @@ class Bulletins extends MY_Controller {
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
         if ($id_classe) $this->db->where('i.id_classe', $id_classe);
-        $this->db->select('i.id_etudiant, i.id_classe, e.nom, e.prenom');
+        $this->db->select("i.id_etudiant, i.id_classe, e.fullname AS nom, '' AS prenom");
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant');
         $q_s = $this->db->get();
@@ -236,11 +236,154 @@ class Bulletins extends MY_Controller {
         ], "Bulletins générés : $created créés, $updated mis à jour");
     }
 
+    public function api_bulletin_complet($id_classe)
+    {
+        $id_periode = $this->input->get('periode');
+        $id_annee = $this->input->get('annee') ?: $this->id_annee_active;
+
+        if (!$id_classe) { $this->json_error('Classe requise'); return; }
+
+        $data = $this->BulletinsModel->get_bulletin_complet($id_classe, $id_annee, $id_periode);
+
+        if ($data === null) {
+            $this->json_error('Aucune donnée trouvée pour cette classe');
+            return;
+        }
+
+        // Calculer rangs
+        $eleves = $data['eleves'];
+        usort($eleves, function($a, $b) { return $b['moyenne'] <=> $a['moyenne']; });
+        $rang = 1; $prev = -1;
+        foreach ($eleves as $i => &$el) {
+            if ($prev >= 0 && $el['moyenne'] < $prev) $rang = $i + 1;
+            $el['rang'] = ($el['moyenne'] > 0) ? $rang : 0;
+            $prev = $el['moyenne'];
+        }
+        unset($el);
+        usort($eleves, function($a, $b) { return strcasecmp($a['fullname'], $b['fullname']); });
+        $data['eleves'] = $eleves;
+
+        $this->json_success($data);
+    }
+
     private function _getDecision($moyenne) {
         $admis = floatval($this->Model->get_setting('regle_admis_moy', 12));
         $ajourne = floatval($this->Model->get_setting('regle_ajourne_moy', 10));
         if ($moyenne >= $admis) return 'admis';
         if ($moyenne >= $ajourne) return 'ajourne';
         return 'echoue';
+    }
+
+    public function export_bulletins_classe($class_id)
+    {
+        $eleves_db = $this->Model->readQuery("
+            SELECT i.id_etudiant AS inscription_id, e.fullname, e.matricule
+            FROM inscriptions i
+            LEFT JOIN etudiants e ON e.id_etudiant = i.id_etudiant
+            WHERE i.id_classe = ? AND i.deleted_at IS NULL AND e.deleted_at IS NULL
+            ORDER BY e.fullname ASC
+        ", [$class_id]);
+
+        if (empty($eleves_db)) {
+            echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucun élève trouvé pour cette classe.</h3>";
+            return;
+        }
+
+        $eleves = [];
+        foreach ($eleves_db as $e) {
+            $eleves[$e['inscription_id']] = $e;
+        }
+
+        $annee_id = $this->id_annee_active;
+        $annee_scolaire = $annee_id  
+            ? ($this->Model->readQuery('SELECT libelle FROM annees_scolaires WHERE id_annee = ?', [$annee_id])[0]['libelle'] ?? 'N/A')  
+            : 'N/A';
+
+        $all_subjects = $this->Model->readQuery("
+            SELECT m.id_matiere AS id, m.libelle AS name, m.code, mc.coefficient, 1 AS is_active
+            FROM matieres_classes mc
+            JOIN matieres m ON m.id_matiere = mc.id_matiere
+            WHERE mc.id_classe = ? AND mc.deleted_at IS NULL AND m.deleted_at IS NULL
+        ", [$class_id]);
+
+        if (empty($all_subjects)) {
+            echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucune matière assignée à cette classe.</h3>";
+            return;
+        }
+
+        $all_subject_ids = array_column($all_subjects, 'id');
+        $etudiant_ids = array_column($eleves_db, 'inscription_id');
+        $etudiant_ids_str = implode(',', $etudiant_ids);
+        $all_subject_ids_str = implode(',', $all_subject_ids);
+
+        $periodes = $this->Model->read('periodes', ['id_annee' => $annee_id, 'deleted_at' => null], 'id_periode');
+        $periode_map = [];
+        foreach ($periodes as $p) {
+            if (stripos($p['libelle'], '1') !== false) $periode_map[1] = $p['id_periode'];
+            elseif (stripos($p['libelle'], '2') !== false) $periode_map[2] = $p['id_periode'];
+            elseif (stripos($p['libelle'], '3') !== false) $periode_map[3] = $p['id_periode'];
+        }
+
+        $p1 = $periode_map[1] ?? 0;
+        $p2 = $periode_map[2] ?? 0;
+        $p3 = $periode_map[3] ?? 0;
+
+        $query = "
+            SELECT 
+                n.id_etudiant AS inscription_id,
+                ev.id_matiere AS subject_id,
+                
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN n.note ELSE 0 END) AS note_t1_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN n.note ELSE 0 END) AS note_t1_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN n.note ELSE 0 END) AS note_t1_ress,
+
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN n.note ELSE 0 END) AS note_t2_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN n.note ELSE 0 END) AS note_t2_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN n.note ELSE 0 END) AS note_t2_ress,
+
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN n.note ELSE 0 END) AS note_t3_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN n.note ELSE 0 END) AS note_t3_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN n.note ELSE 0 END) AS note_t3_ress,
+
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.sur ELSE 0 END) AS max_t1_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.sur ELSE 0 END) AS max_t1_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.sur ELSE 0 END) AS max_t1_ress,
+
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.sur ELSE 0 END) AS max_t2_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.sur ELSE 0 END) AS max_t2_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.sur ELSE 0 END) AS max_t2_ress,
+
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.sur ELSE 0 END) AS max_t3_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.sur ELSE 0 END) AS max_t3_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.sur ELSE 0 END) AS max_t3_ress
+            
+            FROM notes n
+            JOIN evaluations ev ON ev.id_evaluation = n.id_evaluation
+            WHERE n.id_etudiant IN ({$etudiant_ids_str}) 
+            AND ev.id_matiere IN ({$all_subject_ids_str})
+            AND n.deleted_at IS NULL AND ev.deleted_at IS NULL
+            GROUP BY n.id_etudiant, ev.id_matiere
+        ";
+
+        $aggregated_data = $this->Model->readQuery($query, [
+            $p1, $p1, $p1,
+            $p2, $p2, $p2,
+            $p3, $p3, $p3,
+            $p1, $p1, $p1,
+            $p2, $p2, $p2,
+            $p3, $p3, $p3,
+        ]);
+
+        $classe_info = $this->Model->readOne('classes', ['id_classe' => $class_id]);
+        $classe_nom = $classe_info ? $classe_info['libelle'] : 'Classe';
+
+        $data['title'] = 'Bulletins de la classe ' . $classe_nom;
+        $data['eleves'] = $eleves;
+        $data['subjects'] = $all_subjects;
+        $data['annee_scolaire'] = $annee_scolaire;
+        $data['classe_nom'] = $classe_nom;
+        $data['aggregated_data'] = $aggregated_data;
+        
+        $this->load->view('print_bulletins', $data);
     }
 }

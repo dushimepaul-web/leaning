@@ -268,11 +268,11 @@ setupAutocomplete('produitSearch', 'id_produit', 'produitList', produitsList, {
 setupAutocomplete('etudiantSearch', 'id_etudiant', 'etudiantList', etudiantsList, {
   filter: function(e) { return true; },
   match: function(e, q) {
-    return (e.nom + ' ' + (e.prenom || '') + ' ' + (e.matricule || '')).toLowerCase().includes(q);
+    return (e.fullname + ' ' + (e.matricule || '')).toLowerCase().includes(q);
   },
   html: function(e) {
-    return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + e.id_etudiant + '" data-label="' + e.nom + ' ' + e.prenom + ' (' + e.matricule + ')">' +
-      '<span class="fw-medium text-sm">' + e.nom + ' ' + e.prenom + '</span>' +
+    return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + e.id_etudiant + '" data-label="' + e.fullname + ' (' + e.matricule + ')">' +
+      '<span class="fw-medium text-sm">' + e.fullname + '</span>' +
       '<small class="d-block text-secondary-light text-xs">Matricule: ' + (e.matricule || '-') + '</small>' +
     '</button>';
   }
@@ -295,7 +295,7 @@ async function loadData() {
   filtered.forEach(function(m, i) {
     var badge = m.type === 'entree' ? '<span class="bg-success-100 text-success-600 px-12 py-4 radius-4 fw-medium text-sm">Entrée</span>' : '<span class="bg-danger-100 text-danger-600 px-12 py-4 radius-4 fw-medium text-sm">Sortie</span>';
     var d = m.date_mvt ? new Date(m.date_mvt).toLocaleDateString('fr-FR') + ' ' + new Date(m.date_mvt).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) : '-';
-    var eleve = m.etudiant_nom ? (m.etudiant_nom + ' ' + (m.etudiant_prenom || '')) : '-';
+    var eleve = m.etudiant_nom || '-';
     rows += '<tr><td>' + (i+1) + '</td><td>' + d + '</td><td class="fw-semibold">' + (m.produit_libelle||'-') + '</td><td>' + badge + '</td><td>' + m.quantite + '</td><td>' + parseFloat(m.prix_unitaire||0).toLocaleString() + '</td><td>' + eleve + '</td><td>' + (m.motif||'-') + '</td><td>' + (m.utilisateur||'-') + '</td></tr>';
   });
   document.getElementById('dataBody').innerHTML = rows;
@@ -346,8 +346,8 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
 // ===== VENTE BATCH =====
 setupAutocomplete('venteEtudiantSearch', 'venteEtudiant', 'venteEtudiantList', etudiantsList, {
   filter: function(e) { return true; },
-  match: function(e, q) { return (e.nom + ' ' + (e.prenom || '') + ' ' + (e.matricule || '')).toLowerCase().includes(q); },
-  html: function(e) { return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + e.id_etudiant + '" data-label="' + e.nom + ' ' + e.prenom + ' (' + e.matricule + ')"><span class="fw-medium text-sm">' + e.nom + ' ' + e.prenom + '</span><small class="d-block text-secondary-light text-xs">Matricule: ' + (e.matricule || '-') + '</small></button>'; }
+  match: function(e, q) { return (e.fullname + ' ' + (e.matricule || '')).toLowerCase().includes(q); },
+  html: function(e) { return '<button type="button" class="list-group-item list-group-item-action text-start py-2 px-3 border-bottom" data-id="' + e.id_etudiant + '" data-label="' + e.fullname + ' (' + e.matricule + ')"><span class="fw-medium text-sm">' + e.fullname + '</span><small class="d-block text-secondary-light text-xs">Matricule: ' + (e.matricule || '-') + '</small></button>'; }
 });
 setupAutocomplete('venteProduitSearch', 'venteProduit', 'venteProduitList', produitsList, {
   filter: function(p) { return true; },
@@ -418,7 +418,7 @@ document.getElementById('venteForm').addEventListener('submit', async function(e
   var etudiant = etudiantsList.find(function(e) { return e.id_etudiant == id_etudiant; });
   var data = {
     id_etudiant: id_etudiant,
-    nom_etudiant: etudiant ? etudiant.nom + ' ' + etudiant.prenom : 'élève',
+    nom_etudiant: etudiant ? etudiant.fullname : 'élève',
     produits: venteProduits.map(function(v) { return { id_produit: v.id_produit, quantite: v.quantite, prix_unitaire: v.prix_unitaire }; })
   };
   var r = await fetch(BASE_URL + 'api/mouvements/batch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r){return r.json();});

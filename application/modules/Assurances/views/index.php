@@ -238,7 +238,7 @@ function openEditSidebar(data) {
   document.getElementById('recordId').value = data.uuid;
   document.getElementById('id_etudiant').value = data.id_etudiant || '';
   var etu = JSON.parse(document.getElementById('id_etudiant_data').textContent).find(function(e) { return e.id_etudiant == data.id_etudiant; });
-  document.getElementById('id_etudiant_search').value = etu ? etu.nom + ' ' + etu.prenom + ' (' + (etu.matricule || '') + ')' : '';
+  document.getElementById('id_etudiant_search').value = etu ? etu.nom + ' (' + (etu.matricule || '') + ')' : '';
   document.getElementById('police').value = data.police || '';
   document.getElementById('compagnie').value = data.compagnie || '';
   document.getElementById('date_debut').value = data.date_debut || '';
@@ -336,7 +336,7 @@ function exportCSV() {
     if (typeof jQuery !== 'undefined' && $.fn && $.fn.DataTable && typeof API !== 'undefined') {
       clearInterval(wait);
       loadData();
-      autoSetup('id_etudiant_search', 'id_etudiant', 'id_etudiant_results', JSON.parse(document.getElementById('id_etudiant_data').textContent).map(function(e) { return { id: e.id_etudiant, nom: e.nom, prenom: e.prenom, matricule: e.matricule }; }), function(e) { return e.nom + ' ' + e.prenom + ' (' + (e.matricule || '') + ')'; });
+      autoSetup('id_etudiant_search', 'id_etudiant', 'id_etudiant_results', JSON.parse(document.getElementById('id_etudiant_data').textContent).map(function(e) { return { id: e.id_etudiant, nom: e.nom, prenom: e.prenom, matricule: e.matricule }; }), function(e) { return e.nom + ' (' + (e.matricule || '') + ')'; });
       $('#dtSearch').on('keyup', function() { $('#dataTable').DataTable().search(this.value).draw(); });
       $('#dtLength').on('change', function() { $('#dataTable').DataTable().page.len(+this.value).draw(); });
     }

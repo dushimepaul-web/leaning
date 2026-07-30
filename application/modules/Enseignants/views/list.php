@@ -127,7 +127,7 @@ async function loadData() {
               ? '<img src="' + BASE_URL + e.photo + '" alt="" class="flex-shrink-0 me-12 radius-8" style="width:40px;height:40px;object-fit:cover;">'
               : '<span class="flex-shrink-0 me-12 radius-8 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:#EEF2F6;"><iconify-icon icon="solar:user-bold" class="text-secondary-light text-xl"></iconify-icon></span>'
           }
-          <div><h6 class="text-md mb-0 fw-medium"><a href="${BASE_URL}Enseignants/details/${e.uuid}" class="text-primary-light">${e.nom} ${e.postnom || ''} ${e.prenom || ''}</a></h6></div>
+          <div><h6 class="text-md mb-0 fw-medium"><a href="${BASE_URL}Enseignants/details/${e.uuid}" class="text-primary-light">${e.fullname || ''}</a></h6></div>
         </div>
       </td>
       <td>${e.email || '-'}</td>

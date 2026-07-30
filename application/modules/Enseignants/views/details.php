@@ -20,7 +20,7 @@
             <figure class="mb-24 w-120-px h-120-px mx-auto rounded-circle overflow-hidden">
               <img src="<?= base_url('assets/images/thumbs/student-details-img.png') ?>" alt="Photo" class="w-100 h-100 object-fit-cover">
             </figure>
-            <h2 class="h6 text-primary-light mb-16 fw-semibold"><?= htmlspecialchars($t['nom'] . ' ' . ($t['postnom'] ?? '') . ' ' . ($t['prenom'] ?? '')) ?></h2>
+            <h2 class="h6 text-primary-light mb-16 fw-semibold"><?= htmlspecialchars($t['fullname'] ?? '') ?></h2>
             <p class="mb-0">ID: <span class="text-primary-600 fw-semibold"><?= $t['matricule'] ?? '-' ?></span></p>
             <p class="mb-0">Courses: <span class="text-primary-light fw-semibold"><?= count($t['enseignements']) ?></span></p>
             <div class="mt-32 d-flex gap-16 w-100">
@@ -146,7 +146,7 @@
         <div class="tab-pane fade" id="pills-courses" role="tabpanel">
           <div class="shadow-1 radius-12 bg-base overflow-hidden">
             <div class="card-header border-bottom bg-base py-16 px-24">
-              <h6 class="text-lg fw-semibold mb-0">Courses taught by <?= htmlspecialchars($t['prenom'] . ' ' . $t['nom']) ?></h6>
+              <h6 class="text-lg fw-semibold mb-0">Courses taught by <?= htmlspecialchars($t['fullname'] ?? '') ?></h6>
             </div>
             <div class="card-body p-0">
               <table class="table bordered-table mb-0">

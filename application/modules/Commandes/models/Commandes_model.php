@@ -8,7 +8,7 @@ class Commandes_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('c.deleted_at', null);
-        $this->db->select('c.*, e.nom, e.prenom, e.matricule');
+        $this->db->select("c.*, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('commandes c');
         $this->db->join('etudiants e', 'c.id_etudiant = e.id_etudiant', 'left');
         if (!empty($filters['id_etudiant'])) $this->db->where('c.id_etudiant', $filters['id_etudiant']);

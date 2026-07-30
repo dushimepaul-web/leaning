@@ -12,7 +12,7 @@ class Stock_Mouvements extends MY_Controller {
     }
 
     public function api_list() {
-        $this->db->select('m.*, p.libelle as produit_libelle, p.code as produit_code, u.nom_complet as utilisateur, e.nom as etudiant_nom, e.prenom as etudiant_prenom');
+        $this->db->select("m.*, p.libelle as produit_libelle, p.code as produit_code, u.nom_complet as utilisateur, e.fullname as etudiant_nom, '' as etudiant_prenom");
         $this->db->from('mouvements_stock m');
         $this->db->join('produits p', 'm.id_produit = p.id_produit', 'left');
         $this->db->join('utilisateurs u', 'm.id_utilisateur = u.id_utilisateur', 'left');

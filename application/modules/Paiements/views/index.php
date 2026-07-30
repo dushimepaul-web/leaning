@@ -282,7 +282,7 @@ async function loadData() {
     const anneesRes = await API.annees.list();
     window._anneesMap = {};
     if (anneesRes.success && anneesRes.data) {
-      window._anneesMap[a.id_annee] = a.libelle;  // fixed typo: a not anneesData
+      anneesRes.data.forEach(function(a) { window._anneesMap[a.id_annee] = a.libelle; });
     }
   } catch(e) {}
 
@@ -511,8 +511,8 @@ function exportCSV() {
     loadFilters();
     loadData();
     autoSetup('payEtudiant_search', 'payEtudiant', 'payEtudiant_results',
-      etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.nom, prenom: e.prenom, matricule: e.matricule, id_classe: e.id_classe, id_section: e.id_section, classe_libelle: e.classe_libelle, section_libelle: e.section_libelle }; }),
-      function(e) { return e.nom + ' ' + e.prenom + ' (' + (e.matricule || '') + ')'; },
+      etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.fullname || e.nom, prenom: e.prenom || '', matricule: e.matricule, id_classe: e.id_classe, id_section: e.id_section, classe_libelle: e.classe_libelle, section_libelle: e.section_libelle }; }),
+      function(e) { return (e.nom || '') + ' (' + (e.matricule || '') + ')'; },
       function(e) {
         document.getElementById('payClasse').value = e.classe_libelle || '';
         document.getElementById('payClasseId').value = e.id_classe || '';
@@ -522,7 +522,10 @@ function exportCSV() {
     );
     autoSetup('payType_search', 'payType', 'payType_results',
       typesFraisData.map(function(t) { return { id: t.id_type_frais, libelle: t.libelle }; }),
-      function(t) { return t.libelle; }
+      function(t) { return t.libelle; },
+      function(t) {
+        document.getElementById('payType').value = t.id || '';
+      }
     );
   };
   _f();

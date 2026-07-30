@@ -10,8 +10,8 @@
       </div>
     </div>
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-primary-600 btn-sm" onclick="printFiche()"><i class="ri-printer-line me-1"></i> Imprimer</button>
-      <button type="button" class="btn btn-primary-600 btn-sm" onclick="exportPDF()"><i class="ri-file-pdf-line me-1"></i> PDF</button>
+      <button type="button" class="btn btn-outline-primary-600 btn-sm" onclick="exportFiche()"><i class="ri-printer-line me-1"></i> Imprimer</button>
+      <button type="button" class="btn btn-primary-600 btn-sm" onclick="exportFiche()"><i class="ri-file-pdf-line me-1"></i> PDF</button>
     </div>
   </div>
 
@@ -93,7 +93,7 @@ async function loadFiche(){
 
   var rows='';
   r.data.students.forEach(function(s,i){
-    rows+='<tr><td class="text-center">'+(i+1)+'</td><td class="text-nowrap"><small>'+s.etudiant.matricule+'</small></td><td class="text-nowrap"><span class="fw-semibold text-sm">'+s.etudiant.nom+' '+s.etudiant.prenom+'</span></td>';
+    rows+='<tr><td class="text-center">'+(i+1)+'</td><td class="text-nowrap"><small>'+s.etudiant.matricule+'</small></td><td class="text-nowrap"><span class="fw-semibold text-sm">'+s.etudiant.nom+'</span></td>';
     evals.forEach(function(ev){rows+='<td class="text-center">'+(s.notes[ev.id_evaluation]!==null?s.notes[ev.id_evaluation].toFixed(1):'<span class="text-secondary-light">-</span>')+'</td>';});
     rows+='<td class="text-center fw-semibold">'+s.total.toFixed(1)+'</td><td class="text-center fw-bold">'+s.moyenne.toFixed(2)+'</td><td class="text-center">'+s.rang+'</td>';
     rows+='<td class="text-center"><span class="'+(appBadges[s.appreciation]||'')+' px-8 py-2 radius-4 text-xs fw-medium">'+s.appreciation+'</span></td>';
@@ -102,8 +102,12 @@ async function loadFiche(){
   document.getElementById('ficheBody').innerHTML=rows;
 }
 
-function printFiche(){window.print();}
-function exportPDF(){Swal.fire({icon:'info',title:'Export PDF',text:'Fonctionnalité à venir'});}
+function exportFiche(){
+  var id_classe=document.getElementById('id_classe').value;
+  if(!id_classe){Swal.fire({icon:'warning',title:'Sélection',text:'Veuillez choisir une classe'});return;}
+  var p=document.getElementById('id_periode').value||'';
+  window.open(API.base_url+'Notes/Fiches/export/'+id_classe+(p?'?periode='+p:''),'_blank');
+}
 
 (function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;});}},50);})();
 </script>

@@ -15,25 +15,45 @@ class Librairie extends MY_Controller {
 
     public function api_list() {
         $categorie = $this->input->get('categorie');
-        $this->db->where('p.deleted_at', null);
-        $this->db->select('p.*, cp.libelle as categorie, cp.code as code_categorie');
-        $this->db->from('produits p');
-        $this->db->join('categories_produits cp', 'p.id_categorie = cp.id_categorie');
-        if ($categorie) $this->db->where('cp.code', strtoupper($categorie));
-        $this->db->order_by('cp.libelle', 'ASC')->order_by('p.libelle', 'ASC');
+        $this->db->where('produits.deleted_at', null);
+        $this->db->select('produits.*, categories_produits.libelle as categorie, categories_produits.code as code_categorie');
+        $this->db->from('produits');
+        $this->db->join('categories_produits', 'produits.id_categorie = categories_produits.id_categorie', 'left');
+        if ($categorie) $this->db->where('categories_produits.code', strtoupper($categorie));
+        $this->db->order_by('produits.libelle', 'ASC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_get($id) {
-        $p = $this->db
-            ->select('p.*, cp.libelle as categorie, cp.code as code_categorie')
-            ->from('produits p')
-            ->join('categories_produits cp', 'p.id_categorie = cp.id_categorie')
-            ->where('p.uuid', $id)->where('p.deleted_at', null)
-            ->get()->row_array();
-        if (!$p) { $this->json_error('Produit non trouvé', 404); return; }
-        $p['mouvements'] = $this->Model->read('mouvements_stock', ['id_produit' => $p['id_produit']], 'date_mvt DESC');
+        $p = null;
+        try {
+            $p = $this->db
+                ->select('produits.*, categories_produits.libelle as categorie, categories_produits.code as code_categorie')
+                ->from('produits')
+                ->join('categories_produits', 'produits.id_categorie = categories_produits.id_categorie', 'left')
+                ->where('produits.uuid', (string)$id)
+                ->where('produits.deleted_at IS NULL', null, false)
+                ->get()->row_array();
+        } catch (Exception $e) {
+            $this->json_error('Erreur SQL: ' . $e->getMessage(), 500);
+            return;
+        }
+
+        if (!$p) { 
+            $this->json_error('Produit non trouvé', 404); 
+            return; 
+        }
+        
+        $mouvements = [];
+        try {
+            if (!empty($p['id_produit'])) {
+                $mouvements = $this->Model->read('mouvements_stock', ['id_produit' => $p['id_produit']], 'date_mvt DESC');
+            }
+        } catch (Exception $e) {
+            $mouvements = [];
+        }
+        $p['mouvements'] = is_array($mouvements) ? $mouvements : [];
         $this->json_success($p);
     }
 
@@ -79,13 +99,13 @@ class Librairie extends MY_Controller {
         $update = array_intersect_key($data, array_flip($allowed));
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
         $update['modifie_le'] = date('Y-m-d H:i:s');
-        if ($this->Model->update('produits', ['uuid' => $id], $update))
+        if ($this->Model->update('produits', ['uuid' => (string)$id], $update))
             $this->json_success(null, 'Produit mis à jour');
         else $this->json_error('Erreur de mise à jour');
     }
 
     public function api_delete($id) {
-        if ($this->Model->update('produits', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s'), 'modifie_le' => date('Y-m-d H:i:s')]))
+        if ($this->Model->update('produits', ['uuid' => (string)$id], ['deleted_at' => date('Y-m-d H:i:s'), 'modifie_le' => date('Y-m-d H:i:s')]))
             $this->json_success(null, 'Produit supprimé');
         else $this->json_error('Erreur de suppression');
     }

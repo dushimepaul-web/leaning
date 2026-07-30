@@ -7,7 +7,7 @@
       <div>
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
         <a href="<?= base_url('Enseignants') ?>" class="text-secondary-light hover-text-primary hover-underline"> / Teacher</a>
-        <a href="<?= base_url('Enseignants/details/' . $teacher['uuid']) ?>" class="text-secondary-light hover-text-primary hover-underline"> / <?= htmlspecialchars($teacher['nom'] . ' ' . $teacher['prenom']) ?></a>
+        <a href="<?= base_url('Enseignants/details/' . $teacher['uuid']) ?>" class="text-secondary-light hover-text-primary hover-underline"> / <?= htmlspecialchars($teacher['fullname'] ?? '') ?></a>
         <span class="text-secondary-light"> / Timetable</span>
       </div>
     </div>
@@ -15,7 +15,7 @@
   <div class="mt-24">
     <div class="card h-100">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-bottom border-neutral-200">
-        <h5 class="fw-semibold mb-0"><?= htmlspecialchars($teacher['nom'] . ' ' . ($teacher['postnom'] ?? '') . ' ' . $teacher['prenom']) ?> - Timetable</h5>
+        <h5 class="fw-semibold mb-0"><?= htmlspecialchars($teacher['fullname'] ?? '') ?> - Timetable</h5>
       </div>
       <?php
       $horaires = [];
@@ -23,7 +23,9 @@
         $this->db->select('h.*, c.libelle as classe_libelle, m.libelle as matiere_libelle, cr.libelle as creneau_libelle, cr.heure_debut, cr.heure_fin, cr.ordre, j.libelle as jour_libelle');
         $this->db->from('horaires h');
         $this->db->join('classes c', 'c.id_classe = h.id_classe', 'left');
-        $this->db->join('matieres m', 'm.id_matiere = (SELECT ens.id_matiere FROM enseignements ens WHERE ens.id_enseignement = h.id_enseignement LIMIT 1)', 'left');
+        $this->db->join('enseignements en', 'en.id_enseignement = h.id_enseignement', 'left');
+        $this->db->join('matieres_classes mc', 'mc.id_matiere_classe = en.id_matiere_classe', 'left');
+        $this->db->join('matieres m', 'm.id_matiere = mc.id_matiere', 'left');
         $this->db->join('creneaux cr', 'cr.id_creneau = h.id_creneau');
         $this->db->join('jours_semaine j', 'j.id_jour = h.id_jour');
         $this->db->where('h.id_enseignant', $teacher['id_enseignant']);

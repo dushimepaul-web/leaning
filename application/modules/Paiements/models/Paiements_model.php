@@ -11,7 +11,7 @@ class Paiements_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('p.deleted_at', null);
-        $this->db->select('p.*, e.nom, e.prenom, e.matricule, tf.libelle as type_frais, tf.code as type_code, i.id_classe, i.id_section');
+        $this->db->select("p.*, e.fullname AS nom, '' AS prenom, e.matricule, tf.libelle as type_frais, tf.code as type_code, i.id_classe, i.id_section");
         $this->db->from('paiements p');
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('frais f', 'p.id_frais = f.id_frais', 'left');
@@ -34,7 +34,7 @@ class Paiements_model extends Model
     {
         $this->db->where('p.deleted_at', null);
         $this->db->where('p.uuid', $id);
-        $this->db->select('p.*, e.nom, e.prenom, e.matricule, tf.libelle as type_frais, i.id_classe, i.id_section, r.numero_recu, r.uuid as recu_uuid');
+        $this->db->select("p.*, e.fullname AS nom, '' AS prenom, e.matricule, tf.libelle as type_frais, i.id_classe, i.id_section, r.numero_recu, r.uuid as recu_uuid");
         $this->db->from('paiements p');
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('frais f', 'p.id_frais = f.id_frais', 'left');

@@ -17,7 +17,7 @@ class Notes extends MY_Controller {
 
     public function api_list() {
         $this->db->where('n.deleted_at', null);
-        $this->db->select('n.*, e.nom, e.prenom, m.libelle as matiere, ev.libelle as evaluation');
+        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, m.libelle as matiere, ev.libelle as evaluation");
         $this->db->from('notes n');
         $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
@@ -85,10 +85,10 @@ class Notes extends MY_Controller {
         $this->db->where('i.id_annee', $this->id_annee_active);
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
-        $this->db->select('e.id_etudiant, e.nom, e.prenom, e.matricule, i.numero_ordre');
+        $this->db->select("e.id_etudiant, e.fullname AS nom, '' AS prenom, e.matricule, i.numero_ordre");
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant');
-        $this->db->order_by('e.nom, e.prenom');
+        $this->db->order_by('e.fullname ASC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());
     }
@@ -126,10 +126,10 @@ class Notes extends MY_Controller {
         $this->db->where('i.id_annee', $this->id_annee_active);
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
-        $this->db->select('e.id_etudiant, e.nom, e.prenom, e.matricule');
+        $this->db->select("e.id_etudiant, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant');
-        $this->db->order_by('e.nom, e.prenom');
+        $this->db->order_by('e.fullname ASC');
         $q_el = $this->db->get();
         $eleves = $q_el !== false ? $q_el->result_array() : array();
 

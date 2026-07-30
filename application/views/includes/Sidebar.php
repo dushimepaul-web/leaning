@@ -42,6 +42,12 @@
         </a>
         <ul class="sidebar-submenu">
           <li>
+            <a href="<?=base_url('Classes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Classes / Salles
+            </a>
+          </li>
+          <li>
             <a href="<?=base_url('Classes/Sections')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Sections
@@ -59,12 +65,7 @@
               Programmes
             </a>
           </li>
-          <li>
-            <a href="<?=base_url('Classes/Enseignements')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Enseignements
-            </a>
-          </li>
+
           <li>
             <a href="<?=base_url('Classes/Periodes')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
@@ -77,12 +78,7 @@
               Années scolaires
             </a>
           </li>
-          <li>
-            <a href="<?=base_url('Horaires')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Emploi du temps
-            </a>
-          </li>
+          
           <li>
             <a href="<?=base_url('Creneaux')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
@@ -90,9 +86,21 @@
             </a>
           </li>
           <li>
+            <a href="<?=base_url('Jours')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Jours de la semaine
+            </a>
+          </li>
+          <li>
             <a href="<?=base_url('Disponibilites')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Disponibilités
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Horaires')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Emploi du temps
             </a>
           </li>
         </ul>

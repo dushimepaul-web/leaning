@@ -20,11 +20,11 @@ class Fiches extends MY_Controller {
         if (!$id_classe || !$id_periode) { $this->json_error('Classe et période requis'); return; }
 
         $students = $this->db
-            ->select('e.id_etudiant, e.matricule, e.nom, e.prenom, e.sexe, e.photo')
+            ->select("e.id_etudiant, e.matricule, e.fullname AS nom, '' AS prenom, e.sexe, e.photo")
             ->from('inscriptions i')
             ->join('etudiants e', 'i.id_etudiant = e.id_etudiant')
             ->where('i.id_classe', $id_classe)->where('i.id_annee', $id_annee)->where('i.deleted_at', null)->where('e.deleted_at', null)
-            ->order_by('e.nom, e.prenom')->get()->result_array();
+            ->order_by('e.fullname ASC')->get()->result_array();
 
         $evaluations = $this->db
             ->select('ev.*, m.libelle as matiere')
@@ -97,16 +97,16 @@ class Fiches extends MY_Controller {
 
         // Récupérer les élèves
         $students = $this->db
-            ->select('e.id_etudiant, e.matricule, e.nom, e.prenom')
+            ->select("e.id_etudiant, e.matricule, e.fullname AS nom, '' AS prenom")
             ->from('inscriptions i')
             ->join('etudiants e', 'i.id_etudiant = e.id_etudiant')
             ->where('i.id_classe', $id_classe)->where('i.id_annee', $id_annee)->where('i.deleted_at', null)->where('e.deleted_at', null)
-            ->order_by('e.nom, e.prenom')->get()->result_array();
+            ->order_by('e.fullname ASC')->get()->result_array();
 
-        // Récupérer les matières de la classe
+        // Récupérer les matières de la classe (single source: matieres_classes)
         $matieres = $this->db->query(
-            "SELECT DISTINCT m.id_matiere, m.libelle, m.code FROM matieres_classes mc JOIN matieres m ON mc.id_matiere = m.id_matiere WHERE mc.id_classe = ? AND mc.deleted_at IS NULL UNION SELECT DISTINCT m.id_matiere, m.libelle, m.code FROM enseignements e JOIN matieres m ON e.id_matiere = m.id_matiere WHERE e.id_classe = ? AND e.deleted_at IS NULL ORDER BY libelle",
-            [$id_classe, $id_classe]
+            "SELECT DISTINCT m.id_matiere, m.libelle, m.code FROM matieres_classes mc JOIN matieres m ON mc.id_matiere = m.id_matiere WHERE mc.id_classe = ? AND mc.deleted_at IS NULL ORDER BY m.libelle",
+            [$id_classe]
         )->result_array();
 
         if ($id_periode && $id_periode !== 'all') {
@@ -266,5 +266,97 @@ class Fiches extends MY_Controller {
         if ($moy >= $rules['admis']) return 'Admis';
         if ($moy >= $rules['ajourne']) return 'Ajourné';
         return 'Échoué';
+    }
+
+    public function export_fiche_classe($class_id)
+    {
+        $id_periode = $this->input->get('periode'); // optional, if absent = all periods
+        $id_annee = $this->id_annee_active;
+
+        $students = $this->db
+            ->select("e.id_etudiant, e.matricule, e.fullname AS nom, '' AS prenom")
+            ->from('inscriptions i')
+            ->join('etudiants e', 'i.id_etudiant = e.id_etudiant')
+            ->where('i.id_classe', $class_id)->where('i.id_annee', $id_annee)->where('i.deleted_at', null)->where('e.deleted_at', null)
+            ->order_by('e.fullname ASC')->get()->result_array();
+
+        if (empty($students)) {
+            echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucun élève trouvé pour cette classe.</h3>";
+            return;
+        }
+
+        $matieres = $this->db->query(
+            "SELECT DISTINCT m.id_matiere, m.libelle, m.code FROM matieres_classes mc JOIN matieres m ON mc.id_matiere = m.id_matiere WHERE mc.id_classe = ? AND mc.deleted_at IS NULL ORDER BY m.libelle",
+            [$class_id]
+        )->result_array();
+
+        if (empty($matieres)) {
+            echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucune matière assignée à cette classe.</h3>";
+            return;
+        }
+
+        $all_subject_ids = array_column($matieres, 'id_matiere');
+        $all_subject_ids_str = implode(',', $all_subject_ids);
+        $etudiant_ids = array_column($students, 'id_etudiant');
+        $etudiant_ids_str = implode(',', $etudiant_ids);
+
+        // Determine periods
+        $periodes = [];
+        if ($id_periode) {
+            $p = $this->Model->readOne('periodes', ['id_periode' => $id_periode]);
+            if ($p) $periodes[] = $p;
+        } else {
+            $periodes = $this->db->where('id_annee', $id_annee)->where('deleted_at', null)->order_by('id_periode')->get('periodes')->result_array();
+        }
+
+        if (empty($periodes)) {
+            echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucune période trouvée.</h3>";
+            return;
+        }
+
+        // Build note mapping: [etudiant_id][matiere_id][type] = sum_note
+        $note_map = [];
+        $max_map = [];
+
+        foreach ($periodes as $periode) {
+            $pid = $periode['id_periode'];
+            $rows = $this->db->query("
+                SELECT n.id_etudiant, ev.id_matiere, ev.type,
+                       SUM(n.note) AS total_notes,
+                       SUM(ev.sur) AS total_sur
+                FROM notes n
+                JOIN evaluations ev ON ev.id_evaluation = n.id_evaluation
+                WHERE n.id_etudiant IN ({$etudiant_ids_str})
+                AND ev.id_matiere IN ({$all_subject_ids_str})
+                AND ev.id_periode = ?
+                AND n.deleted_at IS NULL AND ev.deleted_at IS NULL
+                GROUP BY n.id_etudiant, ev.id_matiere, ev.type
+            ", [$pid])->result_array();
+
+            foreach ($rows as $r) {
+                $eid = $r['id_etudiant'];
+                $mid = $r['id_matiere'];
+                $type = $r['type'];
+                $cat = in_array($type, ['composition', 'examen']) ? 'comp' : ($type === 'tp' ? 'ress' : 'tj');
+                $note_map[$eid][$mid][$pid][$cat] = floatval($r['total_notes']);
+                $max_map[$mid][$pid][$cat] = floatval($r['total_sur']);
+            }
+        }
+
+        $annee_scolaire = $this->Model->readQuery('SELECT libelle FROM annees_scolaires WHERE id_annee = ?', [$id_annee]);
+        $annee_libelle = $annee_scolaire[0]['libelle'] ?? 'N/A';
+        $classe_info = $this->Model->readOne('classes', ['id_classe' => $class_id]);
+        $classe_nom = $classe_info ? $classe_info['libelle'] : 'Classe';
+
+        $data['title'] = 'Fiches de points - ' . $classe_nom;
+        $data['students'] = $students;
+        $data['matieres'] = $matieres;
+        $data['periodes'] = $periodes;
+        $data['note_map'] = $note_map;
+        $data['max_map'] = $max_map;
+        $data['classe_nom'] = $classe_nom;
+        $data['annee_libelle'] = $annee_libelle;
+
+        $this->load->view('print_fiches', $data);
     }
 }

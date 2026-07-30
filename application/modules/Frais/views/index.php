@@ -351,7 +351,7 @@ function editPaiementSidebar(index) {
   document.getElementById('payEtudiant').value = p.id_etudiant || '';
   document.getElementById('payType').value = p.id_type_frais || '';
   var _e = etudiantsData.find(function(x) { return String(x.id_etudiant) === String(p.id_etudiant); });
-  if (_e) document.getElementById('payEtudiant_search').value = _e.nom + ' ' + _e.prenom + ' (' + (_e.matricule || '') + ')';
+  if (_e) document.getElementById('payEtudiant_search').value = _e.nom + ' (' + (_e.matricule || '') + ')';
   var _t = typesFraisData.find(function(x) { return String(x.id_type_frais) === String(p.id_type_frais); });
   if (_t) document.getElementById('payType_search').value = _t.libelle;
   document.getElementById('payMontant').value = p.montant || '';
@@ -436,7 +436,7 @@ function exportCSV() {
     if (typeof $ === 'undefined' || typeof API === 'undefined' || typeof autoSetup === 'undefined') { setTimeout(_f, 50); return; }
     loadTypes();
     loadPaiements();
-    autoSetup('payEtudiant_search', 'payEtudiant', 'payEtudiant_results', etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.nom, prenom: e.prenom, matricule: e.matricule }; }), function(e) { return e.nom + ' ' + e.prenom + ' (' + (e.matricule || '') + ')'; });
+    autoSetup('payEtudiant_search', 'payEtudiant', 'payEtudiant_results', etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.nom, prenom: e.prenom, matricule: e.matricule }; }), function(e) { return e.nom + ' (' + (e.matricule || '') + ')'; });
     autoSetup('payType_search', 'payType', 'payType_results', typesFraisData.map(function(t) { return { id: t.id_type_frais, libelle: t.libelle }; }), function(t) { return t.libelle; });
     $('#dtSearch1').on('keyup', function() { $('#typesTable').DataTable().search(this.value).draw(); });
     $('#dtLength1').on('change', function() { $('#typesTable').DataTable().page.len(+this.value).draw(); });

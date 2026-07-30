@@ -3,13 +3,16 @@
 <div class="dashboard-main-body">
   <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
     <div>
-      <h1 class="fw-semibold mb-4 h6 text-primary-light"><?= $teacher ? 'Edit Teacher' : 'Add New Teacher' ?></h1>
+      <h1 class="fw-semibold mb-4 h6 text-primary-light"><?= $teacher ? 'Modifier l\'enseignant' : 'Ajouter un enseignant' ?></h1>
       <div>
-        <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
-        <a href="<?= base_url('Enseignants') ?>" class="text-secondary-light hover-text-primary hover-underline"> / Teacher</a>
-        <span class="text-secondary-light"> / <?= $teacher ? 'Edit Teacher' : 'Add New Teacher' ?></span>
+        <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Tableau de bord</a>
+        <a href="<?= base_url('Enseignants') ?>" class="text-secondary-light hover-text-primary hover-underline"> / Enseignants</a>
+        <span class="text-secondary-light"> / <?= $teacher ? 'Modifier l\'enseignant' : 'Ajouter un enseignant' ?></span>
       </div>
     </div>
+    <a href="<?= base_url('Enseignants') ?>" class="btn btn-outline-secondary d-flex align-items-center gap-6">
+      <i class="ri-arrow-left-line"></i> Retour
+    </a>
   </div>
   <form id="mainForm" class="mt-24">
     <input type="hidden" id="id_enseignant" value="<?= $teacher['uuid'] ?? '' ?>">
@@ -17,58 +20,50 @@
       <div class="col-lg-12">
         <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
           <div class="card-header border-bottom bg-base py-16 px-24">
-            <h6 class="text-lg fw-semibold mb-0">Personal Info</h6>
+            <h6 class="text-lg fw-semibold mb-0">Informations personnelles</h6>
           </div>
           <div class="card-body p-20">
             <div class="row gy-3">
               <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Teacher ID</label>
-                <input type="text" class="form-control" id="matricule" value="<?= $teacher['matricule'] ?? '' ?>" placeholder="Teacher ID">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Matricule</label>
+                <input type="text" class="form-control" id="matricule" value="<?= $teacher['matricule'] ?? '' ?>" placeholder="Matricule">
               </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Full Name <span class="text-danger-600">*</span></label>
-                <input type="text" class="form-control" id="nom" value="<?= $teacher['nom'] ?? '' ?>" placeholder="Last Name">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Post Name</label>
-                <input type="text" class="form-control" id="postnom" value="<?= $teacher['postnom'] ?? '' ?>" placeholder="Post Name">
-              </div>
-              <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">First Name <span class="text-danger-600">*</span></label>
-                <input type="text" class="form-control" id="prenom" value="<?= $teacher['prenom'] ?? '' ?>" placeholder="First Name">
+              <div class="col-xxl-9 col-xl-8 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Nom complet <span class="text-danger-600">*</span></label>
+                <input type="text" class="form-control" id="fullname" value="<?= $teacher['fullname'] ?? '' ?>" placeholder="Nom complet de l'enseignant">
               </div>
               <div class="col-12">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Subjects & Classes</label>
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Matières et Classes</label>
                 <div id="enseignementsContainer"></div>
-                <button type="button" class="btn btn-sm btn-primary-600 mt-8" onclick="addEnseignement()">+ Add subject/class</button>
+                <button type="button" class="btn btn-sm btn-primary-600 mt-8" onclick="addEnseignement()">+ Ajouter une matière / classe</button>
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Gender</label>
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Sexe</label>
                 <select id="sexe" class="form-control form-select">
-                  <option value="">Select Gender</option>
-                  <option value="M" <?= ($teacher['sexe'] ?? '') == 'M' ? 'selected' : '' ?>>Male</option>
-                  <option value="F" <?= ($teacher['sexe'] ?? '') == 'F' ? 'selected' : '' ?>>Female</option>
+                  <option value="">Sélectionner</option>
+                  <option value="M" <?= ($teacher['sexe'] ?? '') == 'M' ? 'selected' : '' ?>>Masculin</option>
+                  <option value="F" <?= ($teacher['sexe'] ?? '') == 'F' ? 'selected' : '' ?>>Féminin</option>
                 </select>
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date Of Birth</label>
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date de naissance</label>
                 <input type="date" class="form-control" id="date_naissance" value="<?= $teacher['date_naissance'] ?? '' ?>">
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Qualification</label>
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Qualification / Diplôme</label>
                 <input type="text" class="form-control" id="qualification" value="<?= $teacher['qualification'] ?? '' ?>" placeholder="Diplôme / Qualification">
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Experience</label>
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Expérience</label>
                 <input type="text" class="form-control" id="experience" value="<?= $teacher['experience'] ?? '' ?>" placeholder="Années d'expérience">
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Join Date</label>
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date d'embauche</label>
                 <input type="date" class="form-control" id="date_embauche" value="<?= $teacher['date_embauche'] ?? '' ?>">
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Phone Number</label>
-                <input type="tel" class="form-control" id="telephone" value="<?= $teacher['telephone'] ?? '' ?>" placeholder="Phone Number">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Numéro de téléphone</label>
+                <input type="tel" class="form-control" id="telephone" value="<?= $teacher['telephone'] ?? '' ?>" placeholder="Numéro de téléphone">
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Email</label>
@@ -82,13 +77,13 @@
       <div class="col-lg-12">
         <div class="shadow-1 radius-12 bg-base h-100 overflow-hidden">
           <div class="card-header border-bottom bg-base py-16 px-24">
-            <h6 class="text-lg fw-semibold mb-0">Address</h6>
+            <h6 class="text-lg fw-semibold mb-0">Adresse</h6>
           </div>
           <div class="card-body p-20">
             <div class="row gy-3">
               <div class="col-sm-12">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Address</label>
-                <textarea class="form-control" id="adresse" rows="2" placeholder="Address"><?= $teacher['adresse'] ?? '' ?></textarea>
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Adresse</label>
+                <textarea class="form-control" id="adresse" rows="2" placeholder="Adresse"><?= $teacher['adresse'] ?? '' ?></textarea>
               </div>
             </div>
           </div>
@@ -97,8 +92,8 @@
 
       <div class="col-12">
         <div class="d-flex align-items-center justify-content-center gap-3 mt-8">
-          <a href="<?= base_url('Enseignants') ?>" class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-50 py-11 radius-8 text-decoration-none">Cancel</a>
-          <button type="submit" class="btn btn-primary-600 border border-primary-600 text-md px-28 py-12 radius-8">Save Changes</button>
+          <a href="<?= base_url('Enseignants') ?>" class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-50 py-11 radius-8 text-decoration-none">Annuler</a>
+          <button type="submit" class="btn btn-primary-600 border border-primary-600 text-md px-28 py-12 radius-8">Enregistrer</button>
         </div>
       </div>
     </div>
@@ -108,12 +103,14 @@
 <script id="enseignementsData" type="application/json"><?= json_encode($teacher['enseignements'] ?? []) ?></script>
 <script id="matieresData" type="application/json"><?= json_encode($matieres) ?></script>
 <script id="classesData" type="application/json"><?= json_encode($classes) ?></script>
+<script id="matieresClassesData" type="application/json"><?= json_encode($matieres_classes) ?></script>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 
-let matieresList = []; let classesList = [];
+let matieresList = []; let classesList = []; let matieresClassesList = [];
 try { const el = document.getElementById('matieresData'); if (el) matieresList = JSON.parse(el.textContent); } catch(e) {}
 try { const el = document.getElementById('classesData'); if (el) classesList = JSON.parse(el.textContent); } catch(e) {}
+try { const el = document.getElementById('matieresClassesData'); if (el) matieresClassesList = JSON.parse(el.textContent); } catch(e) {}
 
 function renderSearchResults(container, items, query, labelFn, selectFn) {
   const q = (query || '').toLowerCase().trim();
@@ -170,7 +167,7 @@ function setupAutocomplete(inputId, hiddenId, resultsId, items, labelFn, onSelec
 
 let ensCounter = 0;
 
-function addEnseignement(matiereId, classeId, coefficient, nb_heures_par_jour, nb_heures_par_semaine) {
+function addEnseignement(matiereId, classeId) {
   const container = document.getElementById('enseignementsContainer');
   const idx = ensCounter++;
   const div = document.createElement('div');
@@ -178,40 +175,69 @@ function addEnseignement(matiereId, classeId, coefficient, nb_heures_par_jour, n
   const matiereItem = matieresList.find(m => String(m.id_matiere) === String(matiereId));
   const classeItem = classesList.find(c => String(c.id_classe) === String(classeId));
   div.innerHTML = `
-    <div class="col-3 position-relative">
-      <label class="text-xs fw-semibold text-secondary-light mb-4">Matière</label>
-      <input type="hidden" class="ens-matiere-id" id="ens_matiere_${idx}" value="${matiereId || ''}">
-      <input type="text" class="form-control ens-matiere-search" id="ens_matiere_search_${idx}" placeholder="Rechercher matière..." value="${matiereItem ? matiereItem.libelle : ''}" autocomplete="off" ${matiereItem ? 'style="border-color:var(--bs-success);border-width:2px;"' : ''}>
-      <div class="list-group position-absolute z-99 w-100 shadow radius-4 border" id="ens_matiere_results_${idx}" style="display:none;max-height:180px;overflow-y:auto;"></div>
-    </div>
-    <div class="col-3 position-relative">
-      <label class="text-xs fw-semibold text-secondary-light mb-4">Classe</label>
+    <div class="col-md-5 position-relative">
+      <label class="text-xs fw-semibold text-secondary-light mb-4">Classe <span class="text-danger">*</span></label>
       <input type="hidden" class="ens-classe-id" id="ens_classe_${idx}" value="${classeId || ''}">
       <input type="text" class="form-control ens-classe-search" id="ens_classe_search_${idx}" placeholder="Rechercher classe..." value="${classeItem ? classeItem.libelle : ''}" autocomplete="off" ${classeItem ? 'style="border-color:var(--bs-success);border-width:2px;"' : ''}>
       <div class="list-group position-absolute z-99 w-100 shadow radius-4 border" id="ens_classe_results_${idx}" style="display:none;max-height:180px;overflow-y:auto;"></div>
     </div>
-    <div class="col-2">
-      <label class="text-xs fw-semibold text-secondary-light mb-4">Coeff</label>
-      <input type="number" step="0.1" min="0" class="form-control ens-coefficient" id="ens_coefficient_${idx}" value="${coefficient ?? ''}" placeholder="1.0">
+    <div class="col-md-6 position-relative">
+      <label class="text-xs fw-semibold text-secondary-light mb-4">Matière <span class="text-danger">*</span></label>
+      <input type="hidden" class="ens-matiere-id" id="ens_matiere_${idx}" value="${matiereId || ''}">
+      <input type="text" class="form-control ens-matiere-search" id="ens_matiere_search_${idx}" placeholder="Sélectionnez d'abord une classe..." value="${matiereItem ? matiereItem.libelle : ''}" autocomplete="off" ${matiereItem ? 'style="border-color:var(--bs-success);border-width:2px;"' : ''} ${!classeId ? 'disabled' : ''}>
+      <div class="list-group position-absolute z-99 w-100 shadow radius-4 border" id="ens_matiere_results_${idx}" style="display:none;max-height:180px;overflow-y:auto;"></div>
     </div>
-    <div class="col-2">
-      <label class="text-xs fw-semibold text-secondary-light mb-4">H/jour</label>
-      <input type="number" step="0.5" min="0" class="form-control ens-nb-heures-jour" id="ens_nb_heures_jour_${idx}" value="${nb_heures_par_jour ?? ''}" placeholder="0.0">
-    </div>
-    <div class="col-2 position-relative">
-      <label class="text-xs fw-semibold text-secondary-light mb-4">H/sem</label>
-      <div class="d-flex gap-2">
-        <input type="number" step="0.5" min="0" class="form-control ens-nb-heures-semaine" id="ens_nb_heures_semaine_${idx}" value="${nb_heures_par_semaine ?? ''}" placeholder="0.0">
-        <button type="button" class="btn btn-danger-600 text-white px-2 flex-shrink-0" onclick="this.closest('.enseignement-row').remove()" title="Supprimer"><i class="ri-close-line"></i></button>
-      </div>
+    <div class="col-md-1 d-flex align-items-end">
+      <button type="button" class="btn btn-danger-600 text-white w-100 h-40-px" onclick="this.closest('.enseignement-row').remove()" title="Supprimer"><i class="ri-close-line"></i></button>
     </div>
   `;
   container.appendChild(div);
 
-  setupAutocomplete('ens_matiere_search_' + idx, 'ens_matiere_' + idx, 'ens_matiere_results_' + idx,
-    matieresList, i => i.libelle);
+  const matiereSearchInput = document.getElementById('ens_matiere_search_' + idx);
+  const matiereHiddenId = document.getElementById('ens_matiere_' + idx);
+
+  // Setup Classe autocomplete
   setupAutocomplete('ens_classe_search_' + idx, 'ens_classe_' + idx, 'ens_classe_results_' + idx,
-    classesList, i => i.libelle || ('Class ' + i.id_classe));
+    classesList, i => i.libelle, function(selectedClasseId) {
+      // When classe is selected, enable matiere and filter matieres based on matieres_classes for this classe
+      matiereSearchInput.disabled = false;
+      matiereSearchInput.value = '';
+      matiereHiddenId.value = '';
+      matiereSearchInput.placeholder = 'Rechercher matière...';
+      matiereSearchInput.classList.remove('border-success', 'border-2');
+    });
+
+  // Setup Matière autocomplete filtered by selected classe
+  const matiereInput = document.getElementById('ens_matiere_search_' + idx);
+  const matiereHidden = document.getElementById('ens_matiere_' + idx);
+  const matiereResults = document.getElementById('ens_matiere_results_' + idx);
+
+  if (matiereInput) {
+    matiereInput.addEventListener('focus', function() {
+      if (this.disabled) return;
+      const cId = document.getElementById('ens_classe_' + idx).value;
+      const allowedMatierIds = matieresClassesList.filter(mc => String(mc.id_classe) === String(cId)).map(mc => String(mc.id_matiere));
+      const filteredMatieres = matieresList.filter(m => allowedMatierIds.includes(String(m.id_matiere)));
+      if (!matiereHidden.value) renderSearchResults(matiereResults, filteredMatieres, this.value, i => i.libelle);
+    });
+    matiereInput.addEventListener('input', function() {
+      if (this.disabled) return;
+      matiereHidden.value = '';
+      this.classList.remove('border-success', 'border-2');
+      const cId = document.getElementById('ens_classe_' + idx).value;
+      const allowedMatierIds = matieresClassesList.filter(mc => String(mc.id_classe) === String(cId)).map(mc => String(mc.id_matiere));
+      const filteredMatieres = matieresList.filter(m => allowedMatierIds.includes(String(m.id_matiere)));
+      renderSearchResults(matiereResults, filteredMatieres, this.value, i => i.libelle);
+    });
+    matiereResults.addEventListener('click', function(e) {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      matiereHidden.value = btn.dataset.id;
+      matiereInput.value = btn.textContent.trim();
+      matiereInput.classList.add('border-success', 'border-2');
+      matiereResults.style.display = 'none';
+    });
+  }
 }
 
 document.getElementById('mainForm').addEventListener('submit', async function(e) {
@@ -223,25 +249,17 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   rows.forEach(row => {
     const mid = row.querySelector('.ens-matiere-id');
     const cid = row.querySelector('.ens-classe-id');
-    const coeff = row.querySelector('.ens-coefficient');
-    const hJour = row.querySelector('.ens-nb-heures-jour');
-    const hSem = row.querySelector('.ens-nb-heures-semaine');
-    if (mid && mid.value) {
+    if (mid && mid.value && cid && cid.value) {
       enseignements.push({
         id_matiere: mid.value,
-        id_classe: cid ? cid.value : null,
-        coefficient: coeff ? coeff.value : null,
-        nb_heures_par_jour: hJour ? hJour.value : null,
-        nb_heures_par_semaine: hSem ? hSem.value : null
+        id_classe: cid.value
       });
       const mi = matieresList.find(m => String(m.id_matiere) === String(mid.value));
       if (mi) specialites.push(mi.libelle);
     }
   });
   const data = {
-    nom: document.getElementById('nom').value,
-    postnom: document.getElementById('postnom').value,
-    prenom: document.getElementById('prenom').value,
+    fullname: document.getElementById('fullname').value,
     matricule: document.getElementById('matricule').value,
     sexe: document.getElementById('sexe').value,
     date_naissance: document.getElementById('date_naissance').value,
@@ -254,7 +272,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     enseignements: enseignements,
     date_embauche: document.getElementById('date_embauche').value,
   };
-  if (!data.nom || !data.prenom) { Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Name and First Name are required' }); return; }
+  if (!data.fullname) { Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Full Name is required' }); return; }
   let res;
   if (id) res = await API.enseignants.update(id, data);
   else res = await API.enseignants.create(data);

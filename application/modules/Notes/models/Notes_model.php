@@ -11,7 +11,7 @@ class Notes_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('n.deleted_at', null);
-        $this->db->select('n.*, e.nom, e.prenom, e.matricule, ev.libelle as evaluation_libelle, m.libelle as matiere, ev.id_periode, ev.id_classe');
+        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, e.matricule, ev.libelle as evaluation_libelle, m.libelle as matiere, ev.id_periode, ev.id_classe");
         $this->db->from('notes n');
         $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
@@ -31,7 +31,7 @@ class Notes_model extends Model
     {
         $this->db->where('n.deleted_at', null);
         $this->db->where('n.uuid', $id);
-        $this->db->select('n.*, e.nom, e.prenom, ev.libelle as evaluation_libelle, m.libelle as matiere');
+        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, ev.libelle as evaluation_libelle, m.libelle as matiere");
         $this->db->from('notes n');
         $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
@@ -108,7 +108,7 @@ class Notes_model extends Model
     public function get_bulletins($filters = [])
     {
         $this->db->where('b.deleted_at', null);
-        $this->db->select('b.*, e.nom, e.prenom, e.matricule, c.libelle as classe, p.libelle as periode, a.libelle as annee');
+        $this->db->select("b.*, e.fullname AS nom, '' AS prenom, e.matricule, c.libelle as classe, p.libelle as periode, a.libelle as annee");
         $this->db->from('bulletins b');
         $this->db->join('etudiants e', 'b.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('classes c', 'b.id_classe = c.id_classe', 'left');

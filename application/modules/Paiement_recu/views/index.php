@@ -156,7 +156,7 @@ document.getElementById('dtLength').addEventListener('change', function() { if (
     if (typeof $ === 'undefined' || typeof API === 'undefined') { setTimeout(_f, 50); return; }
     loadData();
     API.recus.list().then(function(r) { if (r.success) { var sel = document.getElementById('recuSelect'); r.data.forEach(function(d) { var o = document.createElement('option'); o.value = d.id_recu; o.textContent = d.numero_recu; sel.appendChild(o); }); } });
-    API.paiements_data.list().then(function(r) { if (r.success) { var sel = document.getElementById('paiementSelect'); r.data.forEach(function(d) { var o = document.createElement('option'); o.value = d.id_paiement; o.textContent = d.nom + ' ' + d.prenom + ' - ' + parseFloat(d.montant || 0).toLocaleString(); sel.appendChild(o); }); } });
+    API.paiements_data.list().then(function(r) { if (r.success) { var sel = document.getElementById('paiementSelect'); r.data.forEach(function(d) { var o = document.createElement('option'); o.value = d.id_paiement; o.textContent = d.nom + ' - ' + parseFloat(d.montant || 0).toLocaleString(); sel.appendChild(o); }); } });
   };
   _f();
 })();

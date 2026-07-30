@@ -24,7 +24,7 @@ class Inscriptions extends MY_Controller {
 
     public function api_list() {
         $this->db->where('i.deleted_at', null);
-        $this->db->select('i.*, e.nom, e.prenom, e.matricule, c.libelle as classe, s.libelle as section, a.libelle as annee');
+        $this->db->select("i.*, e.fullname AS nom, '' AS prenom, e.matricule, c.libelle as classe, s.libelle as section, a.libelle as annee");
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('classes c', 'i.id_classe = c.id_classe', 'left');
@@ -81,13 +81,13 @@ class Inscriptions extends MY_Controller {
     }
 
     private function _recalculer_numero_ordre() {
-        $this->db->select('i.id_classe, e.id_etudiant, e.nom, e.postnom, e.prenom');
+        $this->db->select('i.id_classe, e.id_etudiant, e.fullname');
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'e.id_etudiant = i.id_etudiant');
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
         $this->db->where('i.id_annee', $this->id_annee_active);
-        $this->db->order_by('i.id_classe ASC, e.nom ASC, e.postnom ASC, e.prenom ASC');
+        $this->db->order_by('i.id_classe ASC, e.fullname ASC');
         $q_r = $this->db->get();
         $rows = $q_r !== false ? $q_r->result_array() : array();
         $current_classe = null;

@@ -8,7 +8,7 @@ class Echeance_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('e.deleted_at', null);
-        $this->db->select('e.*, f.montant as frais_montant, tf.libelle as type_frais, et.nom, et.prenom, et.matricule');
+        $this->db->select("e.*, f.montant as frais_montant, tf.libelle as type_frais, et.fullname AS nom, '' AS prenom, et.matricule");
         $this->db->from('echeances e');
         $this->db->join('frais f', 'e.id_frais = f.id_frais', 'left');
         $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');

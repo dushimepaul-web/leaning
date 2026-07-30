@@ -13,63 +13,25 @@
 .bull-toolbar button:hover{background:#f9fafb;border-color:#d1d5db}
 .bull-toolbar button.primary{background:#6366f1;color:#fff;border-color:#6366f1}
 .bull-toolbar button.primary:hover{background:#4f46e5}
-.bull-grid-container{overflow-x:auto;max-height:65vh;border:1px solid #e5e7eb;border-radius:var(--radius);background:#fff;box-shadow:var(--shadow-md)}
-.bull-table{border-collapse:collapse;width:100%;min-width:900px;table-layout:auto}
-.bull-table thead{position:sticky;top:0;z-index:5}
-.bull-table thead th{background:#217346;color:#fff;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;padding:6px 4px;border-right:1px solid #1a5c38;white-space:nowrap;text-align:center}
-.bull-table thead th.sub{background:#2d8a4e;font-size:9px;font-weight:500;text-transform:none;letter-spacing:0;color:#e2f0e7}
-.bull-table thead th:last-child{border-right:none}
-.bull-table thead th.sticky-left{position:sticky;z-index:6;background:#217346}
-.bull-table thead th.sub.sticky-left{background:#2d8a4e}
-.bull-table thead th.col-no{left:0;width:36px;min-width:36px}
-.bull-table thead th.col-nom{left:36px;min-width:140px}
-.bull-table thead th.course-group{border-right:2px solid #fff}
-.bull-table thead th.course-last{border-right:2px solid #fff!important}
-.bull-table tbody td{padding:4px 4px;border:1px solid #f1f5f9;vertical-align:middle;height:36px;font-size:12px;text-align:center}
-.bull-table tbody td.sticky-left{position:sticky;z-index:3}
-.bull-table tbody td.col-no{left:0;background:#f8fafc;font-size:11px;color:#94a3b8;font-weight:500}
-.bull-table tbody td.col-nom{left:36px;background:#f8fafc;font-size:12px;font-weight:600;color:#1e293b;text-align:left}
-.bull-table tbody tr:nth-child(even) td{background:#fff}
-.bull-table tbody tr:nth-child(even) td.sticky-left{background:#f1f5f9}
-.bull-table tbody tr:hover td{background:#f8fafc}
-.bull-table tbody tr:hover td.sticky-left{background:#e2e8f0}
-.bull-table tbody td.note-dev{color:#6366f1;font-weight:600}
-.bull-table tbody td.note-exam{color:#d97706;font-weight:600}
-.bull-table tbody td.cell-total{color:#1e293b;font-weight:700;font-size:13px;background:#f1f5f9}
-.bull-table tbody td.cell-moy{color:#059669;font-weight:700;font-size:13px;background:#f0fdf4}
-.bull-table tbody td.cell-pct{color:#2563eb;font-weight:700;font-size:13px;background:#eff6ff}
-.bull-table tbody td.course-last-col{border-right:2px solid #e5e7eb}
-.bull-table tfoot td{padding:8px 4px;background:#f1f5f9;font-weight:600;font-size:11px;text-align:center;color:#475569;border:1px solid #e5e7eb}
-.bull-table tfoot td.sticky-left{position:sticky;z-index:3;background:#e2e8f0}
-.bull-table tfoot td.col-no{left:0}.bull-table tfoot td.col-nom{left:36px}
-.bull-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
-.stat-card{background:#fff;border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;min-width:110px}
-.stat-card .stat-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
-.stat-card .stat-val{font-size:18px;font-weight:700}.stat-card .stat-lbl{font-size:11px;color:#6b7280}
-.bulletin-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px;overflow:hidden;page-break-after:always}
-.bulletin-card .bul-header{background:#217346;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.bulletin-card .bul-header .bul-info{display:flex;gap:20px;flex-wrap:wrap}
-.bulletin-card .bul-header .bul-info span{font-size:13px;display:flex;align-items:center;gap:4px}
-.bulletin-card .bul-body{padding:12px 10px;overflow-x:auto}
-.bulletin-card .bul-body table{width:100%;border-collapse:collapse;min-width:600px;font-size:11px}
-.bulletin-card .bul-body table th{background:#f0fdf4;color:#1e293b;font-weight:600;padding:6px 4px;border:1px solid #d1d5db;text-align:center;font-size:10px}
-.bulletin-card .bul-body table th.course-header{background:#d1fae5}
-.bulletin-card .bul-body table td{padding:4px 6px;border:1px solid #e5e7eb;text-align:center}
-.bulletin-card .bul-body table td.note-dev{color:#6366f1;font-weight:600}
-.bulletin-card .bul-body table td.note-exam{color:#d97706;font-weight:600}
-.bulletin-card .bul-body table td.empty{color:#d1d5db}
-.bulletin-card .bul-footer{padding:12px 20px;background:#f9fafb;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:2px solid #e5e7eb}
-.bulletin-card .bul-footer .decision-badge{padding:6px 16px;border-radius:20px;font-weight:700;font-size:13px}
-.bulletin-card .bul-footer .decision-admis{background:#ecfdf5;color:#059669}
-.bulletin-card .bul-footer .decision-ajourne{background:#fffbeb;color:#d97706}
-.bulletin-card .bul-footer .decision-echoue{background:#fef2f2;color:#dc2626}
-.bulletin-card .bul-footer .decision-sans{background:#f9fafb;color:#6b7280}
+.bulletin-card{font-family:Arial,Calibri,sans-serif;background:#fff;border:1px solid #000;margin-bottom:20px;page-break-after:always;width:100%}
+.bulletin-card .bul-header{padding:8px 12px 4px}
+.bulletin-card .bul-header .h-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;line-height:1.6}
+.bulletin-card .bul-header .h-row .h-right{text-align:right}
+.bulletin-card .bul-body{overflow-x:auto}
+.bulletin-card .bul-body table{width:100%;border-collapse:collapse;font-size:11px}
+.bulletin-card .bul-body table th,.bulletin-card .bul-body table td{border:1px solid #000;padding:3px 4px;text-align:center;font-weight:400}
+.bulletin-card .bul-body table thead th{background:#D9D9D9;font-weight:700;font-size:10px}
+.bulletin-card .bul-body table thead th.branches-header{background:#fff;width:140px;min-width:140px;text-align:center}
+.bulletin-card .bul-body table td.branches{text-align:left;font-weight:700;padding-left:6px}
+.bulletin-card .bul-body table td.matiere{color:#000;font-weight:400}
+.bulletin-card .bul-body table td.num{text-align:center}
+.bulletin-card .bul-body table td.gris{background:#D9D9D9}
 @media print {
   body *{visibility:hidden}
   #bulletinsCard,#bulletinsCard *{visibility:visible}
   #bulletinsCard{position:absolute;left:0;top:0;width:100%}
   .bull-toolbar{display:none!important}
-  .bulletin-card{box-shadow:none;margin-bottom:10px;page-break-after:always}
+  .bulletin-card{border:1px solid #000;margin-bottom:10px;page-break-after:always}
   .sidebar,.dashboard-main-body .breadcrumb{display:none!important}
 }
 @media(max-width:768px){.bull-toolbar{flex-direction:column;align-items:stretch}.bull-toolbar .btn-group{flex-wrap:wrap}}
@@ -113,7 +75,7 @@
         <span style="font-weight:600;color:#1e293b;font-size:14px;padding:0 8px" id="bulTitle">—</span>
       </div>
       <div class="btn-group">
-        <button onclick="window.print()"><i class="ri-printer-line"></i> Imprimer tous</button>
+        <button onclick="if(gClasseId) window.open(API.base_url + 'Notes/Bulletins/export/' + gClasseId, '_blank'); else Swal.fire({icon:'warning',title:'Attention',text:'Veuillez sélectionner une classe'});"><i class="ri-printer-line"></i> Imprimer tous</button>
         <button class="primary" onclick="genererBulletinsClasse()"><i class="ri-magic-line"></i> Générer bulletins</button>
       </div>
     </div>
@@ -215,10 +177,9 @@ async function openBulletinPeriode(id,periodeId,periodeNom){
   document.getElementById('bulTitle').textContent=gClasseNom+' — '+periodeNom;
   document.getElementById('bulletinsList').innerHTML='<div class="text-center py-32"><div class="spinner-border text-primary-600"></div><p class="mt-8 text-secondary-light">Chargement des bulletins...</p></div>';
 
-  const url=API.base_url+'api/fiches/fiche_par_cours/'+id+'?periode='+periodeId+'&annee='+ACTIVE_ANNEE_ID;
+  const url=API.base_url+'api/bulletins/complet/'+id+'?periode='+periodeId+'&annee='+ACTIVE_ANNEE_ID;
   const r=await fetch(url).then(r=>r.json());
   if(!r.success){Swal.fire({icon:'error',text:r.message});return}
-  gFicheData=r.data;
   renderBulletins(r.data,periodeNom);
 }
 
@@ -267,7 +228,7 @@ function renderFichePeriode(data){
   // Corps
   let body='',totalMoy=0,nbMoy=0,allMoyennes=[];
   data.eleves.forEach((el,idx)=>{
-    body+=`<tr><td class="sticky-left col-no">${idx+1}</td><td class="sticky-left col-nom">${el.etudiant.nom} ${el.etudiant.prenom}</td>`;
+    body+=`<tr><td class="sticky-left col-no">${idx+1}</td><td class="sticky-left col-nom">${el.etudiant.nom}</td>`;
     let colIdx=0;
     el.cours.forEach((c,i)=>{
       const isLast=(i===el.cours.length-1);
@@ -329,7 +290,7 @@ function renderFicheAnnee(data){
   // Corps
   let body='',totalMoy=0,nbMoy=0,allMoyennes=[];
   data.eleves.forEach((el,idx)=>{
-    body+=`<tr><td class="sticky-left col-no">${idx+1}</td><td class="sticky-left col-nom">${el.etudiant.nom} ${el.etudiant.prenom}</td>`;
+    body+=`<tr><td class="sticky-left col-no">${idx+1}</td><td class="sticky-left col-nom">${el.etudiant.nom}</td>`;
     // Moyennes par période (les cours sont groupés par période dans el.cours)
     let courseIdx=0;
     allPeriodes.forEach(pc=>{
@@ -391,94 +352,188 @@ async function genererBulletinsClasse(){
 }
 
 function renderBulletins(data,periodeNom){
-  const decisionBadges={admis:'decision-admis',ajourne:'decision-ajourne',echoue:'decision-echoue'};
-  const decisionLabels={admis:'Admis',ajourne:'Ajourné(e)',echoue:'Échoué(e)'};
-  const appreciationLabels={};
-  [18,16,14,12,10].forEach((s,i)=>{const k=['Excellent','Très Bien','Bien','Assez Bien','Passable'];appreciationLabels[s]=k[i];});
+  const periodes=data.periodes||[];
+  const matieres=data.matieres||[];
+  const maxima=data.maxima||{};
+  const maximaPeriode=data.maxima_periode||{};
+  const section=data.section||data.classe_section||'';
+  const anneeScolaire=data.annee_scolaire||'2025-2026';
+  const classeNom=data.classe||'';
 
-  // Calculer les rangs
-  const eleves=data.eleves.map(e=>({...e}));
-  eleves.sort((a,b)=>b.moyenne-a.moyenne);
-  let rk=1,prev=-1;
-  const ranks={};
-  eleves.forEach((e,i)=>{
-    if(e.moyenne<=0){ranks[e.etudiant.id_etudiant]=0;return}
-    if(prev>=0&&e.moyenne<prev)rk=i+1;
-    ranks[e.etudiant.id_etudiant]=rk;
-    prev=e.moyenne;
-  });
-
-  // Récupérer tous les cours (si année: fusion depuis toutes les périodes)
-  let allCours=[];
-  if(data.type==='periode'){
-    allCours=data.periodes[0].cours;
-  } else {
-    const cmap={};
-    data.periodes.forEach(pc=>{pc.cours.forEach(c=>{if(!cmap[c.id_matiere])cmap[c.id_matiere]=c;});});
-    allCours=Object.values(cmap);
-  }
+  function nf(v){return v!==undefined&&v!==null&&v>0?v.toFixed(1):'-'}
 
   let html='';
   data.eleves.forEach((el,idx)=>{
-    const rang=ranks[el.etudiant.id_etudiant]||'—';
-    const moyenne=el.moyenne>0?el.moyenne.toFixed(2):'—';
-    const pct=el.moyenne>0?el.pourcentage.toFixed(1)+'%':'—';
+    // Compute per-period subject totals for A (matieres)
+    const aPer={};
+    let aAnnNote=0, aAnnMax=0;
+    periodes.forEach(p=>{
+      const pid=p.id_periode;
+      let tj=0,ex=0,tp=0;
+      matieres.forEach(mat=>{
+        const matEl=el.matieres.find(m=>m.id_matiere==mat.id_matiere)||{periodes:{}};
+        const per=matEl.periodes[pid]||{tj:0,comp:0,ress:0};
+        tj+=per.tj; ex+=per.comp; tp+=per.ress;
+      });
+      aPer[pid]={tj,ex,tp,tot:tj+ex+tp};
+    });
+    matieres.forEach(mat=>{
+      const matEl=el.matieres.find(m=>m.id_matiere==mat.id_matiere)||{annuel:{note:0,max:0}};
+      aAnnNote+=matEl.annuel.note||0;
+      aAnnMax+=matEl.annuel.max||0;
+    });
 
-    // Décision
-    let decision='sans',decisionLabel='Sans notes';
-    if(el.moyenne>=12){decision='admis';decisionLabel='Admis';}
-    else if(el.moyenne>=10){decision='ajourne';decisionLabel='Ajourné(e)';}
-    else if(el.moyenne>0){decision='echoue';decisionLabel='Échoué(e)';}
-
-    // Appréciation
-    let appreciation='';
-    if(el.moyenne>=18)appreciation='Excellent';
-    else if(el.moyenne>=16)appreciation='Très Bien';
-    else if(el.moyenne>=14)appreciation='Bien';
-    else if(el.moyenne>=12)appreciation='Assez Bien';
-    else if(el.moyenne>=10)appreciation='Passable';
-    else if(el.moyenne>0)appreciation='Insuffisant';
-
-    const coursMap={};
-    el.cours.forEach(c=>{coursMap[c.id_matiere]=c;});
+    const conduiteVal=60, relTj=10, relEx=10, relTot=20;
 
     html+=`<div class="bulletin-card">
       <div class="bul-header">
-        <div class="bul-info">
-          <span><i class="ri-user-3-line"></i> <strong>${el.etudiant.nom} ${el.etudiant.prenom}</strong></span>
-          <span><i class="ri-barcode-line"></i> ${el.etudiant.matricule||'—'}</span>
+        <div class="h-row">
+          <span>SECTION: ${section||classeNom}</span>
+          <span class="h-right">ANNEE SCOLAIRE : ${anneeScolaire}</span>
         </div>
-        <span style="font-size:14px;font-weight:700">${gClasseNom} — ${periodeNom}</span>
+        <div class="h-row">
+          <span>NOM ET PRENOM : ${el.fullname||''}</span>
+          <span class="h-right">Nombre d'Eleves : ${data.eleves.length}</span>
+        </div>
+        <div class="h-row">
+          <span>N&deg; d'ordre : ${el.matricule||'.................'}</span>
+        </div>
+        <div class="h-row">
+          <span>Classe : ${classeNom}</span>
+        </div>
       </div>
       <div class="bul-body">
         <table>
-          <thead><tr><th>N°</th><th>Cours</th><th>Devoirs</th><th>Examen</th><th>Moy. Cours</th></tr></thead>
+          <thead>
+            <tr>
+              <th class="branches-header" rowspan="2"></th>
+              <th colspan="4">MAXIMA</th>
+              ${periodes.map(p=>`<th colspan="4">${p.libelle||''}</th>`).join('')}
+              <th colspan="3">TOTAUX ANNUELS</th>
+            </tr>
+            <tr>
+              <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
+              ${periodes.map(()=>'<th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>').join('')}
+              <th>MAX</th><th>TOT</th><th>%</th>
+            </tr>
+          </thead>
           <tbody>`;
 
-    allCours.forEach((c,i)=>{
-      const cd=coursMap[c.id_matiere]||{};
-      const devNote=cd.dev_note!==null?cd.dev_note.toFixed(2):'<span class="empty">—</span>';
-      const examNote=cd.exam_note!==null?cd.exam_note.toFixed(2):'<span class="empty">—</span>';
-      const coursAvg=cd.cours_note!==null?cd.cours_note.toFixed(2):'<span class="empty">—</span>';
+    // ---- A: Matières ----
+    matieres.forEach((mat,mi)=>{
+      const mid=mat.id_matiere;
+      const matEl=el.matieres.find(m=>m.id_matiere==mid)||{periodes:{},annuel:{note:0,max:0,pct:0}};
+
+      const mxP=maxima[mid]&&maxima[mid][periodes[0].id_periode]||{};
+      const max_tj=mxP.tj||0, max_ex=mxP.comp||0, max_tp=mxP.ress||0;
+      const max_tot=max_tj+max_ex+max_tp;
+
       html+=`<tr>
-        <td>${i+1}</td>
-        <td style="text-align:left;font-weight:600">${c.libelle}</td>
-        <td class="note-dev">${devNote}</td>
-        <td class="note-exam">${examNote}</td>
-        <td style="font-weight:700;color:#1e293b">${coursAvg}</td>
+        <td class="branches matiere">${mat.libelle}</td>
+        <td class="num">${nf(max_tj)}</td><td class="num">${nf(max_ex)}</td><td class="num">${nf(max_tp)}</td><td class="num"><strong>${nf(max_tot)}</strong></td>`;
+
+      periodes.forEach(p=>{
+        const pid=p.id_periode;
+        const per=matEl.periodes[pid]||{tj:0,comp:0,ress:0};
+        const pt=per.tj+per.comp+per.ress;
+        html+=`<td class="num">${nf(per.tj)}</td><td class="num">${nf(per.comp)}</td><td class="num">${nf(per.ress)}</td><td class="num"><strong>${nf(pt)}</strong></td>`;
+      });
+
+      html+=`<td class="num"><strong>${nf(matEl.annuel.max)}</strong></td>
+        <td class="num"><strong>${nf(matEl.annuel.note)}</strong></td>
+        <td class="num"><strong>${matEl.annuel.pct>0?matEl.annuel.pct.toFixed(2)+'%':'-'}</strong></td>
       </tr>`;
     });
 
-    html+=`</tbody></table></div>
-      <div class="bul-footer">
-        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-          <span><strong>Total :</strong> ${el.total.toFixed(2)} pts</span>
-          <span><strong>Moyenne :</strong> <span style="color:#059669;font-weight:700;font-size:15px">${moyenne}/20</span></span>
-          <span><strong>% :</strong> <span style="color:#2563eb;font-weight:700">${pct}</span></span>
-          <span><strong>Rang :</strong> ${rang}${rang!=='—'?'<sup>e</sup>':''}</span>
-          <span><strong>Appréciation :</strong> ${appreciation||'—'}</span>
-        </div>
-        <span class="decision-badge ${decisionBadges[decision]||'decision-sans'}">${decisionLabel}</span>
+    // ---- B: Sous-Tot ----
+    html+=`<tr>
+      <td class="branches">Sous-Tot</td>
+      <td></td><td></td><td></td><td></td>`;
+    periodes.forEach(p=>{
+      const st=aPer[p.id_periode]||{tj:0,ex:0,tp:0,tot:0};
+      html+=`<td></td><td></td><td></td><td class="num"><strong>${nf(st.tot)}</strong></td>`;
+    });
+    html+=`<td class="num"><strong>${nf(aAnnMax)}</strong></td>
+      <td class="num"><strong>${nf(aAnnNote)}</strong></td>
+      <td class="num"><strong>${aAnnMax>0?(aAnnNote/aAnnMax*100).toFixed(2)+'%':'-'}</strong></td>
+    </tr>`;
+
+    // ---- C: Conduite ----
+    html+=`<tr>
+      <td class="branches">Conduite</td>
+      <td class="num gris">${conduiteVal}</td><td></td><td></td><td class="num">${conduiteVal}</td>`;
+    periodes.forEach(()=>{
+      html+=`<td></td><td></td><td></td><td class="num">${conduiteVal}</td>`;
+    });
+    html+=`<td class="num"><strong>${conduiteVal*periodes.length}</strong></td>
+      <td class="num"><strong>${conduiteVal*periodes.length}</strong></td>
+      <td>100.00%</td>
+    </tr>`;
+
+    // ---- D: Totaux ----
+    html+=`<tr>
+      <td class="branches">Totaux</td>
+      <td></td><td></td><td></td><td></td>`;
+    periodes.forEach(p=>{
+      const st=aPer[p.id_periode]||{tj:0,ex:0,tp:0,tot:0};
+      const totD=st.tot+conduiteVal;
+      html+=`<td></td><td></td><td></td><td class="num"><strong>${nf(totD)}</strong></td>`;
+    });
+    html+=`<td class="num"><strong>${nf(aAnnMax+conduiteVal*periodes.length)}</strong></td>
+      <td class="num"><strong>${nf(aAnnNote+conduiteVal*periodes.length)}</strong></td>
+      <td class="num"><strong>${(aAnnMax+conduiteVal*periodes.length)>0?((aAnnNote+conduiteVal*periodes.length)/(aAnnMax+conduiteVal*periodes.length)*100).toFixed(2)+'%':'-'}</strong></td>
+    </tr>`;
+
+    // ---- E: Pourcentage ----
+    html+=`<tr>
+      <td class="branches">Pourcentage</td>
+      <td></td><td></td><td></td><td></td>`;
+    periodes.forEach(()=>{
+      html+=`<td></td><td></td><td></td><td></td>`;
+    });
+    html+=`<td></td><td></td><td></td>
+    </tr>`;
+
+    // ---- F: Place ----
+    html+=`<tr>
+      <td class="branches">Place</td>
+      <td></td><td></td><td></td><td></td>`;
+    periodes.forEach(()=>{
+      html+=`<td></td><td></td><td></td><td></td>`;
+    });
+    html+=`<td></td><td></td><td></td>
+    </tr>`;
+
+    // ---- G: Religion ----
+    html+=`<tr>
+      <td class="branches">Religion</td>
+      <td class="num">${relTj}</td><td class="num">${relEx}</td><td></td><td class="num">${relTot}</td>`;
+    periodes.forEach(()=>{
+      html+=`<td class="num">${relTj}</td><td class="num">${relEx}</td><td></td><td class="num">${relTot}</td>`;
+    });
+    html+=`<td class="num"><strong>${relTot*periodes.length}</strong></td>
+      <td></td><td></td>
+    </tr>`;
+
+    // ---- H: Signatures (2 rows) ----
+    html+=`<tr>
+      <td class="branches" rowspan="2">Signatures</td>
+      <td>PARENTS</td><td></td><td></td><td></td>`;
+    periodes.forEach(()=>{
+      html+=`<td></td><td></td><td></td><td></td>`;
+    });
+    html+=`<td></td><td></td><td></td>
+    </tr>`;
+    html+=`<tr>
+      <td>TITULAIRE</td><td></td><td></td><td></td>`;
+    periodes.forEach(()=>{
+      html+=`<td></td><td></td><td></td><td></td>`;
+    });
+    html+=`<td></td><td></td><td></td>
+    </tr>`;
+
+    html+=`</tbody>
+        </table>
       </div>
     </div>`;
   });

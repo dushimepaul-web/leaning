@@ -117,7 +117,7 @@
           </select>
         </div>
         <div class="col-md-6">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (FC) <span class="text-danger-600">*</span></label>
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Prix unitaire (<span class="devise-label">FC</span>) <span class="text-danger-600">*</span></label>
           <input type="number" class="form-control" id="fPrix" step="0.01" placeholder="0.00">
         </div>
         <div class="col-md-6">
@@ -161,8 +161,8 @@ function toggleBookFields() {
 }
 
 async function loadData() {
-  const endpoint = currentCategory ? 'api/librairie?categorie=' + currentCategory : 'api/librairie';
-  const r = await API.get(endpoint);
+  const endpoint = currentCategory ? currentCategory : '';
+  const r = await API.librairie.list(endpoint);
   if (!r.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur</td></tr>'); return; }
   let rows = '';
   r.data.forEach(function(d, i) {
@@ -174,7 +174,7 @@ async function loadData() {
       <td>${catLabel}</td>
       <td><span class="fw-semibold">${d.code || '-'}</span></td>
       <td>${d.libelle}</td>
-      <td><strong>${parseFloat(d.prix_unitaire || 0).toLocaleString()} FC</strong></td>
+      <td><strong>${parseFloat(d.prix_unitaire || 0).toLocaleString()} ${typeof DEVISE !== 'undefined' ? DEVISE : 'FC'}</strong></td>
       <td><span class="${stockBadge} px-16 py-4 radius-4 fw-medium text-sm">${stock}</span></td>
       <td>
         <div class="btn-group">
@@ -289,7 +289,13 @@ document.getElementById('dtLength').addEventListener('change', function() { if (
 
 (function() {
   var w = setInterval(function() {
-    if (typeof $ !== 'undefined' && $.fn.DataTable && typeof API !== 'undefined' && API.librairie) { clearInterval(w); loadData(); }
+    if (typeof $ !== 'undefined' && $.fn.DataTable && typeof API !== 'undefined' && API.librairie) { 
+      clearInterval(w); 
+      if (typeof DEVISE !== 'undefined') {
+        document.querySelectorAll('.devise-label').forEach(function(el) { el.textContent = DEVISE; });
+      }
+      loadData(); 
+    }
   }, 50);
 })();
 </script>

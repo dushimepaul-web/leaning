@@ -8,7 +8,7 @@ class Assurances_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('a.deleted_at', null);
-        $this->db->select('a.*, e.nom, e.prenom, e.matricule');
+        $this->db->select("a.*, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('assurances a');
         $this->db->join('etudiants e', 'a.id_etudiant = e.id_etudiant', 'left');
         if (!empty($filters['statut'])) $this->db->where('a.statut', $filters['statut']);

@@ -229,12 +229,12 @@ try { const el = document.getElementById('produits_data'); if (el) produitsList 
 function renderStudentList(filter) {
   const container = document.getElementById('id_etudiant_results');
   const q = (filter || '').toLowerCase().trim();
-  const matches = q ? etudiantsList.filter(e => (e.nom+' '+e.prenom+' '+(e.matricule||'')).toLowerCase().includes(q)) : etudiantsList;
+  const matches = q ? etudiantsList.filter(e => (e.nom+' '+(e.matricule||'')).toLowerCase().includes(q)) : etudiantsList;
   if (!matches.length) {
     container.innerHTML = '<div class="list-group-item text-secondary-light text-center py-3"><i class="ri-user-search-line me-1"></i>Aucun étudiant trouvé</div>';
   } else {
     container.innerHTML = matches.map(e =>
-      `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${e.id_etudiant}" data-nom="${e.nom}" data-prenom="${e.prenom}" data-matricule="${e.matricule||''}">
+      `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${e.id_etudiant}" data-nom="${e.nom}" data-matricule="${e.matricule||''}">
         <span class="d-flex align-items-center justify-content-center bg-primary-100 text-primary-600 radius-4" style="width:36px;height:36px;flex-shrink:0;"><i class="ri-user-3-line"></i></span>
         <div class="text-start">
           <span class="fw-medium text-sm">${e.nom} ${e.prenom}</span>
@@ -248,7 +248,7 @@ function renderStudentList(filter) {
 
 function selectStudent(el) {
   document.getElementById('id_etudiant').value = el.dataset.id;
-  document.getElementById('id_etudiant_search').value = el.dataset.nom + ' ' + el.dataset.prenom + ' (' + el.dataset.matricule + ')';
+  document.getElementById('id_etudiant_search').value = el.dataset.nom + ' (' + el.dataset.matricule + ')';
   document.getElementById('id_etudiant_search').classList.add('border-success', 'border-2');
   document.getElementById('id_etudiant_results').style.display = 'none';
   document.getElementById('clearSearch').style.display = 'block';
@@ -459,7 +459,7 @@ async function viewDetail(id) {
   if (!r.success) { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); return; }
   const c = r.data;
   let html = `<div class="row mb-16">
-    <div class="col-md-6"><strong>Étudiant:</strong> ${c.nom || ''} ${c.prenom || ''} (${c.matricule || ''})</div>
+    <div class="col-md-6"><strong>Étudiant:</strong> ${c.nom || ''} (${c.matricule || ''})</div>
     <div class="col-md-6"><strong>Date:</strong> ${c.date_commande || ''}</div>
     <div class="col-md-6"><strong>Statut:</strong> ${c.statut || ''}</div>
     <div class="col-md-6"><strong>Total:</strong> ${parseFloat(c.total).toLocaleString()} ${DEVISE}</div>

@@ -13,7 +13,7 @@ class Echeance extends MY_Controller {
 
     public function api_list() {
         $this->db->where('e.deleted_at', null);
-        $this->db->select('e.*, et.nom, et.prenom, et.matricule, tf.libelle as type_frais');
+        $this->db->select("e.*, et.fullname AS nom, '' AS prenom, et.matricule, tf.libelle as type_frais");
         $this->db->from('echeances e');
         $this->db->join('etudiants et', 'e.id_etudiant = et.id_etudiant', 'left');
         $this->db->join('frais f', 'e.id_frais = f.id_frais', 'left');
@@ -25,7 +25,7 @@ class Echeance extends MY_Controller {
 
     public function api_get($id) {
         $this->db->where('e.uuid', $id);
-        $this->db->select('e.*, et.nom, et.prenom, et.matricule, tf.libelle as type_frais');
+        $this->db->select("e.*, et.fullname AS nom, '' AS prenom, et.matricule, tf.libelle as type_frais");
         $this->db->from('echeances e');
         $this->db->join('etudiants et', 'e.id_etudiant = et.id_etudiant', 'left');
         $this->db->join('frais f', 'e.id_frais = f.id_frais', 'left');

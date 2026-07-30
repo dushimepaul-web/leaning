@@ -16,8 +16,25 @@
   </div>
 
   <div class="mt-24">
-    <div class="card h-100">
-      <div class="card-body p-0">
+    <div class="card h-100 radius-12 border-0 shadow-sm overflow-hidden">
+      <div class="card-body p-0 table-responsive" style="overflow-x: auto; white-space: nowrap;">
+        <style>
+          #dataTable tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.04) !important;
+            transition: background-color 0.2s ease;
+          }
+          #dataTable th {
+            background-color: #f8f9fa !important;
+            color: #212529 !important;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+          }
+          #dataTable td {
+            border-color: #dee2e6;
+            vertical-align: middle;
+            padding: 12px 16px;
+          }
+        </style>
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-bottom border-neutral-200">
           <div class="d-flex flex-wrap align-items-center gap-16">
             <div class="dropdown">
@@ -49,17 +66,16 @@
             </select>
           </div>
         </div>
-        <table class="table bordered-table mb-0" id="dataTable" style="width:100%">
-          <thead>
+        <table class="table mb-0" id="dataTable" style="width:100%; border-collapse: collapse; border: 1px solid #ced4da;">
+          <thead style="background-color: #e9ecef;">
             <tr>
-              <th>#</th>
-              <th>Matière</th>
-              <th>Classe</th>
-              <th>Enseignant</th>
-              <th>Coefficient</th>
-              <th>H/jour</th>
-              <th>H/semaine</th>
-              <th>Actions</th>
+              <th class="text-center" style="width: 15%; padding: 12px 16px; border: 1px solid #ced4da; color: #212529; font-weight: 600;">CLASSE</th>
+              <th class="text-start" style="width: 28%; padding: 12px 16px; border: 1px solid #ced4da; color: #212529; font-weight: 600;">COURS</th>
+              <th class="text-center" style="width: 10%; padding: 12px 16px; border: 1px solid #ced4da; color: #212529; font-weight: 600;">Coeff.</th>
+              <th class="text-center" style="width: 10%; padding: 12px 16px; border: 1px solid #ced4da; color: #212529; font-weight: 600;">Nb h / jour</th>
+              <th class="text-center" style="width: 12%; padding: 12px 16px; border: 1px solid #ced4da; color: #212529; font-weight: 600;">Nb h / sem.</th>
+              <th class="text-center" style="width: 17%; padding: 12px 16px; border: 1px solid #ced4da; color: #212529; font-weight: 600;">Enseignant</th>
+              <th class="text-center" style="width: 8%; padding: 12px 16px; border: 1px solid #ced4da; color: #212529; font-weight: 600;">Actions</th>
             </tr>
           </thead>
           <tbody id="dataBody"></tbody>
@@ -81,6 +97,7 @@
     <input type="hidden" id="id_matiere">
     <input type="hidden" id="id_classe">
     <input type="hidden" id="id_enseignant">
+    <input type="hidden" id="id_section">
     <div class="row g-3">
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Matière *</label>
@@ -88,14 +105,14 @@
         <div class="autocomplete-results" id="matiereResults"></div>
       </div>
       <div class="col-sm-6">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Section</label>
+        <input type="text" class="form-control" id="sectionSearch" placeholder="Rechercher une section...">
+        <div class="autocomplete-results" id="sectionResults"></div>
+      </div>
+      <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe *</label>
         <input type="text" class="form-control" id="classeSearch" placeholder="Rechercher une classe...">
         <div class="autocomplete-results" id="classeResults"></div>
-      </div>
-      <div class="col-sm-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Enseignant</label>
-        <input type="text" class="form-control" id="enseignantSearch" placeholder="Rechercher un enseignant...">
-        <div class="autocomplete-results" id="enseignantResults"></div>
       </div>
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Coefficient</label>
@@ -137,7 +154,7 @@
 
 <script id="matieresData" type="application/json"><?= json_encode($matieres ?? []) ?></script>
 <script id="classesData" type="application/json"><?= json_encode($classes ?? []) ?></script>
-<script id="enseignantsData" type="application/json"><?= json_encode($enseignants ?? []) ?></script>
+<script id="sectionsData" type="application/json"><?= json_encode($sections ?? []) ?></script>
 <script src="<?= base_url() ?>assets/js/api.js"></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js"></script>
 <?php include VIEWPATH.'includes/Footer.php'; ?>
@@ -145,13 +162,25 @@
 let editingId = null;
 let deleteId = null;
 
+var allClasses = JSON.parse(document.getElementById('classesData').textContent);
+const classItems = allClasses.map(function(c) { return {id: c.id_classe, libelle: c.libelle, code: c.code, id_section: c.id_section}; });
 const matieresItems = JSON.parse(document.getElementById('matieresData').textContent).map(function(m) { return {id: m.id_matiere, libelle: m.libelle, code: m.code}; });
-const classesItems = JSON.parse(document.getElementById('classesData').textContent).map(function(c) { return {id: c.id_classe, libelle: c.libelle, code: c.code}; });
-const enseignantsItems = JSON.parse(document.getElementById('enseignantsData').textContent).map(function(e) { return {id: e.id_enseignant, nom_complet: e.nom + ' ' + (e.prenom || '')}; });
+const allSections = JSON.parse(document.getElementById('sectionsData').textContent || '[]');
 
-autoSetup('matiereSearch', 'id_matiere', 'matiereResults', matieresItems, (m) => m.libelle + ' (' + (m.code || '') + ')');
-autoSetup('classeSearch', 'id_classe', 'classeResults', classesItems, (c) => c.libelle);
-autoSetup('enseignantSearch', 'id_enseignant', 'enseignantResults', enseignantsItems, (e) => e.nom_complet);
+autoSetup('matiereSearch', 'id_matiere', 'matiereResults', matieresItems, function(m) { return m.libelle + ' (' + (m.code || '') + ')'; });
+var classCtrl = autoSetup('classeSearch', 'id_classe', 'classeResults', classItems, function(c) { return c.libelle; });
+autoSetup('sectionSearch', 'id_section', 'sectionResults', allSections.map(function(s) { return {id: s.id_section, libelle: s.libelle}; }), function(s) { return s.libelle; }, function(section) {
+  if (!classCtrl) return;
+  if (!section || !section.id) {
+    classCtrl.updateItems(classItems);
+  } else {
+    var filtered = allClasses.filter(function(c) { return String(c.id_section) === String(section.id); });
+    classCtrl.updateItems(filtered.map(function(c) { return {id: c.id_classe, libelle: c.libelle, id_section: c.id_section}; }));
+  }
+  document.getElementById('id_classe').value = '';
+  document.getElementById('classeSearch').value = '';
+  document.getElementById('classeSearch').classList.remove('border-success', 'border-2');
+});
 
 function openAddSidebar() {
   editingId = null;
@@ -159,15 +188,16 @@ function openAddSidebar() {
   document.getElementById('recordId').value = '';
   document.getElementById('id_matiere').value = '';
   document.getElementById('id_classe').value = '';
-  document.getElementById('id_enseignant').value = '';
+  document.getElementById('id_section').value = '';
   document.getElementById('matiereSearch').value = '';
   document.getElementById('classeSearch').value = '';
-  document.getElementById('enseignantSearch').value = '';
+  document.getElementById('sectionSearch').value = '';
   document.getElementById('coefficient').value = '';
   document.getElementById('nb_heures_par_jour').value = '';
   document.getElementById('nb_heures_par_semaine').value = '';
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
+  if (classCtrl) classCtrl.updateItems(classItems);
 }
 
 function openEditSidebar(data) {
@@ -176,13 +206,26 @@ function openEditSidebar(data) {
   document.getElementById('recordId').value = data.uuid;
   document.getElementById('id_matiere').value = data.id_matiere;
   document.getElementById('id_classe').value = data.id_classe;
-  document.getElementById('id_enseignant').value = data.id_enseignant || '';
   document.getElementById('matiereSearch').value = data.matiere_libelle || '';
   document.getElementById('classeSearch').value = data.classe_libelle || '';
-  document.getElementById('enseignantSearch').value = data.enseignant_nom || '';
   document.getElementById('coefficient').value = data.coefficient || '';
   document.getElementById('nb_heures_par_jour').value = data.nb_heures_par_jour || '';
   document.getElementById('nb_heures_par_semaine').value = data.nb_heures_par_semaine || '';
+  // Section from class
+  var cls = allClasses.find(function(c) { return String(c.id_classe) === String(data.id_classe); });
+  if (cls && cls.id_section) {
+    document.getElementById('id_section').value = cls.id_section;
+    var sec = allSections.find(function(s) { return String(s.id_section) === String(cls.id_section); });
+    document.getElementById('sectionSearch').value = sec ? sec.libelle : '';
+    if (classCtrl) {
+      var filtered = allClasses.filter(function(c) { return String(c.id_section) === String(cls.id_section); });
+      classCtrl.updateItems(filtered.map(function(c) { return {id: c.id_classe, libelle: c.libelle, id_section: c.id_section}; }));
+    }
+  } else {
+    document.getElementById('id_section').value = '';
+    document.getElementById('sectionSearch').value = '';
+    if (classCtrl) classCtrl.updateItems(classItems);
+  }
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -194,36 +237,40 @@ function closeSidebar() {
 
 async function loadData() {
   const res = await API.matieres_classes.list();
-  if (!res.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
+  if (!res.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
+  
+  // Regrouper par classe
+  const grouped = {};
+  res.data.forEach(function(s) {
+    const cName = s.classe_libelle || 'Inconnue';
+    if (!grouped[cName]) grouped[cName] = [];
+    grouped[cName].push(s);
+  });
+
   let rows = '';
-  res.data.forEach((s, i) => {
-    rows += `<tr>
-      <td>${i + 1}</td>
-      <td><span class="fw-semibold">${s.matiere_libelle || '-'}</span></td>
-      <td>${s.classe_libelle || '-'}</td>
-      <td>${s.enseignant_nom || '-'}</td>
-      <td>${s.coefficient ?? '-'}</td>
-      <td>${s.nb_heures_par_jour ?? '0.0'}</td>
-      <td>${s.nb_heures_par_semaine ?? '0.0'}</td>
-      <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord(${s.uuid})"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete(${s.uuid})"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
-          </ul>
-        </div>
-      </td>
-    </tr>`;
+  let index = 1;
+
+  Object.keys(grouped).forEach(function(classe) {
+    const items = grouped[classe];
+    const rowSpan = items.length;
+
+    items.forEach(function(s, idx) {
+      rows += '<tr style="transition:0.2s;">';
+      if (idx === 0) {
+        rows += '<td rowspan="' + rowSpan + '" class="align-middle text-center fw-bold" style="font-size:0.95rem; vertical-align:middle; padding: 12px 16px; border: 1px solid #ced4da; background-color: #f1f3f5;">' + classe + '</td>';
+      }
+      rows += '<td class="align-middle text-start" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.matiere_code || '-') + '</td>';
+      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.coefficient ?? '-') + '</td>';
+      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_jour ?? '0.0') + '</td>';
+      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_semaine ?? '0.0') + '</td>';
+      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.enseignant_fullname || '-') + '</td>';
+      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da;"><div class="btn-group"><button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button><ul class="dropdown-menu dropdown-menu-lg-end border p-12"><li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord(\'' + s.uuid + '\')"><i class="ri-edit-2-line"></i> Modifier</button></li><li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete(\'' + s.uuid + '\')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li></ul></div></td>';
+      rows += '</tr>';
+    });
   });
+
   $('#dataBody').html(rows);
-  if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
-  $('#dataTable').DataTable({
-    pageLength: 10, scrollX: true,
-    lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
-    language: { search: '', searchPlaceholder: 'Rechercher...', lengthMenu: 'Lignes par page: _MENU_', info: '', zeroRecords: 'Aucun programme trouvé', infoEmpty: '', infoFiltered: '' },
-    dom: 't<"d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-top border-neutral-200"<"d-flex align-items-center gap-8 text-secondary-light"i><"d-flex align-items-center gap-2"p>>'
-  });
+  // DataTables désactivé pour ce tableau groupé avec rowspan pour éviter les conflits d'indexation de colonnes.
 }
 
 async function editRecord(id) {
@@ -236,7 +283,6 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   const data = {
     id_matiere: document.getElementById('id_matiere').value,
     id_classe: document.getElementById('id_classe').value,
-    id_enseignant: document.getElementById('id_enseignant').value || null,
     coefficient: document.getElementById('coefficient').value || null,
     nb_heures_par_jour: document.getElementById('nb_heures_par_jour').value || null,
     nb_heures_par_semaine: document.getElementById('nb_heures_par_semaine').value || null
@@ -277,15 +323,17 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 
 (function() {
   var wait = setInterval(function() {
-    if (typeof jQuery !== 'undefined' && typeof API !== 'undefined' && $.fn && $.fn.DataTable) {
+    if (typeof jQuery !== 'undefined' && typeof API !== 'undefined') {
       clearInterval(wait);
       loadData();
       $('#dtSearch').on('keyup', function() {
-        $('#dataTable').DataTable().search(this.value).draw();
+        var q = this.value.toLowerCase();
+        $('#dataTable tbody tr').each(function() {
+          var text = $(this).text().toLowerCase();
+          $(this).toggle(text.indexOf(q) > -1);
+        });
       });
-      $('#dtLength').on('change', function() {
-        $('#dataTable').DataTable().page.len(+this.value).draw();
-      });
+      $('#dtLength').parent().hide();
     }
   }, 50);
 })();

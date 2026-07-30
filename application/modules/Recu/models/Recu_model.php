@@ -8,7 +8,7 @@ class Recu_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('r.deleted_at', null);
-        $this->db->select('r.*, e.nom, e.prenom, e.matricule, a.libelle as annee');
+        $this->db->select("r.*, e.fullname AS nom, '' AS prenom, e.matricule, a.libelle as annee");
         $this->db->from('recus r');
         $this->db->join('etudiants e', 'r.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('annees_scolaires a', 'r.id_annee = a.id_annee', 'left');
@@ -23,7 +23,7 @@ class Recu_model extends Model
     {
         $this->db->where('r.deleted_at', null);
         $this->db->where('r.uuid', $id);
-        $this->db->select('r.*, e.nom, e.prenom, e.matricule, a.libelle as annee, u.nom as user_nom, u.prenom as user_prenom');
+        $this->db->select("r.*, e.fullname AS nom, '' AS prenom, e.matricule, a.libelle as annee, u.nom as user_nom, u.prenom as user_prenom");
         $this->db->from('recus r');
         $this->db->join('etudiants e', 'r.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('annees_scolaires a', 'r.id_annee = a.id_annee', 'left');

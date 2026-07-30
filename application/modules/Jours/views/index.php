@@ -3,15 +3,15 @@
 <div class="dashboard-main-body">
   <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
     <div>
-      <h1 class="fw-semibold mb-4 h6 text-primary-light">Créneaux horaires</h1>
+      <h1 class="fw-semibold mb-4 h6 text-primary-light">Jours de la semaine</h1>
       <div>
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
-        <span class="text-secondary-light"> / Créneaux</span>
+        <span class="text-secondary-light"> / Jours de la semaine</span>
       </div>
     </div>
     <button type="button" class="btn btn-primary-600 d-flex align-items-center gap-6" onclick="openAddSidebar()">
       <span class="d-flex text-md"><i class="ri-add-large-line"></i></span>
-      Ajouter un créneau
+      Ajouter un jour
     </button>
   </div>
   <div class="mt-24">
@@ -31,40 +31,13 @@
               </ul>
             </div>
             <form class="navbar-search dt-search m-0">
-              <input type="text" id="dtSearch" class="dt-input bg-transparent radius-4" aria-controls="dataTable" name="search" placeholder="Rechercher...">
+              <input type="text" id="dtSearch" class="dt-input bg-transparent radius-4" placeholder="Rechercher...">
               <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
             </form>
           </div>
           <div class="d-flex align-items-center gap-8 text-secondary-light">
-            <div class="dropdown">
-              <button type="button" class="px-12 py-5-px border border-neutral-300 radius-8 d-flex align-items-center gap-20" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="d-flex align-items-center gap-1 text-secondary-light text-sm">Filtrer</span>
-                <span class=""><i class="ri-arrow-down-s-line"></i></span>
-              </button>
-              <div class="dropdown-menu border bg-base shadow dropdown-menu-lg p-0">
-                <div class="d-flex align-items-center justify-content-between border-bottom py-8 px-16">
-                  <span class="fw-semibold text-lg text-primary-light">Filtre</span>
-                </div>
-                <form class="p-16 d-grid grid-cols-2 gap-16">
-                  <div>
-                    <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Statut</label>
-                    <select id="filterStatut" class="form-control form-select">
-                      <option value="">Tous</option>
-                      <option value="actif">Actif</option>
-                      <option value="inactif">Inactif</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Recherche</label>
-                    <input type="text" id="filterSearch" class="form-control" placeholder="Mot-clé...">
-                  </div>
-                  <div><button type="reset" class="btn btn-danger-200 text-danger-600 w-100" onclick="resetFilters()">Réinitialiser</button></div>
-                  <div><button type="button" class="btn btn-primary-600 w-100" onclick="applyFilters()">Appliquer</button></div>
-                </form>
-              </div>
-            </div>
             <span>Lignes par page :</span>
-            <div class="dt-length"><select id="dtLength" name="dataTable_length" aria-controls="dataTable" class="dt-input form-control form-select">
+            <div class="dt-length"><select id="dtLength" class="dt-input form-control form-select" style="width:auto;">
               <option value="5">5</option>
               <option value="10" selected>10</option>
               <option value="25">25</option>
@@ -76,11 +49,11 @@
         <table class="table bordered-table mb-0 data-table" id="dataTable" data-page-length='10' style="width:100%">
           <thead>
             <tr>
-                            <th scope="col"><div class="form-check style-check d-flex align-items-center"><input class="form-check-input" type="checkbox"><label class="form-check-label">S.L</label></div></th>
+              <th scope="col"><div class="form-check style-check d-flex align-items-center"><input class="form-check-input" type="checkbox"><label class="form-check-label">S.L</label></div></th>
+              <th>Code</th>
               <th>Libellé</th>
-              <th>Début</th>
-              <th>Fin</th>
-              <th>Type</th>
+              <th>Ordre</th>
+              <th>Statut</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -93,34 +66,31 @@
 
 <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300" id="sidebarOverlay"></div>
 
-<div class="bg-white position-fixed end-0 top-0 h-100vh overflow-y-auto z-99 w-100 translate-x-full duration-300 active-translate-0" id="addSidebar" style="width:50vw;max-width:50vw;box-shadow: -4px 0 20px rgba(0,0,0,0.1);">
+<div class="bg-white position-fixed end-0 top-0 h-100vh overflow-y-auto z-99 w-100 translate-x-full duration-300 active-translate-0" id="addSidebar" style="width:50vw;max-width:50vw;box-shadow:-4px 0 20px rgba(0,0,0,0.1);">
   <div class="px-20 py-12 border-bottom d-flex align-items-center justify-content-between gap-20">
-    <h5 class="text-lg mb-0" id="sidebarTitle">Ajouter un créneau</h5>
+    <h5 class="text-lg mb-0" id="sidebarTitle">Ajouter un jour</h5>
     <button type="button" class="btn-close" onclick="closeSidebar()"></button>
   </div>
   <form id="mainForm" class="d-flex flex-column p-20">
     <input type="hidden" id="recordId">
     <div class="row g-3">
-      <div class="col-12">
+      <div class="col-md-6">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Code *</label>
+        <input type="text" class="form-control" id="code" placeholder="Ex: LUN">
+      </div>
+      <div class="col-md-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label>
-        <input type="text" class="form-control" id="libelle" placeholder="Ex: 1ère heure">
+        <input type="text" class="form-control" id="libelle" placeholder="Ex: Lundi">
       </div>
       <div class="col-md-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Heure début *</label>
-        <input type="time" class="form-control" id="heure_debut">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Ordre</label>
+        <input type="number" class="form-control" id="ordre" placeholder="1">
       </div>
       <div class="col-md-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Heure fin *</label>
-        <input type="time" class="form-control" id="heure_fin">
-      </div>
-      <div class="col-12">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Type</label>
-        <select class="form-control form-select" id="type_creneau">
-          <option value="cours">Cours</option>
-          <option value="recreation">Récréation</option>
-          <option value="pause">Pause</option>
-          <option value="accueil">Accueil</option>
-          <option value="sortie">Sortie</option>
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Actif</label>
+        <select class="form-control form-select" id="actif">
+          <option value="1">Oui</option>
+          <option value="0">Non</option>
         </select>
       </div>
       <div class="col-12">
@@ -152,25 +122,13 @@
 <script src="<?= base_url() ?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
 <?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
-
-
-function applyFilters() {
-  const searchVal = document.getElementById('filterSearch')?.value || '';
-  $('#dataTable').DataTable().search(searchVal).draw();
-}
-
-function resetFilters() {
-  if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
-  if (document.getElementById('filterStatut')) document.getElementById('filterStatut').value = '';
-  $('#dataTable').DataTable().search('').draw();
-}
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editingId = null;
 let deleteId = null;
 
 function openAddSidebar() {
   editingId = null;
-  document.getElementById('sidebarTitle').textContent = 'Ajouter un créneau';
+  document.getElementById('sidebarTitle').textContent = 'Ajouter un jour';
   document.getElementById('mainForm').reset();
   document.getElementById('recordId').value = '';
   document.getElementById('addSidebar').classList.add('active');
@@ -179,12 +137,12 @@ function openAddSidebar() {
 
 function openEditSidebar(data) {
   editingId = data.uuid;
-  document.getElementById('sidebarTitle').textContent = 'Modifier le créneau';
+  document.getElementById('sidebarTitle').textContent = 'Modifier le jour';
   document.getElementById('recordId').value = data.uuid;
+  document.getElementById('code').value = data.code || '';
   document.getElementById('libelle').value = data.libelle || '';
-  document.getElementById('heure_debut').value = data.heure_debut || '';
-  document.getElementById('heure_fin').value = data.heure_fin || '';
-  document.getElementById('type_creneau').value = data.type_creneau || 'cours';
+  document.getElementById('ordre').value = data.ordre || 0;
+  document.getElementById('actif').value = data.actif || 1;
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -195,17 +153,17 @@ function closeSidebar() {
 }
 
 async function loadData() {
-  const res = await API.creneaux.list();
+  const res = await API.jours.list();
   if (!res.success) { $('#dataBody').html('<tr><td colspan="6" class="text-center text-danger">Erreur</td></tr>'); return; }
   let rows = '';
   res.data.forEach((c, i) => {
-    const typeBadge = c.type_creneau === 'cours' ? 'bg-primary-100 text-primary-600' : 'bg-info-100 text-info-600';
+    const badge = c.actif == 1 ? 'bg-success-100 text-success-600' : 'bg-danger-100 text-danger-600';
     rows += `<tr>
       <td>${i + 1}</td>
-      <td><span class="fw-semibold">${c.libelle}</span></td>
-      <td>${c.heure_debut || '-'}</td>
-      <td>${c.heure_fin || '-'}</td>
-      <td><span class="${typeBadge} px-24 py-4 radius-4 fw-medium text-sm text-capitalize">${c.type_creneau}</span></td>
+      <td><span class="fw-semibold text-uppercase">${c.code || '-'}</span></td>
+      <td>${c.libelle || '-'}</td>
+      <td>${c.ordre || 0}</td>
+      <td><span class="${badge} px-24 py-4 radius-4 fw-medium text-sm">${c.actif == 1 ? 'Actif' : 'Inactif'}</span></td>
       <td>
         <div class="btn-group">
           <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
@@ -222,37 +180,37 @@ async function loadData() {
   $('#dataTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
-    language: { search: '', searchPlaceholder: 'Rechercher...', lengthMenu: 'Lignes par page: _MENU_', info: '', zeroRecords: 'Aucun créneau trouvé', infoEmpty: '', infoFiltered: '' },
+    language: { search: '', searchPlaceholder: 'Rechercher...', lengthMenu: 'Lignes par page: _MENU_', info: '', zeroRecords: 'Aucun jour trouvé', infoEmpty: '', infoFiltered: '' },
     dom: 't<"d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-top border-neutral-200"<"d-flex align-items-center gap-8 text-secondary-light"i><"d-flex align-items-center gap-2"p>>'
   });
 }
 
 async function editRecord(id) {
-  const res = await API.creneaux.get(id);
+  const res = await API.jours.get(id);
   if (res.success) openEditSidebar(res.data);
 }
 
 document.getElementById('mainForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const data = {
+    code: document.getElementById('code').value,
     libelle: document.getElementById('libelle').value,
-    heure_debut: document.getElementById('heure_debut').value,
-    heure_fin: document.getElementById('heure_fin').value,
-    type_creneau: document.getElementById('type_creneau').value
+    ordre: document.getElementById('ordre').value || 0,
+    actif: document.getElementById('actif').value
   };
-  if (!data.libelle || !data.heure_debut || !data.heure_fin) {
-    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Libellé, heure début et heure fin obligatoires' });
+  if (!data.code || !data.libelle) {
+    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Code et libellé obligatoires' });
     return;
   }
   let r;
   if (editingId) {
-    r = await API.creneaux.update(editingId, data);
+    r = await API.jours.update(editingId, data);
   } else {
-    r = await API.creneaux.create(data);
+    r = await API.jours.create(data);
   }
   if (r.success) {
     closeSidebar();
-    Toast.fire({ icon: 'success', title: editingId ? 'Créneau modifié' : 'Créneau créé' });
+    Toast.fire({ icon: 'success', title: editingId ? 'Jour modifié' : 'Jour créé' });
     loadData();
   } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); }
 });
@@ -266,10 +224,10 @@ document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
   if (!deleteId) return;
-  const r = await API.creneaux.delete(deleteId);
+  const r = await API.jours.delete(deleteId);
   if (r.success) {
     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-    Toast.fire({ icon: 'success', title: 'Créneau supprimé' });
+    Toast.fire({ icon: 'success', title: 'Jour supprimé' });
     loadData();
   } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); }
   deleteId = null;
@@ -279,7 +237,7 @@ function exportCSV() {
   const table = $('#dataTable').DataTable();
   const data = table.rows({ filter: 'applied' }).data();
   let csv = '\uFEFF';
-  const headers = ['#', 'Libellé', 'Début', 'Fin', 'Type'];
+  const headers = ['#', 'Code', 'Libellé', 'Ordre', 'Statut'];
   csv += headers.join(',') + '\n';
   data.each(function(row) {
     const cols = [];
@@ -293,13 +251,13 @@ function exportCSV() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = 'creneaux.csv';
+  link.download = 'jours_semaine.csv';
   link.click();
 }
 
 (function() {
   var wait = setInterval(function() {
-    if (typeof jQuery !== 'undefined' && $.fn && $.fn.DataTable && typeof API !== 'undefined' && API.creneaux) {
+    if (typeof jQuery !== 'undefined' && $.fn && $.fn.DataTable && typeof API !== 'undefined' && API.jours) {
       clearInterval(wait);
       loadData();
       $('#dtSearch').on('keyup', function() { $('#dataTable').DataTable().search(this.value).draw(); });

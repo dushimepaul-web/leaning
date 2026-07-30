@@ -27,6 +27,7 @@ class Etudiants extends MY_Controller {
         $e = $this->Model->readOne('etudiants', ['uuid' => $id, 'deleted_at' => null]);
         if (!$e) { show_404(); return; }
         $insc = $this->Model->readOne('inscriptions', ['id_etudiant' => $e['id_etudiant'], 'deleted_at' => null]);
+        $e['nom'] = $e['fullname'] ?? '';
         $e['inscription'] = $insc;
         $data['title'] = 'Modifier étudiant';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
@@ -39,6 +40,7 @@ class Etudiants extends MY_Controller {
     public function details($id) {
         $e = $this->Model->readOne('etudiants', ['uuid' => $id, 'deleted_at' => null]);
         if (!$e) { show_404(); return; }
+        $e['nom'] = $e['fullname'] ?? '';
         $insc = $this->Model->readOne('inscriptions', ['id_etudiant' => $e['id_etudiant'], 'deleted_at' => null]);
         $e['inscription'] = $insc;
         if ($insc) {
@@ -66,7 +68,7 @@ class Etudiants extends MY_Controller {
         $etudiants = $q_e !== false ? $q_e->result_array() : array();
 
         foreach ($etudiants as &$et) {
-            $et['nom_complet'] = $et['nom'] ?? '';
+            $et['nom_complet'] = $et['fullname'] ?? '';
         }
         $this->json_success($etudiants);
     }
@@ -76,7 +78,7 @@ class Etudiants extends MY_Controller {
         if (!$e) { $this->json_error('Étudiant non trouvé', 404); return; }
         $insc = $this->Model->readOne('inscriptions', ['id_etudiant' => $e['id_etudiant'], 'deleted_at' => null]);
         $e['inscription'] = $insc;
-        $e['nom_complet'] = trim(($e['nom'] ?? '') . ' ' . ($e['postnom'] ?? '') . ' ' . ($e['prenom'] ?? ''));
+        $e['nom_complet'] = $e['fullname'] ?? '';
         $this->json_success($e);
     }
 
@@ -99,7 +101,8 @@ class Etudiants extends MY_Controller {
         $id_classe = $data['id_classe'] ?? null;
         $id_section = $data['id_section'] ?? null;
         $id_annee = $data['id_annee'] ?? $this->id_annee_active;
-        $cols_etudiant = ['nom','date_naissance','sexe','telephone','email','adresse','adresse_permanente','photo','matricule','lieu_naissance','pere_nom','pere_telephone','pere_profession','pere_adresse','mere_nom','mere_telephone','mere_profession','mere_adresse'];
+        $data['fullname'] = $data['nom'] ?? '';
+        $cols_etudiant = ['fullname','date_naissance','sexe','telephone','email','adresse','adresse_permanente','photo','matricule','lieu_naissance','pere_nom','pere_telephone','pere_profession','pere_adresse','mere_nom','mere_telephone','mere_profession','mere_adresse'];
         $clean = [];
         foreach ($cols_etudiant as $col) {
             if (isset($data[$col]) && $data[$col] !== '') {
@@ -149,6 +152,10 @@ class Etudiants extends MY_Controller {
         }
 
         $updateData = $data;
+        if (isset($updateData['nom'])) {
+            $updateData['fullname'] = $updateData['nom'];
+            unset($updateData['nom']);
+        }
         unset($updateData['id_classe'], $updateData['id_section'], $updateData['id_annee'], $updateData['parents'], $updateData['parent_nom_old']);
         if ($this->Model->update('etudiants', ['uuid' => $id], $updateData)) {
             if (isset($data['id_classe'])) {
@@ -277,13 +284,13 @@ class Etudiants extends MY_Controller {
     }
 
     private function _recalculer_numero_ordre() {
-        $this->db->select('i.id_classe, e.id_etudiant, e.nom, e.postnom, e.prenom');
+        $this->db->select('i.id_classe, e.id_etudiant, e.fullname');
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'e.id_etudiant = i.id_etudiant');
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
         $this->db->where('i.id_annee', $this->id_annee_active);
-        $this->db->order_by('i.id_classe ASC, e.nom ASC, e.postnom ASC, e.prenom ASC');
+        $this->db->order_by('i.id_classe ASC, e.fullname ASC');
         $q_r = $this->db->get();
         $rows = $q_r !== false ? $q_r->result_array() : array();
         $current_classe = null;

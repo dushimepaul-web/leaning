@@ -8,7 +8,7 @@ class Uniformes_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('u.deleted_at', null);
-        $this->db->select('u.*, e.nom, e.prenom, e.matricule');
+        $this->db->select("u.*, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('uniformes u');
         $this->db->join('etudiants e', 'u.id_etudiant = e.id_etudiant', 'left');
         if (!empty($filters['id_etudiant'])) $this->db->where('u.id_etudiant', $filters['id_etudiant']);

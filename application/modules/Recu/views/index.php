@@ -148,7 +148,7 @@ async function editData(uuid) {
   document.getElementById('fNumeroRecu').value = d.numero_recu || '';
   document.getElementById('fEtudiant').value = d.id_etudiant || '';
   const _e = etudiantsData.find(function(x) { return String(x.id_etudiant) === String(d.id_etudiant); });
-  if (_e) document.getElementById('fEtudiant_search').value = _e.nom + ' ' + _e.prenom + ' (' + (_e.matricule || '') + ')';
+  if (_e) document.getElementById('fEtudiant_search').value = _e.nom + ' (' + (_e.matricule || '') + ')';
   document.getElementById('fMontant').value = d.montant_total || '';
   document.getElementById('formOverlay').classList.remove('visibility-hidden', 'opacity-0');
   document.getElementById('formSidebar').classList.remove('translate-x-full');
@@ -178,7 +178,7 @@ document.getElementById('dtLength').addEventListener('change', function() { if (
   var _f = function() {
     if (typeof $ === 'undefined' || typeof API === 'undefined' || typeof autoSetup === 'undefined') { setTimeout(_f, 50); return; }
     loadData();
-    autoSetup('fEtudiant_search', 'fEtudiant', 'fEtudiant_results', etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.nom, prenom: e.prenom, matricule: e.matricule }; }), function(e) { return e.nom + ' ' + e.prenom + ' (' + (e.matricule || '') + ')'; });
+    autoSetup('fEtudiant_search', 'fEtudiant', 'fEtudiant_results', etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.nom, prenom: e.prenom, matricule: e.matricule }; }), function(e) { return e.nom + ' (' + (e.matricule || '') + ')'; });
   };
   _f();
 })();

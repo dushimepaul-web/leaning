@@ -12,7 +12,7 @@ class Paiement_recu extends MY_Controller {
     }
 
     public function api_list() {
-        $this->db->select('pr.*, r.numero_recu, p.montant, p.date_paiement, e.nom, e.prenom, e.matricule');
+        $this->db->select("pr.*, r.numero_recu, p.montant, p.date_paiement, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('paiements_recus pr');
         $this->db->join('recus r', 'pr.id_recu = r.id_recu', 'left');
         $this->db->join('paiements p', 'pr.id_paiement = p.id_paiement', 'left');
@@ -24,7 +24,7 @@ class Paiement_recu extends MY_Controller {
 
     public function api_get($id) {
         $this->db->where('pr.uuid', $id);
-        $this->db->select('pr.*, r.numero_recu, p.montant, p.date_paiement, e.nom, e.prenom, e.matricule');
+        $this->db->select("pr.*, r.numero_recu, p.montant, p.date_paiement, e.fullname AS nom, '' AS prenom, e.matricule");
         $this->db->from('paiements_recus pr');
         $this->db->join('recus r', 'pr.id_recu = r.id_recu', 'left');
         $this->db->join('paiements p', 'pr.id_paiement = p.id_paiement', 'left');

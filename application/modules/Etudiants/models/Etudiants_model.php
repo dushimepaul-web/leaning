@@ -26,14 +26,13 @@ class Etudiants_model extends Model
         }
         if (!empty($filters['search'])) {
             $this->db->group_start()
-                ->like('e.nom', $filters['search'])
-                ->or_like('e.prenom', $filters['search'])
+                ->like('e.fullname', $filters['search'])
                 ->or_like('e.matricule', $filters['search'])
                 ->or_like('e.email', $filters['search'])
                 ->group_end();
         }
 
-        $this->db->order_by('e.nom', 'ASC');
+        $this->db->order_by('e.fullname', 'ASC');
         $q = $this->db->get();
         if ($q === false) return array();
         return $q->result_array();
@@ -57,7 +56,7 @@ class Etudiants_model extends Model
 
     public function create_record($data)
     {
-        $required = ['nom', 'prenom', 'date_naissance', 'sexe', 'id_classe', 'id_section', 'id_annee'];
+        $required = ['fullname', 'date_naissance', 'sexe', 'id_classe', 'id_section', 'id_annee'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 return ['success' => false, 'message' => "Champ requis manquant: $field"];
@@ -112,7 +111,7 @@ class Etudiants_model extends Model
     public function get_inscriptions($filters = [])
     {
         $this->db->where('i.deleted_at', null);
-        $this->db->select('i.*, e.nom, e.prenom, e.matricule, c.libelle as classe_libelle, s.libelle as section_libelle');
+        $this->db->select("i.*, e.fullname AS nom, '' AS prenom, e.matricule, c.libelle as classe_libelle, s.libelle as section_libelle");
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('classes c', 'i.id_classe = c.id_classe', 'left');

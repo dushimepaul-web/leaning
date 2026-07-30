@@ -58,7 +58,7 @@ class Frais extends MY_Controller {
     // Paiements
     public function api_paiements() {
         $this->db->where('p.deleted_at', null);
-        $this->db->select('p.*, e.nom, e.prenom, e.matricule, tf.libelle as type_frais');
+        $this->db->select("p.*, e.fullname AS nom, '' AS prenom, e.matricule, tf.libelle as type_frais");
         $this->db->from('paiements p');
         $this->db->join('etudiants e', 'p.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('frais f', 'p.id_frais = f.id_frais', 'left');

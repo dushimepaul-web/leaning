@@ -171,15 +171,15 @@ try {
 function renderStudentList(filter) {
   const container = document.getElementById('etudiantResults');
   const q = (filter || '').toLowerCase().trim();
-  const matches = q ? etudiantsList.filter(e => (e.nom+' '+e.prenom+' '+(e.matricule||'')).toLowerCase().includes(q)) : etudiantsList;
+  const matches = q ? etudiantsList.filter(e => (e.fullname+' '+(e.matricule||'')).toLowerCase().includes(q)) : etudiantsList;
   if (!matches.length) {
     container.innerHTML = '<div class="list-group-item text-secondary-light text-center py-3"><i class="ri-user-search-line me-1"></i>Aucun étudiant trouvé</div>';
   } else {
     container.innerHTML = matches.map(e =>
-      `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${e.id_etudiant}" data-nom="${e.nom}" data-prenom="${e.prenom}" data-matricule="${e.matricule||''}">
+      `<button type="button" class="list-group-item list-group-item-action text-start d-flex align-items-center gap-2 py-2 px-3 border-0 border-bottom border-neutral-100" data-id="${e.id_etudiant}" data-nom="${e.fullname}" data-matricule="${e.matricule||''}">
         <span class="d-flex align-items-center justify-content-center bg-primary-100 text-primary-600 radius-4" style="width:36px;height:36px;flex-shrink:0;"><i class="ri-user-3-line"></i></span>
         <div class="text-start">
-          <span class="fw-medium text-sm">${e.nom} ${e.prenom}</span>
+          <span class="fw-medium text-sm">${e.fullname}</span>
           <small class="d-block text-secondary-light text-xs">${e.matricule||'No matricule'}</small>
         </div>
       </button>`
@@ -225,7 +225,7 @@ document.addEventListener('click', function(e) {
 
 function selectStudent(el) {
   document.getElementById('id_etudiant').value = el.dataset.id;
-  document.getElementById('etudiantSearch').value = el.dataset.nom + ' ' + el.dataset.prenom + ' (' + el.dataset.matricule + ')';
+  document.getElementById('etudiantSearch').value = el.dataset.nom + ' (' + el.dataset.matricule + ')';
   document.getElementById('etudiantSearch').classList.add('border-success', 'border-2');
   document.getElementById('etudiantResults').style.display = 'none';
   document.getElementById('clearSearch').style.display = 'block';
@@ -248,7 +248,7 @@ async function loadData() {
   res.data.forEach((ins, i) => {
     rows += `<tr>
       <td>${i + 1}</td>
-      <td><span class="fw-semibold">${ins.nom} ${ins.prenom}</span> <small class="text-secondary-light">(${ins.matricule || ''})</small></td>
+      <td><span class="fw-semibold">${ins.nom || ins.fullname || ''}</span> <small class="text-secondary-light">(${ins.matricule || ''})</small></td>
       <td>${ins.classe || '-'}</td>
       <td>${ins.section || '-'}</td>
       <td>${ins.annee || '-'}</td>
@@ -288,7 +288,7 @@ function openEditSidebar(data) {
   document.getElementById('recordId').value = data.uuid;
   document.getElementById('id_etudiant').value = data.id_etudiant;
   const e = etudiantsList.find(x => String(x.id_etudiant) === String(data.id_etudiant));
-  document.getElementById('etudiantSearch').value = e ? (e.nom + ' ' + e.prenom + ' (' + (e.matricule||'') + ')') : '';
+  document.getElementById('etudiantSearch').value = e ? (e.fullname + ' (' + (e.matricule||'') + ')') : '';
   document.getElementById('id_classe').value = data.id_classe;
   document.getElementById('id_section').value = data.id_section || '';
   document.getElementById('id_annee').value = data.id_annee || '';
