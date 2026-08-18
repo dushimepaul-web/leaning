@@ -1,0 +1,12 @@
+application/cache/*
+application/logs/*
+!application/cache/index.html
+!application/logs/index.html
+
+attachments_bak/
+
+.env
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
