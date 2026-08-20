@@ -34,6 +34,16 @@ class Enseignements extends MY_Controller {
         $id_matiere = (int)$data['id_matiere'];
         $id_classe = (int)$data['id_classe'];
 
+        if (!$this->Model->readOne('enseignants', ['id_enseignant' => $id_enseignant, 'deleted_at' => null])) {
+            $this->json_error('Enseignant introuvable'); return;
+        }
+        if (!$this->Model->readOne('matieres', ['id_matiere' => $id_matiere, 'deleted_at' => null])) {
+            $this->json_error('Matière introuvable'); return;
+        }
+        if (!$this->Model->readOne('classes', ['id_classe' => $id_classe, 'deleted_at' => null])) {
+            $this->json_error('Classe introuvable'); return;
+        }
+
         $dup = $this->Model->readOne('enseignements', [
             'id_enseignant' => $id_enseignant,
             'id_matiere' => $id_matiere,
@@ -48,6 +58,9 @@ class Enseignements extends MY_Controller {
             'id_classe' => $id_classe,
         ];
         if (!empty($data['id_matiere_classe']) && is_numeric($data['id_matiere_classe'])) {
+            if (!$this->Model->readOne('matieres_classes', ['id_matiere_classe' => $data['id_matiere_classe'], 'deleted_at' => null])) {
+                $this->json_error('Association matière/classe introuvable'); return;
+            }
             $insert['id_matiere_classe'] = (int)$data['id_matiere_classe'];
         } else {
             $mc = $this->Model->readOne('matieres_classes', [
@@ -56,6 +69,10 @@ class Enseignements extends MY_Controller {
                 'deleted_at' => null
             ]);
             if ($mc) $insert['id_matiere_classe'] = $mc['id_matiere_classe'];
+        }
+
+        if (empty($insert['id_matiere_classe'])) {
+            $this->json_error('Aucune association matière/classe trouvée pour cet enseignement'); return;
         }
 
         $id = $this->Model->createLastId('enseignements', $insert);
@@ -71,6 +88,29 @@ class Enseignements extends MY_Controller {
         $update = [];
         foreach (['id_enseignant', 'id_matiere', 'id_classe', 'id_matiere_classe'] as $f) {
             if (isset($data[$f]) && is_numeric($data[$f])) $update[$f] = (int)$data[$f];
+        }
+        if (isset($update['id_enseignant'])) {
+            if (!$this->Model->readOne('enseignants', ['id_enseignant' => $update['id_enseignant'], 'deleted_at' => null])) {
+                $this->json_error('Enseignant introuvable'); return;
+            }
+        }
+        if (isset($update['id_matiere'])) {
+            if (!$this->Model->readOne('matieres', ['id_matiere' => $update['id_matiere'], 'deleted_at' => null])) {
+                $this->json_error('Matière introuvable'); return;
+            }
+        }
+        if (isset($update['id_classe'])) {
+            if (!$this->Model->readOne('classes', ['id_classe' => $update['id_classe'], 'deleted_at' => null])) {
+                $this->json_error('Classe introuvable'); return;
+            }
+        }
+        if (isset($update['id_matiere_classe'])) {
+            $mc = $this->Model->readOne('matieres_classes', ['id_matiere_classe' => $update['id_matiere_classe'], 'deleted_at' => null]);
+            if (!$mc) { $this->json_error('Association matière/classe introuvable'); return; }
+            $id_matiere = $update['id_matiere'] ?? null;
+            $id_classe = $update['id_classe'] ?? null;
+            if ($id_matiere && $id_matiere != $mc['id_matiere']) { $this->json_error('Association incompatible avec la matière'); return; }
+            if ($id_classe && $id_classe != $mc['id_classe']) { $this->json_error('Association incompatible avec la classe'); return; }
         }
         if ($this->Model->update('enseignements', ['uuid' => $id], $update))
             $this->json_success(null, 'Enseignement mis à jour');

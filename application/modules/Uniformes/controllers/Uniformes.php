@@ -24,14 +24,20 @@ class Uniformes extends MY_Controller {
     public function api_create() {
         $data = $this->get_json_input();
         if (empty($data['libelle'])) { $this->json_error('Libellé obligatoire'); return; }
+        $prix = $data['prix'] ?? $data['prix_unitaire'] ?? 0;
+        $stock = $data['stock_actuel'] ?? $data['quantite_stock'] ?? 0;
+        $stock_min = $data['stock_minimum'] ?? 5;
+        if (!is_numeric($prix) || $prix < 0) { $this->json_error('Prix invalide'); return; }
+        if (!is_numeric($stock) || $stock < 0) { $this->json_error('Stock invalide'); return; }
+        if (!is_numeric($stock_min) || $stock_min < 0) { $this->json_error('Stock minimum invalide'); return; }
         $this->load->helper('uuid');
         $insert = [
             'uuid' => generate_uuid(),
             'libelle' => $data['libelle'],
             'taille' => $data['taille'] ?? null,
-            'prix' => $data['prix'] ?? $data['prix_unitaire'] ?? 0,
-            'stock_actuel' => $data['stock_actuel'] ?? $data['quantite_stock'] ?? 0,
-            'stock_minimum' => $data['stock_minimum'] ?? 5,
+            'prix' => $prix,
+            'stock_actuel' => $stock,
+            'stock_minimum' => $stock_min,
             'cree_le' => date('Y-m-d H:i:s'),
             'modifie_le' => date('Y-m-d H:i:s'),
         ];
@@ -47,7 +53,13 @@ class Uniformes extends MY_Controller {
         if (isset($data['quantite_stock'])) { $update['stock_actuel'] = $data['quantite_stock']; unset($data['quantite_stock']); }
         $allowed = ['libelle', 'taille', 'prix', 'stock_actuel', 'stock_minimum'];
         foreach ($allowed as $col) {
-            if (isset($data[$col])) $update[$col] = $data[$col];
+            if (isset($data[$col])) {
+                if (($col === 'prix' || $col === 'stock_actuel' || $col === 'stock_minimum') && (!is_numeric($data[$col]) || $data[$col] < 0)) {
+                    $this->json_error('Valeur invalide pour ' . $col);
+                    return;
+                }
+                $update[$col] = $data[$col];
+            }
         }
         if (count($update) <= 1) { $this->json_error('Aucune donnée à modifier'); return; }
         if ($this->Model->update('uniformes', ['uuid' => $id], $update))

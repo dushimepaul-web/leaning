@@ -41,18 +41,21 @@
           <span>Classes</span>
         </a>
         <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Classes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Classes / Salles
-            </a>
-          </li>
+
           <li>
             <a href="<?=base_url('Classes/Sections')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Sections
             </a>
           </li>
+          
+          <li>
+            <a href="<?=base_url('Classes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Classes / Salles
+            </a>
+          </li>
+          
           <li>
             <a href="<?=base_url('Classes/Matieres')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
@@ -141,12 +144,6 @@
             <a href="<?=base_url('Produits')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Produits
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Toilettes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Toilettes
             </a>
           </li>
           <li>

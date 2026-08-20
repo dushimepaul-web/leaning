@@ -57,6 +57,9 @@ class Librairie extends MY_Controller {
     public function api_create() {
         $data = $this->get_json_input();
         if (empty($data['libelle'])) { $this->json_error('Libellé obligatoire'); return; }
+        if (empty($data['id_categorie']) || !$this->Model->readOne('categories_produits', ['id_categorie' => $data['id_categorie'], 'deleted_at' => null])) {
+            $this->json_error('Catégorie invalide'); return;
+        }
         $this->load->helper('uuid');
         $insert = [
             'uuid' => generate_uuid(),
@@ -93,10 +96,34 @@ class Librairie extends MY_Controller {
         if (isset($data['stock'])) $data['stock_actuel'] = $data['stock'];
         $update = array_intersect_key($data, array_flip($allowed));
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        $produit = $this->Model->readOne('produits', ['uuid' => (string)$id]);
+        if (!$produit) { $this->json_error('Produit introuvable', 404); return; }
+
+        $old_stock = intval($produit['stock_actuel']);
+        $new_stock = isset($update['stock_actuel']) ? intval($update['stock_actuel']) : $old_stock;
+        if ($new_stock < 0) { $this->json_error('Stock invalide'); return; }
+
+        $this->db->trans_begin();
+        if ($new_stock != $old_stock) {
+            $diff = $new_stock - $old_stock;
+            $this->Model->create('mouvements_stock', [
+                'id_produit' => $produit['id_produit'],
+                'type' => $diff > 0 ? 'entree' : 'sortie',
+                'quantite' => abs($diff),
+                'prix_unitaire' => $update['prix_achat'] ?? $produit['prix_achat'],
+                'motif' => 'Ajustement manuel (Librairie)',
+                'id_utilisateur' => $this->session->userdata('id_utilisateur')
+            ]);
+        }
         $update['modifie_le'] = date('Y-m-d H:i:s');
-        if ($this->Model->update('produits', ['uuid' => (string)$id], $update))
-            $this->json_success(null, 'Produit mis à jour');
-        else $this->json_error('Erreur de mise à jour');
+        $ok = $this->Model->update('produits', ['uuid' => (string)$id], $update);
+        if (!$ok || $this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+            $this->json_error('Erreur de mise à jour');
+            return;
+        }
+        $this->db->trans_commit();
+        $this->json_success(null, 'Produit mis à jour');
     }
 
     public function api_delete($id) {

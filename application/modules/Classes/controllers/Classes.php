@@ -29,14 +29,28 @@ class Classes extends MY_Controller {
     public function api_create() {
         $data = $this->get_json_input();
         if (empty($data['libelle'])) { $this->json_error('Libellé obligatoire'); return; }
-        $id = $this->Model->createLastId('classes', $data);
+        if (empty($data['id_section']) || !$this->Model->readOne('sections', ['id_section' => $data['id_section'], 'deleted_at' => null])) {
+            $this->json_error('Section invalide'); return;
+        }
+        $allowed = ['code', 'libelle', 'id_section', 'niveau', 'ordre', 'est_dernier_niveau', 'ressources_active', 'competences_active', 'ressources_pourcentage', 'competences_pourcentage'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('classes', $insert);
         if ($id) $this->json_success(null, 'Classe créée');
         else $this->json_error('Erreur de création');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('classes', ['uuid' => $id], $data))
+        if (!$this->Model->readOne('classes', ['uuid' => $id])) {
+            $this->json_error('Classe non trouvée', 404); return;
+        }
+        if (isset($data['id_section']) && !empty($data['id_section']) && !$this->Model->readOne('sections', ['id_section' => $data['id_section'], 'deleted_at' => null])) {
+            $this->json_error('Section invalide'); return;
+        }
+        $allowed = ['code', 'libelle', 'id_section', 'niveau', 'ordre', 'est_dernier_niveau', 'ressources_active', 'competences_active', 'ressources_pourcentage', 'competences_pourcentage'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('classes', ['uuid' => $id], $update))
             $this->json_success(null, 'Classe mise à jour');
         else $this->json_error('Erreur de mise à jour');
     }

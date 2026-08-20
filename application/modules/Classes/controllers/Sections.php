@@ -10,6 +10,7 @@ class Sections extends MY_Controller {
     }
 
     public function api_list() {
+        $this->db->where('deleted_at', null);
         $this->db->order_by('libelle');
         $this->json_success($this->db->get('sections')->result_array());
     }
@@ -48,13 +49,13 @@ class Sections extends MY_Controller {
         if (!$this->Model->readOne('sections', ['uuid' => $id])) {
             $this->json_error('Section non trouvée', 404); return;
         }
-        if ($this->Model->delete('sections', ['uuid' => $id]))
-            $this->json_success(null, 'Section supprimée définitivement');
+        if ($this->Model->update('sections', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s'), 'actif' => 0]))
+            $this->json_success(null, 'Section supprimée');
         else $this->json_error('Erreur lors de la suppression');
     }
 
     public function api_activate($id) {
-        if ($this->Model->update('sections', ['uuid' => $id], ['actif' => 1]))
+        if ($this->Model->update('sections', ['uuid' => $id], ['actif' => 1, 'deleted_at' => null]))
             $this->json_success(null, 'Section activée');
         else $this->json_error('Erreur');
     }

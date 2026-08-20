@@ -175,7 +175,7 @@ function closeSidebar() {
 }
 
 async function loadData() {
-  const res = await API.periodes.list();
+  const res = await API.periodes.list({ deleted: 1 });
   if (!res.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
   let rows = '';
   res.data.forEach((s, i) => {

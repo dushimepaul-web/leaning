@@ -112,7 +112,8 @@ const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: 
 function formatDate(d) { if (!d) return '-'; const dt = new Date(d); return isNaN(dt) ? d : dt.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
 async function loadData() {
-  const res = await API.enseignants.list();
+  const params = { sexe: $('#filterGender').val(), statut: $('#filterStatus').val() };
+  const res = await API.enseignants.list(params);
   if (!res.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>'); return; }
   let rows = '';
   res.data.forEach((e, i) => {
@@ -141,7 +142,7 @@ async function loadData() {
             <li><a href="${BASE_URL}Enseignants/details/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-user-3-line"></i> View</a></li>
             <li><a href="${BASE_URL}Enseignants/edit/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-edit-2-line"></i> Edit</a></li>
             <li><a href="${BASE_URL}Enseignants/timetable/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-calendar-check-line"></i> Timetable</a></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteRecord(${e.uuid})"><i class="ri-delete-bin-6-line"></i> Delete</button></li>
+            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteRecord('${e.uuid}')"><i class="ri-delete-bin-6-line"></i> Delete</button></li>
           </ul>
         </div>
       </td>

@@ -20,8 +20,10 @@ class Conduite extends MY_Controller {
 
     public function api_list() {
         $id_classe = $this->input->get('classe');
-        $id_annee = $this->input->get('annee') ?: $this->id_annee_active;
-        $id_periode = $this->input->get('periode') ?: $this->id_periode_active;
+        $id_annee = $this->input->get('annee');
+        if ($id_annee === null || $id_annee === '') $id_annee = $this->id_annee_active;
+        $id_periode = $this->input->get('periode');
+        if ($id_periode === null) $id_periode = $this->id_periode_active;
         if (!$id_classe) { $this->json_error('Classe requise'); return; }
         $this->json_success($this->ConduiteModel->get_eleves_conduite($id_classe, $id_annee, $id_periode));
     }
@@ -32,6 +34,7 @@ class Conduite extends MY_Controller {
             $this->json_error('Classe, année et période obligatoires'); return;
         }
         $points_initial = (isset($data['points_initial']) && $data['points_initial'] !== null && $data['points_initial'] !== '') ? floatval($data['points_initial']) : null;
+        if ($points_initial !== null && $points_initial <= 0) { $this->json_error('Points initiaux invalides'); return; }
         $result = $this->ConduiteModel->initialiser_classe($data['id_classe'], $data['id_annee'], $data['id_periode'], $points_initial);
         if (empty($result['total'])) { $this->json_error('Aucun élève trouvé dans cette classe'); return; }
         $this->json_success($result, "Initialisé : {$result['created']} créés, {$result['updated']} mis à jour");
@@ -45,6 +48,7 @@ class Conduite extends MY_Controller {
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
         if (isset($update['points_initial'])) {
             $update['points_initial'] = floatval($update['points_initial']);
+            if ($update['points_initial'] < 0) { $this->json_error('Points initiaux invalides'); return; }
         }
         if ($this->Model->update('points_conduite', ['id_point_conduite' => $data['id_point_conduite']], $update)) {
             $this->json_success(null, 'Points de conduite mis à jour');
@@ -67,7 +71,7 @@ class Conduite extends MY_Controller {
         }
         $point = $this->ConduiteModel->get_point_conduite($id_point_conduite);
         if (!$point) { $this->json_error('Point de conduite introuvable', 404); return; }
-        $point['points_initial'] = $this->ConduiteModel->get_points_initial_defaut(60);
+        $point['points_initial'] = $this->ConduiteModel->get_points_initial_defaut();
         $this->json_success([
             'point' => $point,
             'sanctions' => $this->ConduiteModel->get_sanctions($id_point_conduite)
@@ -86,7 +90,7 @@ class Conduite extends MY_Controller {
         if ($existing) return $existing['id_point_conduite'];
         $student = $this->Model->readOne('etudiants', ['id_etudiant' => $id_etudiant]);
         if (!$student) return null;
-        $points_initial = $this->ConduiteModel->get_points_initial_defaut(60);
+        $points_initial = $this->ConduiteModel->get_points_initial_defaut();
         $id = $this->Model->createLastId('points_conduite', [
             'uuid' => generate_uuid(),
             'id_etudiant' => $id_etudiant,
@@ -106,10 +110,13 @@ class Conduite extends MY_Controller {
         $point = $this->ConduiteModel->get_point_conduite($data['id_point_conduite']);
         if (!$point) { $this->json_error('Point de conduite introuvable'); return; }
 
+        $points_retires = floatval($data['points_retires']);
+        if ($points_retires <= 0 || $points_retires > 1000) { $this->json_error('Points à retirer invalides (doit être > 0)'); return; }
+
         $id = $this->Model->createLastId('sanctions_conduite', [
             'id_point_conduite' => $data['id_point_conduite'],
             'motif' => trim($data['motif']),
-            'points_retires' => floatval($data['points_retires']),
+            'points_retires' => $points_retires,
             'date_sanction' => !empty($data['date_sanction']) ? $data['date_sanction'] : date('Y-m-d'),
             'id_utilisateur' => $this->session->userdata('id_utilisateur'),
         ]);

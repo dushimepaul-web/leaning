@@ -109,6 +109,22 @@ class Fiches extends MY_Controller {
             [$id_classe]
         )->result_array();
 
+        // Max annuel possible : somme sur les matières du coefficient calculé (heures/semaine × facteur_points_heure) × nb périodes
+        $facteur_points = floatval($this->Model->get_setting('facteur_points_heure', 15));
+        $pct_comp = floatval($this->Model->get_setting('pourcentage_competences_examen', 40));
+        $pct_ress = floatval($this->Model->get_setting('pourcentage_ressources_examen', 60));
+        $mc = $this->db
+            ->select('id_matiere, nb_heures_par_semaine')
+            ->from('matieres_classes')
+            ->where('id_classe', $id_classe)
+            ->where('deleted_at', null)
+            ->get()->result_array();
+        $max_par_matiere = [];
+        foreach ($mc as $mm) {
+            $max_par_matiere[$mm['id_matiere']] = floatval($mm['nb_heures_par_semaine'] ?: 0) * $facteur_points;
+        }
+        $max_annuel = array_sum($max_par_matiere);
+
         if ($id_periode && $id_periode !== 'all') {
             // Période unique
             $cours = $this->_buildCoursForPeriod($id_classe, $id_periode, $id_annee, $matieres);
@@ -186,7 +202,10 @@ class Fiches extends MY_Controller {
             }
             $row['total'] = $grandTotal;
             $row['moyenne'] = $grandCoef > 0 ? round($grandTotal / $grandCoef, 2) : 0;
-            $row['pourcentage'] = $grandCoef > 0 ? round(($grandTotal / ($grandCoef * 20)) * 100, 1) : 0;
+            // Pourcentage sur le maximum annuel réel : somme(coef × heures/sem × facteur) × nb périodes
+            // comp et ress = pourcentages configurés dans Paramètres (comp + ress = 100% du TJ)
+            $grandMaxPossible = $max_annuel * count($allCours);
+            $row['pourcentage'] = $grandMaxPossible > 0 ? round(($grandTotal / $grandMaxPossible) * 100, 1) : 0;
             $result[] = $row;
         }
 

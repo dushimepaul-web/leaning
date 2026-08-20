@@ -84,20 +84,20 @@
           <div id="etudiantResults" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:220px;overflow-y:auto;"></div>
         </div>
         <div class="col-md-6 position-relative">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe *</label>
-          <input type="hidden" id="id_classe">
-          <div class="position-relative">
-            <input type="text" class="form-control" id="id_classe_search" placeholder="Rechercher..." autocomplete="off">
-          </div>
-          <div id="id_classe_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
-        </div>
-        <div class="col-md-6 position-relative">
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Section</label>
           <input type="hidden" id="id_section">
           <div class="position-relative">
             <input type="text" class="form-control" id="id_section_search" placeholder="Rechercher..." autocomplete="off">
           </div>
           <div id="id_section_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
+        </div>
+        <div class="col-md-6 position-relative">
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe *</label>
+          <input type="hidden" id="id_classe">
+          <div class="position-relative">
+            <input type="text" class="form-control" id="id_classe_search" placeholder="Rechercher..." autocomplete="off">
+          </div>
+          <div id="id_classe_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
         </div>
         <div class="col-md-6 position-relative">
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Année scolaire</label>
@@ -257,7 +257,7 @@ async function loadData() {
         <div class="btn-group">
           <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
           <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete(${ins.uuid})"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
+            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete('${ins.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
           </ul>
         </div>
       </td>
@@ -289,13 +289,17 @@ function openEditSidebar(data) {
   document.getElementById('id_etudiant').value = data.id_etudiant;
   const e = etudiantsList.find(x => String(x.id_etudiant) === String(data.id_etudiant));
   document.getElementById('etudiantSearch').value = e ? (e.fullname + ' (' + (e.matricule||'') + ')') : '';
-  document.getElementById('id_classe').value = data.id_classe;
   document.getElementById('id_section').value = data.id_section || '';
-  document.getElementById('id_annee').value = data.id_annee || '';
-  var _c = classesList.find(function(x) { return String(x.id_classe) === String(data.id_classe); });
-  if (_c) document.getElementById('id_classe_search').value = _c.libelle;
   var _s = sectionsList.find(function(x) { return String(x.id_section) === String(data.id_section); });
   if (_s) document.getElementById('id_section_search').value = _s.libelle;
+  var _c = classesList.find(function(x) { return String(x.id_classe) === String(data.id_classe); });
+  var _belongs = _c && String(_c.id_section) === String(data.id_section || '');
+  filterClassesBySection(data.id_section || null, _belongs);
+  if (_belongs) {
+    document.getElementById('id_classe').value = data.id_classe;
+    document.getElementById('id_classe_search').value = _c.libelle;
+  }
+  document.getElementById('id_annee').value = data.id_annee || '';
   var _a = anneesList.find(function(x) { return String(x.id_annee) === String(data.id_annee); });
   if (_a) document.getElementById('id_annee_search').value = _a.libelle;
   document.getElementById('date_inscription').value = data.date_inscription || '<?= date('Y-m-d') ?>';
@@ -377,9 +381,30 @@ function exportCSV() {
       loadData();
       $('#dtSearch').on('keyup', function() { $('#dataTable').DataTable().search(this.value).draw(); });
       $('#dtLength').on('change', function() { $('#dataTable').DataTable().page.len(+this.value).draw(); });
-      autoSetup('id_classe_search', 'id_classe', 'id_classe_results', classesList.map(function(c) { return { id: c.id_classe, libelle: c.libelle }; }), function(c) { return c.libelle; });
-      autoSetup('id_section_search', 'id_section', 'id_section_results', sectionsList.map(function(s) { return { id: s.id_section, libelle: s.libelle }; }), function(s) { return s.libelle; });
+      var classCtrl = autoSetup('id_classe_search', 'id_classe', 'id_classe_results', classesList.map(function(c) { return { id: c.id_classe, libelle: c.libelle, id_section: c.id_section }; }), function(c) { return c.libelle; });
+      var sectionCtrl = autoSetup('id_section_search', 'id_section', 'id_section_results', sectionsList.map(function(s) { return { id: s.id_section, libelle: s.libelle }; }), function(s) { return s.libelle; }, function(s) {
+        filterClassesBySection(s.id);
+      });
       autoSetup('id_annee_search', 'id_annee', 'id_annee_results', anneesList.map(function(a) { return { id: a.id_annee, libelle: a.libelle }; }), function(a) { return a.libelle; });
+
+      function filterClassesBySection(sectionId, keepSelection) {
+        var filtered = sectionId ? classesList.filter(function(c) { return String(c.id_section) === String(sectionId); }) : [];
+        classCtrl.updateItems(filtered.map(function(c) { return { id: c.id_classe, libelle: c.libelle, id_section: c.id_section }; }));
+        if (!keepSelection) {
+          document.getElementById('id_classe').value = '';
+          document.getElementById('id_classe_search').value = '';
+          document.getElementById('id_classe_search').classList.remove('border-success', 'border-2');
+        }
+        document.getElementById('id_classe_results').style.display = 'none';
+        document.getElementById('id_classe_search').disabled = !sectionId;
+        document.getElementById('id_classe_search').placeholder = sectionId ? 'Rechercher...' : 'Sélectionnez d\'abord une section';
+      }
+
+      document.getElementById('id_section_search').addEventListener('input', function() {
+        if (!document.getElementById('id_section').value) {
+          filterClassesBySection(null);
+        }
+      });
     }
   }, 50);
 })();

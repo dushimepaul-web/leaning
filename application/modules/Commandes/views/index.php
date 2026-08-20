@@ -487,7 +487,8 @@ function changeStatut(id, newStatut) {
 }
 
 async function loadData() {
-  const r = await API.commandes.list();
+  const params = { statut: $('#filterStatut').val(), date: $('#filterDateStart').val() };
+  const r = await API.commandes.list(params);
   if (!r.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
   let rows = '';
   const statutBadges = {

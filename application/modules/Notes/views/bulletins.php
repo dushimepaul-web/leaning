@@ -25,7 +25,7 @@
 .bulletin-card .bul-header .h-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;line-height:1.6}
 .bulletin-card .bul-header .h-row .h-right{text-align:right}
 .bulletin-card .bul-body{overflow-x:auto}
-.bulletin-card .bul-body table{width:100%;border-collapse:collapse;font-size:11px}
+.bulletin-card .bul-body table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
 .bulletin-card .bul-body table th,.bulletin-card .bul-body table td{border:1px solid #000;padding:3px 4px;text-align:center;font-weight:400}
 .bulletin-card .bul-body table thead th{background:#D9D9D9;font-weight:700;font-size:10px}
 .bulletin-card .bul-body table thead th.branches-header{background:#fff;width:140px;min-width:140px;text-align:center}
@@ -75,7 +75,7 @@
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Trimestre</label>
           <select class="form-control form-select" id="id_periode">
             <option value="all">Année complète</option>
-            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
+            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" data-annee="<?=$p['id_annee']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
           </select>
         </div>
         <div class="col" style="min-width:160px;">
@@ -147,6 +147,19 @@ document.addEventListener('click', function(e) {
   }
 });
 
+document.getElementById('id_annee').addEventListener('change', function() {
+  const aid = this.value;
+  const sel = document.getElementById('id_periode');
+  let ok = false;
+  Array.from(sel.options).forEach(function(opt) {
+    if (!opt.value) return;
+    const visible = opt.dataset.annee === aid;
+    opt.style.display = visible ? '' : 'none';
+    if (visible && opt.selected) ok = true;
+  });
+  if (!ok) sel.value = 'all';
+});
+
 function periodeSelectionnee() {
   const sel = document.getElementById('id_periode');
   const nom = sel.options[sel.selectedIndex].text;
@@ -175,7 +188,7 @@ function backToClasses(){gClasseId=null;document.getElementById('bulletinsCard')
 async function genererBulletinsClasse(){
   if(!gClasseId){return}
   Swal.fire({title:'Génération...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
-  const r=await fetch(API.base_url+'api/bulletins/generer',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({id_classe:gClasseId,id_annee:document.getElementById('id_annee').value})}).then(r=>r.json());
+  const r=await fetch(API.base_url+'api/bulletins/generer',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({id_classe:gClasseId,id_annee:document.getElementById('id_annee').value,csrf_test_name:typeof CSRF_TOKEN!=='undefined'?CSRF_TOKEN:''})}).then(r=>r.json());
   Swal.close();
   r.success?Toast.fire({icon:'success',title:r.message}):Swal.fire({icon:'error',text:r.message})
 }
@@ -187,6 +200,11 @@ function renderBulletins(data,periodeNom,periodeId){
   const section=data.section||data.classe_section||'';
   const anneeScolaire=data.annee_scolaire||'2025-2026';
   const classeNom=data.classe||'';
+  const ressActive = (data.ressources_active===undefined ? 1 : parseInt(data.ressources_active)) !== 0;
+  const compActive = (data.competences_active===undefined ? 1 : parseInt(data.competences_active)) !== 0;
+  const bothActive = ressActive && compActive;
+  const col2 = bothActive ? 'RESS' : 'EX';
+  const col3 = bothActive ? 'COMP' : 'EX';
   const CONDUITE_DEFAUT=60, relTj=10, relEx=10, relTot=20;
   const pids=periodes.map(p=>p.id_periode);
 
@@ -250,6 +268,12 @@ function renderBulletins(data,periodeNom,periodeId){
   }
   function colBlank(i){return cumulMode&&i>selIdx;}
 
+  const colSpan = bothActive ? 4 : 3;
+  const subHead = bothActive ? '<th>TJ</th><th>RESS</th><th>COMP</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+  function cells(t){ return bothActive
+    ? [nf(t.tj), nf(t.ress), nf(t.comp), `<strong>${nf(t.tot)}</strong>`]
+    : [nf(t.tj), nf(t.comp + t.ress), `<strong>${nf(t.tot)}</strong>`]; }
+
   let html='';
   data.eleves.forEach((el,idx)=>{
     let aAnnNote=0,aAnnMax=0;
@@ -283,13 +307,13 @@ function renderBulletins(data,periodeNom,periodeId){
           <thead>
             <tr>
               <th class="branches-header" rowspan="2"></th>
-              <th colspan="4">MAXIMA</th>
-              ${periodes.map(p=>`<th colspan="4">${p.libelle||''}</th>`).join('')}
+              <th colspan="${colSpan}">MAXIMA</th>
+              ${periodes.map(p=>`<th colspan="${colSpan}">${p.libelle||''}</th>`).join('')}
               <th colspan="3">TOTAUX ANNUELS</th>
             </tr>
             <tr>
-              <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
-              ${periodes.map(()=>'<th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>').join('')}
+              ${subHead}
+              ${periodes.map(()=>subHead).join('')}
               <th>MAX</th><th>TOT</th><th>%</th>
             </tr>
           </thead>
@@ -303,12 +327,12 @@ function renderBulletins(data,periodeNom,periodeId){
 
       html+=`<tr>
         <td class="branches matiere">${mat.libelle}</td>
-        <td class="num">${nf(mb.tj)}</td><td class="num">${nf(mb.comp)}</td><td class="num">${nf(mb.ress)}</td><td class="num"><strong>${nf(mb.tot)}</strong></td>`;
+        ${cells(mb).map(c=>`<td class="num">${c}</td>`).join('')}`;
 
       periodes.forEach((p,i)=>{
-        if(colBlank(i)){html+=`<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>`;return;}
+        if(colBlank(i)){html+=`<td class="num">-</td>`.repeat(colSpan);return;}
         const nt=noteCol(el,mid,i);
-        html+=`<td class="num">${nf(nt.tj)}</td><td class="num">${nf(nt.comp)}</td><td class="num">${nf(nt.ress)}</td><td class="num"><strong>${nf(nt.tot)}</strong></td>`;
+        html+=cells(nt).map(c=>`<td class="num">${c}</td>`).join('');
       });
 
       html+=`<td class="num"><strong>${nf(aa.max)}</strong></td>
@@ -320,10 +344,10 @@ function renderBulletins(data,periodeNom,periodeId){
     // ---- B: Sous-Tot ----
     html+=`<tr>
       <td class="branches">Sous-Tot</td>
-      <td></td><td></td><td></td><td></td>`;
+      ${'<td></td>'.repeat(colSpan)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td class="num"><strong>${nf(stCol(el,i))}</strong></td>`;
+      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">-</td>`;return;}
+      html+=`<td></td>`.repeat(colSpan-1)+`<td class="num"><strong>${nf(stCol(el,i))}</strong></td>`;
     });
     html+=`<td class="num"><strong>${nf(aAnnMax)}</strong></td>
       <td class="num"><strong>${nf(aAnnNote)}</strong></td>
@@ -334,10 +358,10 @@ function renderBulletins(data,periodeNom,periodeId){
     const conduiteMax=cumulMode?cdMax:CONDUITE_DEFAUT;
     html+=`<tr>
       <td class="branches">Conduite</td>
-      <td class="num gris">${conduiteMax}</td><td></td><td></td><td class="num">${conduiteMax}</td>`;
+      <td class="num gris">${conduiteMax}</td>${'<td></td>'.repeat(colSpan-2)}<td class="num">${conduiteMax}</td>`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td class="num">${cdCol(el,i)}</td>`;
+      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">-</td>`;return;}
+      html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">${cdCol(el,i)}</td>`;
     });
     html+=`<td class="num"><strong>${cdMax}</strong></td>
       <td class="num"><strong>${cdTot.toFixed(1)}</strong></td>
@@ -347,10 +371,10 @@ function renderBulletins(data,periodeNom,periodeId){
     // ---- D: Totaux ----
     html+=`<tr>
       <td class="branches">Totaux</td>
-      <td></td><td></td><td></td><td></td>`;
+      ${'<td></td>'.repeat(colSpan)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td class="num"><strong>${nf(stCol(el,i)+cdCol(el,i))}</strong></td>`;
+      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">-</td>`;return;}
+      html+=`<td></td>`.repeat(colSpan-1)+`<td class="num"><strong>${nf(stCol(el,i)+cdCol(el,i))}</strong></td>`;
     });
     html+=`<td class="num"><strong>${nf(aAnnMax+cdMax)}</strong></td>
       <td class="num"><strong>${nf(aAnnNote+cdTot)}</strong></td>
@@ -360,10 +384,10 @@ function renderBulletins(data,periodeNom,periodeId){
     // ---- E: Pourcentage ----
     html+=`<tr>
       <td class="branches">Pourcentage</td>
-      <td></td><td></td><td></td><td></td>`;
+      ${'<td></td>'.repeat(colSpan)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td></td>`;
+      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan);return;}
+      html+=`<td></td>`.repeat(colSpan);
     });
     html+=`<td></td><td></td><td></td>
     </tr>`;
@@ -372,32 +396,39 @@ function renderBulletins(data,periodeNom,periodeId){
     const mentionLabel = el.mention || '—';
     html+=`<tr>
       <td class="branches">Mention</td>
-      <td></td><td></td><td></td><td></td>`;
+      ${'<td></td>'.repeat(colSpan)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td></td>`;
+      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan);return;}
+      html+=`<td></td>`.repeat(colSpan);
     });
     html+=`<td></td><td></td><td class="num"><strong>${mentionLabel}</strong></td>
     </tr>`;
 
     // ---- F: Place ----
+    const placeVal = el.rang > 0 ? el.rang + 'e' : '—';
     html+=`<tr>
       <td class="branches">Place</td>
-      <td></td><td></td><td></td><td></td>`;
+      ${'<td></td>'.repeat(colSpan)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td></td>`;
+      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan);return;}
+      html+=`<td></td>`.repeat(colSpan);
     });
-    html+=`<td></td><td></td><td></td>
+    html+=`<td></td><td></td><td class="num"><strong>${placeVal}</strong></td>
     </tr>`;
 
     // ---- G: Religion ----
+    const relCells = (valTj,valEx,valTot)=>bothActive
+      ? `<td class="num">${valTj}</td><td class="num">${valEx}</td><td></td><td class="num">${valTot}</td>`
+      : `<td class="num">${valTj}</td><td class="num">${valEx}</td><td class="num">${valTot}</td>`;
+    const relBlank = ()=>bothActive
+      ? `<td class="num">-</td><td class="num">-</td><td></td><td class="num">-</td>`
+      : `<td class="num">-</td><td class="num">-</td><td class="num">-</td>`;
     html+=`<tr>
       <td class="branches">Religion</td>
-      <td class="num">${relTj}</td><td class="num">${relEx}</td><td></td><td class="num">${relTot}</td>`;
+      ${relCells(relTj,relEx,relTot)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td class="num">-</td><td class="num">-</td><td></td><td class="num">-</td>`;return;}
-      html+=`<td class="num">${relTj}</td><td class="num">${relEx}</td><td></td><td class="num">${relTot}</td>`;
+      if(colBlank(i)){html+=relBlank();return;}
+      html+=relCells(relTj,relEx,relTot);
     });
     html+=`<td class="num"><strong>${relMax}</strong></td>
       <td></td><td></td>
@@ -406,18 +437,16 @@ function renderBulletins(data,periodeNom,periodeId){
     // ---- H: Signatures (2 rows) ----
     html+=`<tr>
       <td class="branches" rowspan="2">Signatures</td>
-      <td>PARENTS</td><td></td><td></td><td></td>`;
+      <td>PARENTS</td>${'<td></td>'.repeat(colSpan-1)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td></td>`;
+      html+=`<td></td>`.repeat(colSpan);
     });
     html+=`<td></td><td></td><td></td>
     </tr>`;
     html+=`<tr>
-      <td>TITULAIRE</td><td></td><td></td><td></td>`;
+      <td>TITULAIRE</td>${'<td></td>'.repeat(colSpan-1)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td><td></td><td></td><td class="num">-</td>`;return;}
-      html+=`<td></td><td></td><td></td><td></td>`;
+      html+=`<td></td>`.repeat(colSpan);
     });
     html+=`<td></td><td></td><td></td>
     </tr>`;

@@ -18,6 +18,24 @@ class Horaires extends MY_Controller {
         $this->load->view('index', $data);
     }
 
+    public function api_get($id) {
+        $this->db->where('h.uuid', $id);
+        $this->db->where('h.deleted_at', null);
+        $this->db->select('h.*, c.libelle as classe, j.libelle as jour, j.ordre as jour_ordre, m.libelle as matiere, ens.fullname as enseignant, g.libelle as generation');
+        $this->db->from('horaires h');
+        $this->db->join('classes c', 'h.id_classe = c.id_classe', 'left');
+        $this->db->join('jours_semaine j', 'h.id_jour = j.id_jour', 'left');
+        $this->db->join('enseignements eg', 'h.id_enseignement = eg.id_enseignement', 'left');
+        $this->db->join('matieres_classes mc', 'eg.id_matiere_classe = mc.id_matiere_classe', 'left');
+        $this->db->join('matieres m', 'mc.id_matiere = m.id_matiere', 'left');
+        $this->db->join('enseignants ens', 'h.id_enseignant = ens.id_enseignant', 'left');
+        $this->db->join('horaires_generations g', 'h.id_generation = g.id_generation', 'left');
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
+        if (!$d) { $this->json_error('Horaire introuvable', 404); return; }
+        $this->json_success($d);
+    }
+
     public function api_list() {
         $this->json_success($this->Horaires_model->get_all());
     }
@@ -26,6 +44,20 @@ class Horaires extends MY_Controller {
         $data = $this->get_json_input();
         if (empty($data['id_classe']) || empty($data['id_jour']) || empty($data['id_creneau'])) {
             $this->json_error('Classe, jour et créneau obligatoires'); return;
+        }
+        if (!$this->Model->readOne('classes', ['id_classe' => $data['id_classe'], 'deleted_at' => null])) {
+            $this->json_error('Classe introuvable'); return;
+        }
+        if (!$this->Model->readOne('jours_semaine', ['id_jour' => $data['id_jour']])) {
+            $this->json_error('Jour invalide'); return;
+        }
+        $creneaux = $this->Horaires_model->get_creneaux_cours();
+        $creneau_ids = array_column($creneaux, 'id_creneau');
+        if (!in_array((int)$data['id_creneau'], $creneau_ids)) {
+            $this->json_error('Créneau invalide'); return;
+        }
+        if (!empty($data['id_enseignant']) && !$this->Model->readOne('enseignants', ['id_enseignant' => $data['id_enseignant'], 'deleted_at' => null])) {
+            $this->json_error('Enseignant introuvable'); return;
         }
         $this->load->helper('uuid');
 
@@ -210,6 +242,7 @@ class Horaires extends MY_Controller {
                             foreach ($creneaux as $cr) {
                                 if ($nbHeures <= 0) break;
                                 if ($nbHeuresParJour > 0 && ($heuresParJourMC[$hkey] ?? 0) >= $nbHeuresParJour) break;
+                                if (!empty($cr['type_creneau']) && $cr['type_creneau'] !== 'cours') continue;
                                 if (!$estLibre($idProf, $idClasse, $idMatiere, $jour['id_jour'], $cr['id_creneau'])) continue;
                                 $placer($idProf, $idClasse, $idMatiere, $idEns, $jour['id_jour'], $cr['id_creneau'], $idMC);
                                 // CORRECTION: 1 créneau placé = 1 heure

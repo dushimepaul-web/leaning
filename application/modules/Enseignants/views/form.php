@@ -55,7 +55,7 @@
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Expérience</label>
-                <input type="text" class="form-control" id="experience" value="<?= $teacher['experience'] ?? '' ?>" placeholder="Années d'expérience">
+                <input type="text" class="form-control" id="experience" value="<?= preg_replace('/^(\d+).*$/', '$1', trim((string)($teacher['experience'] ?? ''))) ?>" placeholder="Années d'expérience">
               </div>
               <div class="col-xxl-3 col-xl-4 col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date d'embauche</label>
@@ -68,6 +68,17 @@
               <div class="col-xxl-3 col-xl-4 col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Email</label>
                 <input type="email" class="form-control" id="email" value="<?= $teacher['email'] ?? '' ?>" placeholder="Email">
+              </div>
+              <div class="col-xxl-3 col-xl-4 col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Photo</label>
+                <div class="drop-zone height-44-px p-4 d-flex justify-content-center align-items-center text-center fw-medium text-md cursor-pointer border border-neutral-400 radius-8 border-dashed bg-hover-neutral-200">
+                  <span class="drop-zone__prompt">Cliquer pour télécharger une photo</span>
+                  <input type="file" id="photoInput" class="drop-zone__input" accept="image/*">
+                </div>
+                <input type="hidden" id="photo" value="<?= $teacher['photo'] ?? '' ?>">
+                <?php if (!empty($teacher['photo'])): ?>
+                  <img src="<?= base_url($teacher['photo']) ?>" id="photoPreview" class="mt-8 radius-8" style="max-width:100px;max-height:100px;object-fit:cover;" alt="Photo">
+                <?php endif; ?>
               </div>
 
             </div>
@@ -271,6 +282,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     experience: document.getElementById('experience').value,
     enseignements: enseignements,
     date_embauche: document.getElementById('date_embauche').value,
+    photo: document.getElementById('photo').value,
   };
   if (!data.fullname) { Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Full Name is required' }); return; }
   let res;
@@ -289,6 +301,7 @@ document.getElementById('photoInput')?.addEventListener('change', async function
   const file = this.files[0];
   const fd = new FormData();
   fd.append('file', file, file.name);
+  fd.append('csrf_test_name', typeof CSRF_TOKEN !== 'undefined' ? CSRF_TOKEN : '');
   try {
     const res = await fetch(API.base_url + 'api/enseignants/upload_photo', {
       method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }

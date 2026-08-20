@@ -24,14 +24,22 @@ class Type_frais extends MY_Controller {
         if (empty($data['libelle'])) {
             $this->json_error('Le libellé est obligatoire'); return;
         }
-        $id = $this->Model->createLastId('types_frais', $data);
+        $allowed = ['code', 'libelle', 'description'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('types_frais', $insert);
         if ($id) $this->json_success(['id_type_frais' => $id], 'Type de frais créé');
         else $this->json_error('Erreur de création');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('types_frais', ['uuid' => $id], $data))
+        if (!$this->Model->readOne('types_frais', ['uuid' => $id])) {
+            $this->json_error('Type de frais non trouvé', 404); return;
+        }
+        $allowed = ['code', 'libelle', 'description'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('types_frais', ['uuid' => $id], $update))
             $this->json_success(null, 'Type de frais mis à jour');
         else $this->json_error('Erreur de mise à jour');
     }

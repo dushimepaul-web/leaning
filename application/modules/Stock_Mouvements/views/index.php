@@ -338,7 +338,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     motif: document.getElementById('motif').value || '',
     id_etudiant: document.getElementById('id_etudiant').value || null
   };
-  var r = await fetch(BASE_URL + 'api/mouvements/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r){return r.json();});
+  var r = await fetch(BASE_URL + 'api/mouvements/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.assign({}, data, { csrf_test_name: typeof CSRF_TOKEN !== 'undefined' ? CSRF_TOKEN : '' })) }).then(function(r){return r.json();});
   if (r.success) { closeSidebar(); Toast.fire({icon:'success',title:'Mouvement enregistré'}); loadData(); }
   else Swal.fire({icon:'error',title:'Erreur',text:r.message});
 });
@@ -421,7 +421,7 @@ document.getElementById('venteForm').addEventListener('submit', async function(e
     nom_etudiant: etudiant ? etudiant.fullname : 'élève',
     produits: venteProduits.map(function(v) { return { id_produit: v.id_produit, quantite: v.quantite, prix_unitaire: v.prix_unitaire }; })
   };
-  var r = await fetch(BASE_URL + 'api/mouvements/batch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(function(r){return r.json();});
+  var r = await fetch(BASE_URL + 'api/mouvements/batch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.assign({}, data, { csrf_test_name: typeof CSRF_TOKEN !== 'undefined' ? CSRF_TOKEN : '' })) }).then(function(r){return r.json();});
   if (r.success) {
     closeVenteSidebar();
     Swal.fire({icon:'success',title:'Vente enregistrée',text:r.message});

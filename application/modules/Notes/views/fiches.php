@@ -2,7 +2,7 @@
 <?php include VIEWPATH.'includes/Sidebar.php'; ?>
 <style>
 .fiche-app{font-family:Arial,Calibri,sans-serif}
-.fiche-app table{width:100%;border-collapse:collapse;font-size:11px}
+.fiche-app table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
 .fiche-app table th,.fiche-app table td{border:1px solid #000;padding:2px 4px;text-align:center;font-weight:400}
 .fiche-app table thead th{background:#D9D9D9;font-weight:700;font-size:10px}
 .fiche-app table thead th.branches-header{background:#fff;width:140px;min-width:140px;text-align:center}
@@ -54,7 +54,7 @@
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Période</label>
           <select class="form-control form-select" id="id_periode">
             <option value="all" selected>Tous les trimestres</option>
-            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>"><?=$p['libelle']?></option><?php endforeach; ?>
+            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" data-annee="<?=$p['id_annee']?>"><?=$p['libelle']?></option><?php endforeach; ?>
           </select>
         </div>
         <div class="col" style="min-width:160px;">
@@ -131,6 +131,14 @@ async function loadFiche(){
   if(idMatiere){matieres=matieres.filter(function(m){return String(m.id_matiere)===String(idMatiere);});}
   var cls=data.classe||'';
   var an=data.annee_scolaire||'';
+  var ressActive = (data.ressources_active===undefined ? 1 : parseInt(data.ressources_active)) !== 0;
+  var compActive = (data.competences_active===undefined ? 1 : parseInt(data.competences_active)) !== 0;
+  var bothActive = ressActive && compActive;
+  var colSpan = bothActive ? 4 : 3;
+  var subHead = bothActive ? '<th>TJ</th><th>RESS</th><th>COMP</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+  function cells(t){ return bothActive
+    ? [nf(t.tj), nf(t.ress), nf(t.comp), '<strong>'+nf(t.tot)+'</strong>']
+    : [nf(t.tj), nf(t.comp + t.ress), '<strong>'+nf(t.tot)+'</strong>']; }
   var pids=periodes.map(function(p){return p.id_periode});
 
   var section=data.section||data.classe_section||'';
@@ -179,12 +187,12 @@ async function loadFiche(){
   // En-tête identique au bulletin
   var head='<tr>';
   head+='<th class="branches-header" rowspan="2"></th>';
-  head+='<th colspan="4">MAXIMA</th>';
-  periodes.forEach(function(pe){head+='<th colspan="4">'+pe.libelle+'</th>';});
+  head+='<th colspan="'+colSpan+'">MAXIMA</th>';
+  periodes.forEach(function(pe){head+='<th colspan="'+colSpan+'">'+pe.libelle+'</th>';});
   head+='<th colspan="3">TOTAUX ANNUELS</th></tr>';
   head+='<tr>';
-  head+='<th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>';
-  periodes.forEach(function(){head+='<th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>';});
+  head+=subHead;
+  periodes.forEach(function(){head+=subHead;});
   head+='<th>MAX</th><th>TOT</th><th>%</th></tr>';
   document.getElementById('ficheHead').innerHTML=head;
 
@@ -197,13 +205,13 @@ async function loadFiche(){
 
   var body='<tr class="fiche-row-g" style="font-weight:700">';
   body+='<td class="matiere">MAXIMA</td>';
-  body+='<td class="num">'+nf(mTot.tj)+'</td><td class="num">'+nf(mTot.comp)+'</td><td class="num">'+nf(mTot.ress)+'</td><td class="num"><strong>'+nf(mTot.tot)+'</strong></td>';
+  body+=cells(mTot).map(function(c){return '<td class="num">'+c+'</td>';}).join('');
   periodes.forEach(function(pe,i){
     var colT={tj:0,comp:0,ress:0,tot:0};
     if(!cumulMode||i<=selIdx){
       matieres.forEach(function(m){var mm=maxCol(m.id_matiere,i);colT.tj+=mm.tj;colT.comp+=mm.comp;colT.ress+=mm.ress;colT.tot+=mm.tot;});
     }
-    body+='<td class="num">'+nf(colT.tj)+'</td><td class="num">'+nf(colT.comp)+'</td><td class="num">'+nf(colT.ress)+'</td><td class="num"><strong>'+nf(colT.tot)+'</strong></td>';
+    body+=cells(colT).map(function(c){return '<td class="num">'+c+'</td>';}).join('');
   });
   body+='<td class="num"><strong>'+nf(mTot.tot)+'</strong></td><td class="num"><strong>'+nf(mTot.tot)+'</strong></td><td class="num">100%</td></tr>';
 
@@ -211,13 +219,13 @@ async function loadFiche(){
     var mm=cumMax(m.id_matiere,selIdx);
     body+='<tr>';
     body+='<td class="matiere">'+m.libelle+'</td>';
-    body+='<td class="num">'+nf(mm.tj)+'</td><td class="num">'+nf(mm.comp)+'</td><td class="num">'+nf(mm.ress)+'</td><td class="num"><strong>'+nf(mm.tot)+'</strong></td>';
+    body+=cells(mm).map(function(c){return '<td class="num">'+c+'</td>';}).join('');
     periodes.forEach(function(pe,i){
-      if(cumulMode&&i>selIdx){body+='<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>';return;}
+      if(cumulMode&&i>selIdx){body+=('<td class="num">-</td>').repeat(colSpan);return;}
       // Cumuls au niveau classe par matière (somme élèves)
       var t={tj:0,comp:0,ress:0,tot:0};
       data.eleves.forEach(function(el){var nm=noteCol(el,m.id_matiere,i);t.tj+=nm.tj;t.comp+=nm.comp;t.ress+=nm.ress;t.tot+=nm.tot;});
-      body+='<td class="num">'+nf(t.tj)+'</td><td class="num">'+nf(t.comp)+'</td><td class="num">'+nf(t.ress)+'</td><td class="num"><strong>'+nf(t.tot)+'</strong></td>';
+      body+=cells(t).map(function(c){return '<td class="num">'+c+'</td>';}).join('');
     });
     var annT={tj:0,comp:0,ress:0,tot:0};
     data.eleves.forEach(function(el){var nm=noteCol(el,m.id_matiere,selIdx);annT.tj+=nm.tj;annT.comp+=nm.comp;annT.ress+=nm.ress;annT.tot+=nm.tot;});
@@ -231,7 +239,7 @@ async function loadFiche(){
   // Footer: Totaux élèves
   var foot='<tr class="fiche-row-g" style="font-weight:bold">';
   foot+='<td class="matiere">TOTAUX ÉLÈVES</td>';
-  foot+='<td class="num">'+nf(mTot.tj)+'</td><td class="num">'+nf(mTot.comp)+'</td><td class="num">'+nf(mTot.ress)+'</td><td class="num"><strong>'+nf(mTot.tot)+'</strong></td>';
+  foot+=cells(mTot).map(function(c){return '<td class="num">'+c+'</td>';}).join('');
   var gTot=0;
   periodes.forEach(function(pe,i){
     var t={tj:0,comp:0,ress:0,tot:0};
@@ -241,7 +249,7 @@ async function loadFiche(){
       });
     }
     if(i===selIdx||(!cumulMode&&i===periodes.length-1)){gTot=t.tot;}
-    foot+='<td class="num">'+nf(t.tj)+'</td><td class="num">'+nf(t.comp)+'</td><td class="num">'+nf(t.ress)+'</td><td class="num"><strong>'+nf(t.tot)+'</strong></td>';
+    foot+=cells(t).map(function(c){return '<td class="num">'+c+'</td>';}).join('');
   });
   foot+='<td class="num"><strong>'+nf(mTot.tot)+'</strong></td>';
   foot+='<td class="num"><strong>'+nf(gTot)+'</strong></td>';
@@ -264,6 +272,21 @@ async function loadFiche(){
   document.getElementById('statTaux').textContent=Math.round(taux)+'%';
   document.getElementById('statNbEval').textContent=matieres.length+' mat.';
 }
+
+function filterPeriodeFiches() {
+  var aid=document.getElementById('id_annee').value;
+  var sel=document.getElementById('id_periode');
+  var ok=false;
+  Array.prototype.forEach.call(sel.options,function(opt){
+    if(!opt.value){return;}
+    var visible=!opt.dataset.annee||opt.dataset.annee===aid;
+    opt.style.display=visible?'':'none';
+    if(visible&&opt.selected){ok=true;}
+  });
+  if(!ok){sel.value='all';}
+}
+
+document.getElementById('id_annee').addEventListener('change',function(){filterPeriodeFiches();});
 
 function exportFiche(){
   var id_classe=document.getElementById('id_classe').value;

@@ -91,11 +91,25 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="type">
+                                <option value="interrogation">Interrogation</option>
+                                <option value="devoir" selected>Devoir</option>
+                                <option value="controle">Contrôle</option>
+                                <option value="composition">Composition</option>
+                                <option value="examen">Examen</option>
+                                <option value="tp">TP</option>
+                                <option value="projet">Projet</option>
+                                <option value="participation">Participation</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Note maximale</label>
                             <input type="number" class="form-control" name="note_max" value="20" min="1" max="100">
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Coefficient</label>
                             <input type="number" class="form-control" name="coefficient" value="1" min="0.5" step="0.5">
                         </div>

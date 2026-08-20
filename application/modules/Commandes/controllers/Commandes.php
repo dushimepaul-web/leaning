@@ -16,6 +16,8 @@ class Commandes extends MY_Controller {
         $this->db->select("c.*, e.fullname AS nom, '' AS prenom, e.matricule, COALESCE((SELECT SUM((cd.prix_unitaire - cd.prix_achat) * cd.quantite) FROM commandes_details cd WHERE cd.id_commande = c.id_commande), 0) AS benefice");
         $this->db->from('commandes c');
         $this->db->join('etudiants e', 'c.id_etudiant = e.id_etudiant', 'left');
+        if ($this->input->get('statut')) $this->db->where('c.statut', $this->input->get('statut'));
+        if ($this->input->get('date')) $this->db->where('DATE(c.date_commande)', $this->input->get('date'));
         $this->db->order_by('c.date_commande', 'DESC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());
@@ -38,13 +40,16 @@ class Commandes extends MY_Controller {
         $data = $this->get_json_input();
         if (empty($data['id_etudiant'])) { $this->json_error('Étudiant requis'); return; }
         if (empty($data['details']) || !is_array($data['details'])) { $this->json_error('Aucun produit sélectionné'); return; }
+        $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+        if (!$etudiant) { $this->json_error('Étudiant introuvable'); return; }
         $this->load->helper('uuid');
 
         foreach ($data['details'] as $d) {
             if (empty($d['id_produit']) || empty($d['quantite'])) continue;
-            $produit = $this->Model->readOne('produits', ['id_produit' => $d['id_produit']]);
+            $produit = $this->Model->readOne('produits', ['id_produit' => $d['id_produit'], 'deleted_at' => null]);
             if (!$produit) { $this->json_error('Produit introuvable (#' . $d['id_produit'] . ')'); return; }
             $qty = intval($d['quantite']);
+            if ($qty <= 0) { $this->json_error('Quantité invalide pour "' . $produit['libelle'] . '"'); return; }
             if (intval($produit['stock_actuel']) < $qty) {
                 $this->json_error('Stock insuffisant pour "' . $produit['libelle'] . '" (stock: ' . $produit['stock_actuel'] . ', demandé: ' . $qty . ')');
                 return;
@@ -65,10 +70,10 @@ class Commandes extends MY_Controller {
         $total = 0;
         foreach ($data['details'] as $d) {
             if (empty($d['id_produit']) || empty($d['quantite'])) continue;
-            $produit = $this->Model->readOne('produits', ['id_produit' => $d['id_produit']]);
+            $produit = $this->Model->readOne('produits', ['id_produit' => $d['id_produit'], 'deleted_at' => null]);
             if (!$produit) continue;
             $qty = intval($d['quantite']);
-            $price = floatval($d['prix_unitaire'] ?? 0);
+            $price = floatval($produit['prix_unitaire'] ?? 0);
             $prix_achat = floatval($produit['prix_achat'] ?? 0);
             $this->db->insert('commandes_details', [
                 'uuid' => generate_uuid(),

@@ -106,7 +106,7 @@
         <div class="col" style="min-width:160px;">
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Trimestre *</label>
           <select class="form-control form-select" id="id_periode">
-            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
+            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" data-annee="<?=$p['id_annee']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
           </select>
         </div>
         <div class="col" style="min-width:160px;">
@@ -169,7 +169,7 @@
     </div>
     <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Note max.</label><input type="number" class="form-control" id="evalSur" step="0.1" value="20"></div>
     <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Période</label>
-      <select class="form-control form-select" id="evalPeriode"><?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['est_en_cours']?'selected':''?>><?=$p['libelle']?></option><?php endforeach; ?></select>
+      <select class="form-control form-select" id="evalPeriode"><?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" data-annee="<?=$p['id_annee']?>" <?=$p['est_en_cours']?'selected':''?>><?=$p['libelle']?></option><?php endforeach; ?></select>
     </div>
     <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date</label><input type="date" class="form-control" id="evalDate" value="<?=date('Y-m-d')?>"></div>
   </div>
@@ -303,7 +303,7 @@ async function loadGrilleNotes(){
   if(typeof aL!=='undefined'&&aL.length){var ay=aL.find(function(x){return x.id_annee==ACTIVE_ANNEE_ID});if(ay)anneeLabel=ay.libelle}
   if(typeof pL!=='undefined'&&pL.length){var pp=pL.find(function(x){return x.id_periode==ACTIVE_PERIODE_ID});if(pp)periodeLabel=pp.libelle}
   document.getElementById('grilleSubtitle').textContent='Chargement... '+(anneeLabel?'('+anneeLabel+(periodeLabel?' | '+periodeLabel:'')+')':'');
-  const r=await fetch(API.base_url+'api/notes/grille/'+gCId+'/'+gMid+'?periode='+ACTIVE_PERIODE_ID).then(r=>r.json());
+  const r=await fetch(API.base_url+'api/notes/grille/'+gCId+'/'+gMid+'?periode='+ACTIVE_PERIODE_ID+'&annee='+ACTIVE_ANNEE_ID).then(r=>r.json());
   if(!r.success){Swal.fire({icon:'error',text:r.message});return}
   gData=r.data;
   let head='<tr><th class="sticky-left col-no">N°</th><th class="sticky-left col-matricule">Matricule</th><th class="sticky-left col-nom">Nom & Prénom</th>';
@@ -443,10 +443,10 @@ async function saveGrilleNotes(){
   if(!notes.length){Swal.fire({icon:'warning',text:'Aucune note'});return}
   if(!(await Swal.fire({title:'Enregistrer?',text:notes.length+' notes',icon:'question',showCancelButton:true,confirmButtonText:'Oui'})).isConfirmed)return;
   Swal.fire({title:'Enregistrement...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
-  let r=await fetch(API.base_url+'api/notes/batch',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({notes:notes})}).then(r=>r.json());
+  let r=await fetch(API.base_url+'api/notes/batch',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({notes:notes,csrf_test_name:typeof CSRF_TOKEN!=='undefined'?CSRF_TOKEN:''})}).then(r=>r.json());
   Swal.close();r.success?Toast.fire({icon:'success',title:notes.length+' notes enregistrées'}):Swal.fire({icon:'error',text:r.message});
 }
-async function saveObs(inp){if(!inp.dataset.obs||!inp.value.trim())return;await fetch(API.base_url+'api/notes/create',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({id_etudiant:inp.dataset.obs,note:0,appreciation:inp.value.trim()})}).then(r=>r.json())}
+async function saveObs(inp){if(!inp.dataset.obs||!inp.value.trim())return;await fetch(API.base_url+'api/notes/create',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({id_etudiant:inp.dataset.obs,note:0,appreciation:inp.value.trim(),csrf_test_name:typeof CSRF_TOKEN!=='undefined'?CSRF_TOKEN:''})}).then(r=>r.json())}
 
 /* ==== ADD EVAL ==== */
 function showAddEval(){document.getElementById('addEvalRow').style.display='flex';document.getElementById('evalCoursBadge').textContent=gMName;document.getElementById('addEvalLibelle').focus()}
@@ -465,7 +465,24 @@ function backToClasses(){
   if(filtresCard)filtresCard.style.display='';
 }
 
+function filterPeriodeSelect(selectEl, anneeId) {
+  if (!selectEl) return;
+  let ok = false;
+  Array.from(selectEl.options).forEach(function(opt) {
+    if (!opt.value) return;
+    const visible = opt.dataset.annee === anneeId;
+    opt.style.display = visible ? '' : 'none';
+    if (visible && opt.selected) ok = true;
+  });
+  if (!ok) selectEl.value = '';
+}
+
+document.getElementById('id_annee').addEventListener('change', function() {
+  filterPeriodeSelect(document.getElementById('id_periode'), this.value);
+});
+
 function showEvalModal(classeId,matiereNom){
+  filterPeriodeSelect(document.getElementById('evalPeriode'), ACTIVE_ANNEE_ID);
   var c=cList.find(function(x){return x.id_classe==classeId});
   document.getElementById('evalClasse').value=c?c.libelle:'';
   document.getElementById('evalMatiere').value=matiereNom;

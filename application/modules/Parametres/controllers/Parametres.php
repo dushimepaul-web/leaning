@@ -24,10 +24,27 @@ class Parametres extends MY_Controller {
         if (empty($data) || !is_array($data)) {
             $this->json_error('Données invalides'); return;
         }
+        $allowed = [
+            'adresse_ecole', 'annee_active',
+            'duree_cours', 'duree_pause', 'duree_vigie', 'heure_debut_journee', 'nb_creneaux_jour',
+            'devise', 'echelle_notes', 'email_ecole', 'email_protocol', 'email_sendmail_path', 'email_smtp_crypto',
+            'email_smtp_host', 'email_smtp_pass', 'email_smtp_port', 'email_smtp_user', 'favicon_ecole', 'logo_ecole',
+            'mention_assez_bien', 'mention_assez_bien_libelle', 'mention_bien', 'mention_bien_libelle',
+            'mention_excellent', 'mention_excellent_libelle', 'mention_insuffisant', 'mention_insuffisant_libelle',
+            'mention_passable', 'mention_passable_libelle', 'mention_tres_bien', 'mention_tres_bien_libelle',
+            'nom_ecole', 'periode_active', 'points_conduite_defaut',
+            'telephone_ecole', 'login_img',
+            // Paramètres de notation dynamique
+            'ressources_active', 'competences_active',
+            'seuil_moyenne', 'seuil_matiere', 'max_repechage',
+            'facteur_points_heure', 'pourcentage_ressources_examen', 'pourcentage_competences_examen'
+        ];
         foreach ($data as $key => $value) {
-            $this->Model->setValueStore($key, $value);
+            if (in_array($key, $allowed, true)) {
+                if ($key === 'email_smtp_pass' && $value === '') continue;
+                $this->Model->setValueStore($key, $value);
+            }
         }
-        // Handle logo separately (file upload)
         $this->json_success(null, 'Paramètres mis à jour');
     }
 

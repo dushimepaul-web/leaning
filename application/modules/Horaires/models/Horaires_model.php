@@ -99,7 +99,17 @@ class Horaires_model extends Model
 
             // La pause intervient exactement après la moitié des cours définis
             if ($i == $milieu && $i < $nb_creneaux) {
+                $pause_start = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
                 $current_minutes += $duree_pause;
+                $pause_end = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
+                $creneaux[] = [
+                    'id_creneau' => 'pause' . $i,
+                    'libelle' => 'PAUSE / RÉCRÉATION',
+                    'heure_debut' => $pause_start,
+                    'heure_fin' => $pause_end,
+                    'type_creneau' => 'pause',
+                    'ordre' => $i + 0.5
+                ];
             }
         }
         return $creneaux;

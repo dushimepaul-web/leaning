@@ -140,7 +140,8 @@ async function regenerer() {
   try {
     var r = await fetch(API.base_url + 'api/horaires/generer', {
       method: 'POST',
-      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csrf_test_name: typeof CSRF_TOKEN !== 'undefined' ? CSRF_TOKEN : '' })
     }).then(function(res) { return res.json(); });
 
     if (r.success) {

@@ -2,6 +2,24 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Inscriptions extends MY_Controller {
+    private function _valider_relations(&$data) {
+        if (!empty($data['id_etudiant'])) {
+            $et = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+            if (!$et) { $this->json_error('Étudiant introuvable'); return false; }
+        }
+        if (!empty($data['id_classe'])) {
+            $section_finale = null;
+            $err = $this->Model->valider_section_classe($data['id_classe'], $data['id_section'] ?? null, $section_finale);
+            if ($err) { $this->json_error($err); return false; }
+            if ($section_finale !== null) $data['id_section'] = $section_finale;
+        }
+        if (!empty($data['id_annee'])) {
+            $an = $this->Model->readOne('annees_scolaires', ['id_annee' => $data['id_annee']]);
+            if (!$an) { $this->json_error('Année scolaire introuvable'); return false; }
+        }
+        return true;
+    }
+
     private function _exists($id_etudiant, $id_annee, $exclude_id = null) {
         $this->db->where('id_etudiant', $id_etudiant);
         $this->db->where('id_annee', $id_annee);
@@ -11,7 +29,7 @@ class Inscriptions extends MY_Controller {
         $r = $q !== false ? $q->row_array() : null;
         return (bool) $r;
     }
-    public function __construct() { parent::__construct(); $this->not_logged_in(); }
+    public function __construct() { parent::__construct(); }
 
     public function index() {
         $data['title'] = 'Inscriptions';
@@ -47,14 +65,17 @@ class Inscriptions extends MY_Controller {
             $this->json_error('Étudiant et classe obligatoires'); return;
         }
         $data['id_annee'] = $data['id_annee'] ?? $this->id_annee_active;
+        if (!$this->_valider_relations($data)) return;
         if ($this->_exists($data['id_etudiant'], $data['id_annee'])) {
             $this->json_error('Cet étudiant est déjà inscrit pour cette année scolaire'); return;
         }
         $data['date_inscription'] = $data['date_inscription'] ?? date('Y-m-d');
-        $id = $this->Model->createLastId('inscriptions', $data);
+        $allowed = ['id_etudiant', 'id_classe', 'id_section', 'id_annee', 'date_inscription'];
+        $clean = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('inscriptions', $clean);
         if ($id) {
             $this->_ensure_conduite_points($data['id_etudiant'], $data['id_annee']);
-            $this->_recalculer_numero_ordre();
+            $this->Model->recalculer_numero_ordre($this->id_annee_active);
             $this->json_success(['id_inscription' => $id], 'Inscription créée');
         } else $this->json_error('Erreur');
     }
@@ -65,12 +86,16 @@ class Inscriptions extends MY_Controller {
         if (!$insc) { $this->json_error('Inscription non trouvée', 404); return; }
         $id_annee = $data['id_annee'] ?? $insc['id_annee'];
         $id_etudiant = $data['id_etudiant'] ?? $insc['id_etudiant'];
+        if (!$this->_valider_relations($data)) return;
         if ($this->_exists($id_etudiant, $id_annee, $id)) {
             $this->json_error('Cet étudiant est déjà inscrit pour cette année scolaire'); return;
         }
-        if ($this->Model->update('inscriptions', ['uuid' => $id], $data)) {
+        $allowed = ['id_etudiant', 'id_classe', 'id_section', 'id_annee', 'date_inscription'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('inscriptions', ['uuid' => $id], $update)) {
             $this->_ensure_conduite_points($id_etudiant, $id_annee);
-            $this->_recalculer_numero_ordre();
+            $this->Model->recalculer_numero_ordre($this->id_annee_active);
             $this->json_success(null, 'Inscription mise à jour');
         } else $this->json_error('Erreur de mise à jour');
     }
@@ -80,31 +105,8 @@ class Inscriptions extends MY_Controller {
         if (!$insc) { $this->json_error('Inscription non trouvée', 404); return; }
         if ($this->Model->update('inscriptions', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')])) {
             $this->_remove_conduite_points($insc['id_etudiant'], $insc['id_annee']);
-            $this->_recalculer_numero_ordre();
+            $this->Model->recalculer_numero_ordre($this->id_annee_active);
             $this->json_success(null, 'Inscription supprimée');
         } else $this->json_error('Erreur');
-    }
-
-    private function _recalculer_numero_ordre() {
-        $this->db->select('i.id_classe, e.id_etudiant, e.fullname');
-        $this->db->from('inscriptions i');
-        $this->db->join('etudiants e', 'e.id_etudiant = i.id_etudiant');
-        $this->db->where('i.deleted_at', null);
-        $this->db->where('e.deleted_at', null);
-        $this->db->where('i.id_annee', $this->id_annee_active);
-        $this->db->order_by('i.id_classe ASC, e.fullname ASC');
-        $q_r = $this->db->get();
-        $rows = $q_r !== false ? $q_r->result_array() : array();
-        $current_classe = null;
-        $seq = 0;
-        foreach ($rows as $r) {
-            if ($r['id_classe'] !== $current_classe) {
-                $current_classe = $r['id_classe'];
-                $seq = 1;
-            }
-            $this->db->where('id_etudiant', $r['id_etudiant']);
-            $this->db->update('etudiants', ['numero_ordre' => $seq]);
-            $seq++;
-        }
     }
 }

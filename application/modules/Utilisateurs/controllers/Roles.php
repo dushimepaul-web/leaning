@@ -20,14 +20,22 @@ class Roles extends MY_Controller {
         if (empty($data['code']) || empty($data['libelle'])) {
             $this->json_error('Code et libellé obligatoires'); return;
         }
-        $id = $this->Model->createLastId('roles', $data);
+        $allowed = ['code', 'libelle', 'hierarchie'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('roles', $insert);
         if ($id) $this->json_success(['id_role' => $id], 'Rôle créé');
         else $this->json_error('Erreur');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('roles', ['uuid' => $id], $data))
+        if (!$this->Model->readOne('roles', ['uuid' => $id])) {
+            $this->json_error('Rôle non trouvé', 404); return;
+        }
+        $allowed = ['code', 'libelle', 'hierarchie'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('roles', ['uuid' => $id], $update))
             $this->json_success(null, 'Rôle mis à jour');
         else $this->json_error('Erreur');
     }
@@ -53,9 +61,12 @@ class Roles extends MY_Controller {
         $input = $this->get_json_input();
         $items = $input['permissions'] ?? [];
         if (empty($items)) { $this->json_error('Aucune permission fournie'); return; }
+        $permFields = ['can_view', 'can_add', 'can_edit', 'can_delete', 'can_export', 'can_imprimer'];
         $grouped = [];
         foreach ($items as $item) {
             $menuId = (int)$item['id_menu'];
+            if (!$this->Model->readOne('menus', ['id_menu' => $menuId])) continue;
+            if (!in_array($item['field'], $permFields, true)) continue;
             if (!isset($grouped[$menuId])) $grouped[$menuId] = [];
             $grouped[$menuId][$item['field']] = (int)$item['value'];
         }
@@ -88,8 +99,13 @@ class Roles extends MY_Controller {
         if (empty($permissions)) {
             $this->json_error('Aucune permission fournie'); return;
         }
+        $permFields = ['can_view', 'can_add', 'can_edit', 'can_delete', 'can_export', 'can_imprimer'];
         $this->db->trans_start();
         foreach ($permissions as $menuId => $perms) {
+            if (!$this->Model->readOne('menus', ['id_menu' => (int)$menuId])) continue;
+            $perms = array_intersect_key((array)$perms, array_flip($permFields));
+            $perms = array_map('intval', $perms);
+            if (empty($perms)) continue;
             $existing = $this->Model->readOne('roles_menus', ['id_role' => $roleId, 'id_menu' => $menuId]);
             if ($existing) {
                 $this->Model->update('roles_menus', ['id_role_menu' => $existing['id_role_menu']], $perms);

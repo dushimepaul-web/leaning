@@ -174,12 +174,11 @@ async function loadCategories() {
   try {
     const r = await fetch(BASE_URL + 'api/produits/categories').then(r => r.json());
     if (r.success && r.data) {
+      const prev = document.getElementById('id_categorie').value;
       let opts = '<option value="">Sélectionner</option>';
       r.data.forEach(c => { opts += `<option value="${c.id_categorie}">${c.libelle} (${c.code})</option>`; });
       document.getElementById('id_categorie').innerHTML = opts;
-      let filterOpts = '<option value="">Toutes les catégories</option>';
-      r.data.forEach(c => { filterOpts += `<option value="${c.id_categorie}">${c.libelle}</option>`; });
-      document.getElementById('filterCategory').innerHTML = filterOpts;
+      document.getElementById('id_categorie').value = prev;
     }
   } catch(e) {}
 }
@@ -244,7 +243,8 @@ function openEditSidebar(data) {
   document.getElementById('id_categorie').value = data.id_categorie || '';
   document.getElementById('prix_unitaire').value = data.prix_unitaire || '';
   document.getElementById('prix_achat').value = data.prix_achat || '';
-  document.getElementById('stock_mini').value = data.stock_mini || 5;
+  document.getElementById('stock_initial').value = (data.stock_actuel !== undefined && data.stock_actuel !== null && data.stock_actuel !== '') ? data.stock_actuel : 0;
+  document.getElementById('stock_mini').value = (data.stock_mini !== undefined && data.stock_mini !== null && data.stock_mini !== '') ? data.stock_mini : 5;
   document.getElementById('unite').value = data.unite || 'pièce';
   document.getElementById('taille').value = data.taille || '';
   document.getElementById('addSidebar').classList.add('active');
@@ -258,23 +258,24 @@ async function editRecord(id) {
 }
 
 async function saveRecord() {
+  let original = null;
+  if (editingId) {
+    const o = await API.produits.get(editingId);
+    if (o.success) original = o.data;
+  }
   const data = {
     libelle: document.getElementById('libelle').value,
     id_categorie: document.getElementById('id_categorie').value || null,
-    prix_unitaire: document.getElementById('prix_unitaire').value || 0,
-    prix_achat: document.getElementById('prix_achat').value || 0,
-    stock_actuel: document.getElementById('stock_initial').value || 0,
-    stock_mini: document.getElementById('stock_mini').value || 5,
+    prix_unitaire: document.getElementById('prix_unitaire').value || (original ? original.prix_unitaire : 0),
+    prix_achat: document.getElementById('prix_achat').value || (original ? original.prix_achat : 0),
+    stock_actuel: document.getElementById('stock_initial').value || (original ? original.stock_actuel : 0),
+    stock_mini: document.getElementById('stock_mini').value || (original ? original.stock_mini : 5),
     unite: document.getElementById('unite').value || 'pièce',
     taille: document.getElementById('taille').value
   };
   if (!data.libelle) { Swal.fire({ icon: 'warning', title: 'Validation', text: 'Libellé obligatoire' }); return; }
   let r;
   if (editingId) {
-    const original = await API.produits.get(editingId);
-    if (original.success) {
-      data.stock_actuel = document.getElementById('stock_initial').value || original.data.stock_actuel;
-    }
     r = await API.produits.update(editingId, data);
   } else {
     r = await API.produits.create(data);

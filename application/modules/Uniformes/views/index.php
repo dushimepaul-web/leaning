@@ -25,8 +25,8 @@
                 <span><i class="ri-arrow-down-s-line"></i></span>
               </button>
               <ul class="dropdown-menu p-12 border bg-base shadow">
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export PDF',text:'Fonctionnalit� � venir'})"><i class="ri-file-3-line"></i> PDF</button></li>
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export Excel',text:'Fonctionnalit� � venir'})"><i class="ri-file-excel-line"></i> Excel</button></li>
+                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export PDF',text:'Fonctionnalité à venir'})"><i class="ri-file-3-line"></i> PDF</button></li>
+                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export Excel',text:'Fonctionnalité à venir'})"><i class="ri-file-excel-line"></i> Excel</button></li>
                 <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="exportCSV()"><i class="ri-file-excel-line"></i> CSV</button></li>
               </ul>
             </div>
@@ -56,9 +56,9 @@
                   </div>
                   <div>
                     <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Recherche</label>
-                    <input type="text" id="filterSearch" class="form-control" placeholder="Mot-cl�...">
+                    <input type="text" id="filterSearch" class="form-control" placeholder="Mot-clé...">
                   </div>
-                  <div><button type="reset" class="btn btn-danger-200 text-danger-600 w-100" onclick="resetFilters()">R�initialiser</button></div>
+                  <div><button type="reset" class="btn btn-danger-200 text-danger-600 w-100" onclick="resetFilters()">Réinitialiser</button></div>
                   <div><button type="button" class="btn btn-primary-600 w-100" onclick="applyFilters()">Appliquer</button></div>
                 </form>
               </div>
@@ -150,14 +150,18 @@
 <script src="<?= base_url() ?>assets/js/api.js"></script>
 <?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
-(function() {
-  var wait = setInterval(function() {
-    if (typeof jQuery !== 'undefined' && typeof API !== 'undefined' && typeof $.fn.DataTable !== 'undefined') {
-      clearInterval(wait);
-
 function applyFilters() {
+  const table = $('#dataTable').DataTable();
   const searchVal = document.getElementById('filterSearch')?.value || '';
-  $('#dataTable').DataTable().search(searchVal).draw();
+  const statutVal = document.getElementById('filterStatut')?.value || '';
+  $.fn.dataTable.ext.search.push(function(settings, data) {
+    if (!statutVal) return true;
+    const stock = parseFloat(data[4]) || 0;
+    const mini = parseFloat(data[5]) || 0;
+    return statutVal === 'actif' ? stock > mini : stock <= mini;
+  });
+  table.search(searchVal).draw();
+  $.fn.dataTable.ext.search.pop();
 }
 
 function resetFilters() {
@@ -219,8 +223,8 @@ function openEditSidebar(data) {
   document.getElementById('libelle').value = data.libelle || '';
   document.getElementById('taille').value = data.taille || '';
   document.getElementById('prix').value = data.prix || '';
-  document.getElementById('stock_actuel').value = data.stock_actuel || 0;
-  document.getElementById('stock_minimum').value = data.stock_minimum || 5;
+  document.getElementById('stock_actuel').value = (data.stock_actuel !== undefined && data.stock_actuel !== null && data.stock_actuel !== '') ? data.stock_actuel : 0;
+  document.getElementById('stock_minimum').value = (data.stock_minimum !== undefined && data.stock_minimum !== null && data.stock_minimum !== '') ? data.stock_minimum : 5;
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -299,9 +303,5 @@ $(function() {
   $('#mainForm').on('submit', function(e) { e.preventDefault(); saveRecord(); });
   $('#sidebarOverlay').on('click', closeSidebar);
 });
-
-    }
-  }, 50);
-})();
 </script>
 <?php include VIEWPATH.'includes/Footer.php'; ?>

@@ -117,10 +117,12 @@ $route['api/notes/grille/(:any)/(:any)'] = 'Notes/Notes/api_grille_notes/$1/$2';
 $route['api/notes/matieres_by_classe/(:any)'] = 'Notes/Notes/api_matieres_by_classe/$1';
 $route['api/notes/classes_summary'] = 'Notes/Notes/api_classes_summary';
 $route['api/notes/(:any)/delete'] = 'Notes/Notes/api_delete/$1';
+$route['api/notes/(:any)'] = 'Notes/Notes/api_get/$1';
 $route['api/evaluations'] = 'Evaluations/Evaluations/api_list';
 $route['api/evaluations/create'] = 'Evaluations/Evaluations/api_create';
 $route['api/evaluations/(:any)/update'] = 'Evaluations/Evaluations/api_update/$1';
 $route['api/evaluations/(:any)/delete'] = 'Evaluations/Evaluations/api_delete/$1';
+$route['api/evaluations/(:any)'] = 'Evaluations/Evaluations/api_get/$1';
 
 // API - Bulletins
 $route['api/bulletins'] = 'Notes/Bulletins/api_list';
@@ -131,6 +133,7 @@ $route['api/bulletins/complet/(:any)'] = 'Notes/Bulletins/api_bulletin_complet/$
 $route['api/bulletins/(:any)/detail'] = 'Notes/Bulletins/api_detail/$1';
 $route['api/bulletins/(:any)/update'] = 'Notes/Bulletins/api_update/$1';
 $route['api/bulletins/(:any)/delete'] = 'Notes/Bulletins/api_delete/$1';
+$route['api/bulletins/(:any)'] = 'Notes/Bulletins/api_get/$1';
 
 // Fiches de points
 $route['Fiches'] = 'Notes/Fiches/index';
@@ -165,6 +168,7 @@ $route['api/horaires/(:any)/update'] = 'Horaires/Horaires/api_update/$1';
 $route['api/horaires/(:any)/delete'] = 'Horaires/Horaires/api_delete/$1';
 $route['api/horaires/matieres/(:any)'] = 'Horaires/Horaires/api_matieres_by_classe/$1';
 $route['api/horaires/enseignant/(:any)/(:any)'] = 'Horaires/Horaires/api_enseignant_by_classe_matiere/$1/$2';
+$route['api/horaires/(:any)'] = 'Horaires/Horaires/api_get/$1';
 
 
 
@@ -239,20 +243,6 @@ $route['api/commandes/(:any)'] = 'Commandes/Commandes/api_get/$1';
 $route['api/commandes/(:any)/update'] = 'Commandes/Commandes/api_update/$1';
 $route['api/commandes/(:any)/delete'] = 'Commandes/Commandes/api_delete/$1';
 
-// API - Assurances
-$route['api/assurances'] = 'Assurances/Assurances/api_list';
-$route['api/assurances/create'] = 'Assurances/Assurances/api_create';
-$route['api/assurances/(:any)'] = 'Assurances/Assurances/api_get/$1';
-$route['api/assurances/(:any)/update'] = 'Assurances/Assurances/api_update/$1';
-$route['api/assurances/(:any)/delete'] = 'Assurances/Assurances/api_delete/$1';
-
-// API - Toilettes
-$route['api/toilettes'] = 'Toilettes/Toilettes/api_list';
-$route['api/toilettes/create'] = 'Toilettes/Toilettes/api_create';
-$route['api/toilettes/(:any)'] = 'Toilettes/Toilettes/api_get/$1';
-$route['api/toilettes/(:any)/update'] = 'Toilettes/Toilettes/api_update/$1';
-$route['api/toilettes/(:any)/delete'] = 'Toilettes/Toilettes/api_delete/$1';
-
 // API - Librairie
 $route['api/librairie'] = 'Librairie/Librairie/api_list';
 $route['api/librairie/create'] = 'Librairie/Librairie/api_create';
@@ -296,11 +286,12 @@ $route['api/matieres_classes/(:any)/delete'] = 'Enseignants/Programmes/api_delet
 // API - Annees
 $route['api/annees'] = 'Classes/Annees/api_list';
 $route['api/annees/create'] = 'Classes/Annees/api_create';
+$route['api/annees/apercu-cloture'] = 'Classes/Annees/api_apercu_cloture';
+$route['api/annees/cloturer'] = 'Classes/Annees/api_cloturer';
 $route['api/annees/(:any)'] = 'Classes/Annees/api_get/$1';
 $route['api/annees/(:any)/update'] = 'Classes/Annees/api_update/$1';
 $route['api/annees/(:any)/delete'] = 'Classes/Annees/api_delete/$1';
 $route['api/annees/(:any)/activate'] = 'Classes/Annees/api_activate/$1';
-$route['api/annees/(:any)/deactivate'] = 'Classes/Annees/api_deactivate/$1';
 $route['api/annees/(:any)/active'] = 'Classes/Annees/api_set_active/$1';
 
 // Module pages

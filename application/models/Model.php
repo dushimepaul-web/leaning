@@ -3,6 +3,21 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Model extends CI_Model
 {
+    public $id_annee_active = 0;
+
+    public function __construct()
+    {
+        parent::__construct();
+        try {
+            $annee = $this->readOne('annees_scolaires', array('est_en_cours' => 1));
+            if ($annee) {
+                $this->id_annee_active = (int)$annee['id_annee'];
+            }
+        } catch (Throwable $e) {
+            log_message('error', 'Model annee query failed: ' . $e->getMessage());
+        }
+    }
+
     function create($table, $data)
     {
         if (!isset($data['uuid'])) {
@@ -260,5 +275,76 @@ class Model extends CI_Model
         $data['total_inscriptions'] = $this->countWhere('inscriptions', ['deleted_at' => null]);
         $data['total_paiements'] = $this->countWhere('paiements', ['deleted_at' => null]);
         return $data;
+    }
+
+    /**
+     * Recalcule le numero_ordre des étudiants inscrits pour une année.
+     * Ordre alphabétique (fullname) par classe. Une seule SELECT + une seule UPDATE (pas de N+1).
+     */
+    public function recalculer_numero_ordre($id_annee = null)
+    {
+        if (empty($id_annee)) return;
+        $q = $this->db->query(
+            "SELECT i.id_classe, e.id_etudiant
+             FROM inscriptions i
+             JOIN etudiants e ON e.id_etudiant = i.id_etudiant
+             WHERE i.deleted_at IS NULL AND e.deleted_at IS NULL AND i.id_annee = " . (int)$id_annee . "
+             ORDER BY i.id_classe ASC, e.fullname ASC, e.id_etudiant ASC"
+        );
+        if ($q === false || $q->num_rows() === 0) return;
+        $rows = $q->result_array();
+
+        $seq_map = array();
+        $current = null;
+        $seq = 0;
+        foreach ($rows as $r) {
+            if ($r['id_classe'] !== $current) {
+                $current = $r['id_classe'];
+                $seq = 1;
+            }
+            $seq_map[(int)$r['id_etudiant']] = $seq;
+            $seq++;
+        }
+
+        $ids = array_map('intval', array_keys($seq_map));
+        $cases = array();
+        foreach ($seq_map as $id_etu => $num) {
+            $cases[] = 'WHEN ' . (int)$id_etu . ' THEN ' . (int)$num;
+        }
+        $this->db->query(
+            'UPDATE etudiants SET numero_ordre = CASE id_etudiant ' . implode(' ', $cases) . ' END
+             WHERE id_etudiant IN (' . implode(',', $ids) . ')'
+        );
+    }
+
+    /**
+     * Valide qu'une classe existe et appartient bien à la section fournie.
+     * Renseigne $section_finale (section réelle de la classe).
+     * Retourne null si OK, sinon un message d'erreur.
+     */
+    public function valider_section_classe($id_classe, $id_section, &$section_finale = null)
+    {
+        if (empty($id_classe)) {
+            return 'Classe introuvable';
+        }
+        $classe = $this->readOne('classes', array('id_classe' => $id_classe, 'deleted_at' => null));
+        if (!$classe) {
+            return 'Classe introuvable';
+        }
+        if (!empty($id_section)) {
+            $section = $this->readOne('sections', array('id_section' => $id_section, 'deleted_at' => null));
+            if (!$section) {
+                return 'Section introuvable';
+            }
+        }
+        if (!empty($classe['id_section'])) {
+            if (!empty($id_section) && (int)$id_section !== (int)$classe['id_section']) {
+                return 'La section choisie ne correspond pas à la classe';
+            }
+            $section_finale = $classe['id_section'];
+        } else {
+            $section_finale = $id_section;
+        }
+        return null;
     }
 }

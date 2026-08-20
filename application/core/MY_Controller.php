@@ -52,8 +52,6 @@ class MY_Controller extends MX_Controller
         'Stock_Categories' => 'stock',
         'Stock_Mouvements' => 'stock',
         'Librairie' => 'produits_livres',
-        'Assurances' => 'scolarite_assurance',
-        'Toilettes' => 'scolarite_toilettes',
         'Commandes' => 'produits',
         'Conduite' => 'bulletins',
         'Administration' => 'parametres',
@@ -178,19 +176,32 @@ class MY_Controller extends MX_Controller
         }
 
         $menu_code = isset($this->module_menu_map[$class]) ? $this->module_menu_map[$class] : null;
+
+        // Opérations sensibles réservées à l'administrateur
+        if ($method === 'test_email' || $method === 'send_test_email' || strpos($method, 'api_test_email') === 0) {
+            $this->json_response(array('success' => false, 'message' => 'Accès refusé : réservé à l\'administrateur.'), 403);
+            return;
+        }
+
+        $is_api = ($this->uri->segment(1) === 'api' || strpos($method, 'api_') === 0);
+
+        // Module sans menu associé : lecture autorisée, écriture réservée à l'administrateur
         if ($menu_code === null) {
-            return; // module sans menu associé : autorisé pour tout connecté
+            if ($is_api && $this->_is_write_method($method)) {
+                $this->json_response(array('success' => false, 'message' => 'Accès refusé : réservé à l\'administrateur.'), 403);
+                return;
+            }
+            return; // lecture autorisée pour tout utilisateur connecté
         }
 
         // Permission requise selon l'action
         $required = 'can_view';
-        if ($this->uri->segment(1) === 'api' || strpos($method, 'api_') === 0) {
-            if (strpos($method, 'create') !== false || strpos($method, 'initialiser') !== false
-                || strpos($method, 'import') !== false || strpos($method, 'batch') !== false) {
-                $required = 'can_add';
-            } elseif (strpos($method, 'delete') !== false || strpos($method, 'deactivate') !== false
+        if ($is_api) {
+            if (strpos($method, 'delete') !== false || strpos($method, 'deactivate') !== false
                 || strpos($method, 'remove') !== false) {
                 $required = 'can_delete';
+            } elseif ($this->_is_write_method($method)) {
+                $required = 'can_add';
             } elseif (strpos($method, 'update') !== false || strpos($method, 'activate') !== false
                 || strpos($method, 'set_active') !== false || strpos($method, 'generer') !== false) {
                 $required = 'can_edit';
@@ -205,6 +216,18 @@ class MY_Controller extends MX_Controller
             $this->session->set_flashdata('sms', '<div id="message" class="alert alert-danger text-center"><strong>Accès refusé!</strong> Vous n\'avez pas la permission d\'accéder à cette page.</div>');
             redirect(base_url('Dashboard'));
         }
+    }
+
+    private function _is_write_method($method)
+    {
+        $keywords = array('create', 'initialiser', 'import', 'batch', 'upload', 'clotur',
+            'approvisionn', 'payer', 'vendre', 'depens', 'transferer', 'valider',
+            'archiver', 'restaur', 'sauvegarder', 'submit', 'marquer', 'activer',
+            'deactiver', 'toggle', 'enregistrer');
+        foreach ($keywords as $kw) {
+            if (stripos($method, $kw) !== false) return true;
+        }
+        return false;
     }
 
     function _hmvc_fixes()

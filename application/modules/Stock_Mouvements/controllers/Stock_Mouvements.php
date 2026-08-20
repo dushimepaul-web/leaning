@@ -32,7 +32,10 @@ class Stock_Mouvements extends MY_Controller {
         if (!$produit) { $this->json_error('Produit non trouvé', 404); return; }
 
         $qty = intval($data['quantite']);
-        $prix = floatval($data['prix_unitaire'] ?? 0);
+        $prix = floatval($produit['prix_unitaire'] ?? 0);
+        if (!empty($data['id_etudiant']) && !$this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null])) {
+            $this->json_error('Étudiant introuvable'); return;
+        }
 
         if ($data['type'] === 'sortie' && intval($produit['stock_actuel']) < $qty) {
             $this->json_error('Stock insuffisant pour "' . $produit['libelle'] . '" (stock: ' . $produit['stock_actuel'] . ')');
@@ -72,6 +75,9 @@ class Stock_Mouvements extends MY_Controller {
         if (empty($data['produits']) || !is_array($data['produits'])) { $this->json_error('Aucun produit sélectionné'); return; }
 
         $id_etudiant = intval($data['id_etudiant']);
+        if (!$this->Model->readOne('etudiants', ['id_etudiant' => $id_etudiant, 'deleted_at' => null])) {
+            $this->json_error('Étudiant introuvable'); return;
+        }
         $id_user = $this->session->userdata('id_utilisateur');
 
         foreach ($data['produits'] as $item) {
@@ -95,7 +101,7 @@ class Stock_Mouvements extends MY_Controller {
             if (!$produit) continue;
 
             $qty = intval($item['quantite']);
-            $prix = floatval($item['prix_unitaire'] ?? $produit['prix_unitaire'] ?? 0);
+            $prix = floatval($produit['prix_unitaire'] ?? 0);
             $nouveau_stock = intval($produit['stock_actuel']) - $qty;
 
             $this->Model->create('mouvements_stock', [

@@ -14,6 +14,9 @@ class Periodes extends MY_Controller {
         $this->db->select('p.*, a.libelle as annee_libelle');
         $this->db->from('periodes p');
         $this->db->join('annees_scolaires a', 'p.id_annee = a.id_annee', 'left');
+        if ($this->input->get('deleted') != '1') {
+            $this->db->where('p.deleted_at', null);
+        }
         $this->db->order_by('p.date_debut', 'DESC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());
@@ -29,6 +32,8 @@ class Periodes extends MY_Controller {
         $data = $this->get_json_input();
         if (empty($data['libelle'])) { $this->json_error('Libellé obligatoire'); return; }
         if (empty($data['id_annee'])) { $this->json_error('Année scolaire obligatoire'); return; }
+        $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $data['id_annee'], 'deleted_at' => null]);
+        if (!$annee) { $this->json_error('Année scolaire introuvable'); return; }
         $allowed = ['libelle', 'id_annee', 'date_debut', 'date_fin', 'est_en_cours'];
         $insert = array_intersect_key($data, array_flip($allowed));
 
@@ -46,26 +51,60 @@ class Periodes extends MY_Controller {
             return;
         }
 
+        $this->db->trans_begin();
+        if (!empty($insert['est_en_cours'])) {
+            $this->db->where('deleted_at', null)->update('periodes', ['est_en_cours' => 0]);
+        }
         $id = $this->Model->createLastId('periodes', $insert);
-        if ($id) $this->json_success(['id_periode' => $id], 'Période créée');
-        else $this->json_error('Erreur lors de la création');
+        if ($id && $this->db->trans_status()) {
+            $this->db->trans_commit();
+            $this->json_success(['id_periode' => $id], 'Période créée');
+        } else {
+            $this->db->trans_rollback();
+            $this->json_error('Erreur lors de la création');
+        }
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if (!$this->Model->readOne('periodes', ['uuid' => $id])) {
+        $existing = $this->Model->readOne('periodes', ['uuid' => $id]);
+        if (!$existing) {
             $this->json_error('Période non trouvée', 404); return;
         }
         $allowed = ['libelle', 'id_annee', 'date_debut', 'date_fin', 'est_en_cours'];
         $update = array_intersect_key($data, array_flip($allowed));
-        if ($this->Model->update('periodes', ['uuid' => $id], $update))
+        if (isset($update['id_annee'])) {
+            $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $update['id_annee'], 'deleted_at' => null]);
+            if (!$annee) { $this->json_error('Année scolaire introuvable'); return; }
+        }
+        $this->db->trans_begin();
+        if (!empty($update['est_en_cours']) && $existing['est_en_cours'] != 1) {
+            $this->db->where('deleted_at', null)->update('periodes', ['est_en_cours' => 0]);
+        }
+        if ($this->Model->update('periodes', ['uuid' => $id], $update) && $this->db->trans_status()) {
+            $this->db->trans_commit();
             $this->json_success(null, 'Période mise à jour');
-        else $this->json_error('Erreur lors de la mise à jour');
+        } else {
+            $this->db->trans_rollback();
+            $this->json_error('Erreur lors de la mise à jour');
+        }
     }
 
     public function api_delete($id) {
-        if (!$this->Model->readOne('periodes', ['uuid' => $id])) {
+        $periode = $this->Model->readOne('periodes', ['uuid' => $id]);
+        if (!$periode) {
             $this->json_error('Période non trouvée', 404); return;
+        }
+        $children = [
+            'evaluations' => 'évaluations',
+            'bulletins' => 'bulletins',
+            'points_conduite' => 'points de conduite'
+        ];
+        foreach ($children as $table => $libelle) {
+            $count = $this->db->where('id_periode', $periode['id_periode'])->where('deleted_at', null)->count_all_results($table);
+            if ($count > 0) {
+                $this->json_error('Suppression impossible : ' . $count . ' ' . $libelle . ' lié(s) à cette période', 409); return;
+            }
         }
         if ($this->Model->update('periodes', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')]))
             $this->json_success(null, 'Période supprimée');

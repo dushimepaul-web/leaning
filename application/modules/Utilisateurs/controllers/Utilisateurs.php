@@ -55,11 +55,19 @@ class Utilisateurs extends MY_Controller {
             $this->json_error('Cet email est déjà utilisé');
             return;
         }
-        $data['mot_de_passe'] = password_hash($data['mot_de_passe'], PASSWORD_DEFAULT);
-        $data['actif'] = isset($data['actif']) ? $data['actif'] : 1;
-        $id = $this->Model->createLastId('utilisateurs', $data);
+        $allowed = ['nom_complet', 'email', 'mot_de_passe', 'id_role', 'actif'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        if (empty($insert['id_role'])) { $this->json_error('Rôle requis'); return; }
+        if (!$this->Model->readOne('roles', ['id_role' => $insert['id_role']])) { $this->json_error('Rôle introuvable'); return; }
+        $insert['mot_de_passe'] = password_hash($data['mot_de_passe'], PASSWORD_DEFAULT);
+        if (array_key_exists('actif', $insert) && $insert['actif'] !== null && $insert['actif'] !== '') {
+            $insert['actif'] = $insert['actif'] ? 1 : 0;
+        } else {
+            $insert['actif'] = 1;
+        }
+        $id = $this->Model->createLastId('utilisateurs', $insert);
         if ($id) {
-            $this->Model->Set_History($this->session->userdata('id_utilisateur'), 'create', 'Création utilisateur #'.$id, 'utilisateurs', $id, null, $data);
+            $this->Model->Set_History($this->session->userdata('id_utilisateur'), 'create', 'Création utilisateur #'.$id, 'utilisateurs', $id, null, $insert);
             $this->json_success(['id_utilisateur' => $id], 'Utilisateur créé avec succès');
         } else {
             $this->json_error('Erreur lors de la création');
@@ -90,8 +98,17 @@ class Utilisateurs extends MY_Controller {
         } else {
             unset($data['mot_de_passe']);
         }
-        if ($this->Model->update('utilisateurs', ['uuid' => $id], $data)) {
-            $this->Model->Set_History($this->session->userdata('id_utilisateur'), 'update', 'Modification utilisateur #'.$id, 'utilisateurs', $id, $user, $data);
+        $allowed = ['nom_complet', 'email', 'mot_de_passe', 'id_role', 'actif'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (isset($update['id_role']) && !$this->Model->readOne('roles', ['id_role' => $update['id_role']])) {
+            $this->json_error('Rôle introuvable'); return;
+        }
+        if (array_key_exists('actif', $update)) {
+            $update['actif'] = ($update['actif'] !== null && $update['actif'] !== '' && $update['actif']) ? 1 : 0;
+        }
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('utilisateurs', ['uuid' => $id], $update)) {
+            $this->Model->Set_History($this->session->userdata('id_utilisateur'), 'update', 'Modification utilisateur #'.$id, 'utilisateurs', $id, $user, $update);
             $this->json_success(null, 'Utilisateur mis à jour');
         } else {
             $this->json_error('Erreur de mise à jour');

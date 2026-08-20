@@ -111,7 +111,7 @@
                               <i class="ri-time-line"></i>
                             </span>
                             <div class="text-primary-light text-sm d-flex">
-                              <span class="flex-grow-1"><?= date('h:i A', strtotime($h['heure_debut'])) ?> - <?= date('h:i A', strtotime($h['heure_fin'])) ?></span>
+                              <span class="flex-grow-1"><?= !empty($h['heure_debut']) && !empty($h['heure_fin']) ? date('h:i A', strtotime($h['heure_debut'])) . ' - ' . date('h:i A', strtotime($h['heure_fin'])) : '-' ?></span>
                             </div>
                           </div>
                         </div>

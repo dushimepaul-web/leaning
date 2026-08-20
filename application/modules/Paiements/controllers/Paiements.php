@@ -15,6 +15,16 @@ class Paiements extends MY_Controller {
         $q_e = $this->db->get();
         $data['etudiants'] = $q_e !== false ? $q_e->result_array() : array();
         $data['types_frais'] = $this->Model->read('types_frais', ['deleted_at' => null]);
+        $this->db->select('f.*, tf.libelle as type_libelle, c.libelle as classe_libelle, a.libelle as annee_libelle');
+        $this->db->from('frais f');
+        $this->db->join('types_frais tf', 'f.id_type_frais = tf.id_type_frais', 'left');
+        $this->db->join('classes c', 'f.id_classe = c.id_classe', 'left');
+        $this->db->join('annees_scolaires a', 'f.id_annee = a.id_annee', 'left');
+        $this->db->where('f.deleted_at', null);
+        $this->db->where('f.id_annee', $this->id_annee_active);
+        $this->db->order_by('f.id_frais', 'DESC');
+        $q_f = $this->db->get();
+        $data['frais'] = $q_f !== false ? $q_f->result_array() : array();
         $this->load->view('index', $data);
     }
 
@@ -46,40 +56,82 @@ class Paiements extends MY_Controller {
 
     public function api_create() {
         $data = $this->get_json_input();
-        if (empty($data['id_etudiant']) || empty($data['montant'])) {
+        if (empty($data['id_etudiant']) || !isset($data['montant']) || $data['montant'] === '') {
             $this->json_error('Étudiant et montant obligatoires'); return;
         }
+        $montant = floatval($data['montant']);
+        if ($montant <= 0) { $this->json_error('Montant invalide'); return; }
+        $mode_paiement = $data['mode_paiement'] ?? 'especes';
+        if (!in_array($mode_paiement, ['especes', 'banque', 'mobile_money', 'cheque'], true)) {
+            $this->json_error('Mode de paiement invalide'); return;
+        }
+        $statut = $data['statut'] ?? 'partiel';
+        if (!in_array($statut, ['partiel', 'solde', 'annule'], true)) {
+            $this->json_error('Statut invalide'); return;
+        }
+        if (!empty($data['date_paiement']) && strtotime($data['date_paiement']) === false) {
+            $this->json_error('Date de paiement invalide'); return;
+        }
+
+        $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+        if (!$etudiant) { $this->json_error('Étudiant introuvable'); return; }
 
         $frais_id = null;
         if (!empty($data['id_frais'])) {
-            $frais_existe = $this->Model->readOne('frais', ['id_frais' => $data['id_frais'], 'id_annee' => $this->id_annee_active, 'deleted_at' => null]);
-            if (!$frais_existe) {
-                $this->json_error('Frais inexistant pour cette année.'); return;
-            }
             $frais_id = $data['id_frais'];
+        } elseif (!empty($data['id_type_frais'])) {
+            $inscription = $this->Model->readOne('inscriptions', [
+                'id_etudiant' => $data['id_etudiant'],
+                'id_annee' => $this->id_annee_active,
+                'deleted_at' => null
+            ]);
+            if (!$inscription) { $this->json_error('Aucune inscription pour cette année'); return; }
+            $frais_candidat = $this->Model->readOne('frais', [
+                'id_type_frais' => $data['id_type_frais'],
+                'id_classe' => $inscription['id_classe'],
+                'id_annee' => $this->id_annee_active,
+                'deleted_at' => null
+            ]);
+            if (!$frais_candidat) { $this->json_error('Aucun frais configuré pour ce type et cette classe'); return; }
+            $frais_id = $frais_candidat['id_frais'];
         }
 
         if (!$frais_id) {
             $this->json_error('Aucun frais sélectionné. Veuillez choisir un frais.'); return;
         }
 
+        $frais_existe = $this->Model->readOne('frais', ['id_frais' => $frais_id, 'id_annee' => $this->id_annee_active, 'deleted_at' => null]);
+        if (!$frais_existe) {
+            $this->json_error('Frais inexistant pour cette année.'); return;
+        }
+        $inscription = $this->Model->readOne('inscriptions', [
+            'id_etudiant' => $data['id_etudiant'],
+            'id_annee' => $this->id_annee_active,
+            'deleted_at' => null
+        ]);
+        if (!$inscription) { $this->json_error('Aucune inscription pour cette année'); return; }
+        if ((int)$frais_existe['id_classe'] !== (int)$inscription['id_classe']) {
+            $this->json_error('Ce frais ne correspond pas à la classe de l\'étudiant.'); return;
+        }
+
+        $this->db->trans_begin();
         $id_utilisateur = $this->session->userdata('id_utilisateur') ?? null;
         $insert = [
             'id_etudiant' => $data['id_etudiant'],
             'id_frais' => $frais_id,
             'id_annee' => $this->id_annee_active,
-            'montant' => $data['montant'],
-            'mode_paiement' => $data['mode_paiement'] ?? 'especes',
+            'montant' => $montant,
+            'mode_paiement' => $mode_paiement,
             'reference' => $data['reference'] ?? null,
             'preuve_paiement' => $data['preuve_paiement'] ?? null,
             'date_paiement' => $data['date_paiement'] ?? date('Y-m-d'),
-            'statut' => $data['statut'] ?? 'partiel',
+            'statut' => $statut,
             'notes' => $data['notes'] ?? null,
             'id_utilisateur' => $id_utilisateur
         ];
 
         $id = $this->Model->createLastId('paiements', $insert);
-        if (!$id) { $this->json_error('Erreur d\'enregistrement'); return; }
+        if (!$id) { $this->db->trans_rollback(); $this->json_error('Erreur d\'enregistrement'); return; }
 
         $numero_recu = $this->_generate_numero_recu();
         $this->load->helper('uuid');
@@ -109,6 +161,9 @@ class Paiements extends MY_Controller {
             ]);
         }
 
+        if ($this->db->trans_status() === false) { $this->db->trans_rollback(); $this->json_error('Erreur d\'enregistrement'); return; }
+        $this->db->trans_commit();
+
         $this->json_success([
             'id_paiement' => $id,
             'id_recu' => $id_recu,
@@ -136,7 +191,39 @@ class Paiements extends MY_Controller {
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('paiements', ['uuid' => $id], $data))
+        $paiement = $this->Model->readOne('paiements', ['uuid' => $id]);
+        if (!$paiement) { $this->json_error('Paiement non trouvé', 404); return; }
+        $allowed = ['id_etudiant', 'id_frais', 'montant', 'mode_paiement', 'reference', 'preuve_paiement', 'statut', 'notes'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (isset($update['statut']) && !in_array($update['statut'], ['partiel', 'solde', 'annule'], true)) {
+            $this->json_error('Statut invalide'); return;
+        }
+        if (isset($update['mode_paiement']) && !in_array($update['mode_paiement'], ['especes', 'banque', 'mobile_money', 'cheque'], true)) {
+            $this->json_error('Mode de paiement invalide'); return;
+        }
+        if (isset($update['montant'])) {
+            $update['montant'] = floatval($update['montant']);
+            if ($update['montant'] <= 0) { $this->json_error('Montant invalide'); return; }
+        }
+        if (isset($update['id_etudiant'])) {
+            if (!$this->Model->readOne('etudiants', ['id_etudiant' => $update['id_etudiant'], 'deleted_at' => null])) {
+                $this->json_error('Étudiant introuvable'); return;
+            }
+        }
+        if (isset($update['id_frais'])) {
+            $frais = $this->Model->readOne('frais', ['id_frais' => $update['id_frais'], 'deleted_at' => null]);
+            if (!$frais) { $this->json_error('Frais introuvable'); return; }
+            $inscription = $this->Model->readOne('inscriptions', [
+                'id_etudiant' => $update['id_etudiant'] ?? $paiement['id_etudiant'],
+                'id_annee' => $frais['id_annee'],
+                'deleted_at' => null
+            ]);
+            if (!$inscription || (int)$inscription['id_classe'] !== (int)$frais['id_classe']) {
+                $this->json_error('Ce frais ne correspond pas à la classe de l\'étudiant.'); return;
+            }
+        }
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('paiements', ['uuid' => $id], $update))
             $this->json_success(null, 'Paiement mis à jour');
         else $this->json_error('Erreur de mise à jour');
     }
@@ -147,7 +234,7 @@ class Paiements extends MY_Controller {
         $config['max_size'] = 5120;
         $config['encrypt_name'] = true;
         if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
-        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
         if (!$this->upload->do_upload('preuve')) {
             $this->json_error($this->upload->display_errors('', ''));
             return;

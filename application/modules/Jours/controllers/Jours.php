@@ -26,15 +26,22 @@ class Jours extends MY_Controller {
         if (empty($data['libelle']) || empty($data['code'])) {
             $this->json_error('Libellé et code obligatoires'); return;
         }
-        $data['uuid'] = generate_uuid();
-        $id = $this->Model->createLastId('jours_semaine', $data);
+        $allowed = ['code', 'libelle', 'actif', 'ordre'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('jours_semaine', $insert);
         if ($id) $this->json_success(['id_jour' => $id], 'Jour créé');
         else $this->json_error('Erreur');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('jours_semaine', ['uuid' => $id], $data))
+        if (!$this->Model->readOne('jours_semaine', ['uuid' => $id])) {
+            $this->json_error('Jour non trouvé', 404); return;
+        }
+        $allowed = ['code', 'libelle', 'actif', 'ordre'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('jours_semaine', ['uuid' => $id], $update))
             $this->json_success(null, 'Jour mis à jour');
         else $this->json_error('Erreur');
     }

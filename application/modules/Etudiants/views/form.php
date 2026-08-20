@@ -32,16 +32,6 @@
                 <div id="id_annee_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
               </div>
               <div class="col-sm-6 position-relative">
-                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe <span class="text-danger-600">*</span></label>
-                <input type="hidden" id="id_classe" value="<?= $etudiant['inscription']['id_classe'] ?? '' ?>">
-                <input type="text" class="form-control" id="id_classe_search" placeholder="Rechercher..." autocomplete="off"
-                  value="<?php
-                    $selectedClasseId = $etudiant['inscription']['id_classe'] ?? '';
-                    foreach ($classes as $c) { if ($c['id_classe'] == $selectedClasseId) { echo $c['libelle']; break; } }
-                  ?>">
-                <div id="id_classe_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
-              </div>
-              <div class="col-sm-6 position-relative">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Section</label>
                 <input type="hidden" id="id_section" value="<?= $etudiant['inscription']['id_section'] ?? '' ?>">
                 <input type="text" class="form-control" id="id_section_search" placeholder="Rechercher..." autocomplete="off"
@@ -50,6 +40,16 @@
                     foreach ($sections as $s) { if ($s['id_section'] == $selectedSectionId) { echo $s['libelle']; break; } }
                   ?>">
                 <div id="id_section_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
+              </div>
+              <div class="col-sm-6 position-relative">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe <span class="text-danger-600">*</span></label>
+                <input type="hidden" id="id_classe" value="<?= $etudiant['inscription']['id_classe'] ?? '' ?>">
+                <input type="text" class="form-control" id="id_classe_search" placeholder="Rechercher..." autocomplete="off"
+                  value="<?php
+                    $selectedClasseId = $etudiant['inscription']['id_classe'] ?? '';
+                    foreach ($classes as $c) { if ($c['id_classe'] == $selectedClasseId) { echo $c['libelle']; break; } }
+                  ?>">
+                <div id="id_classe_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
               </div>
             </div>
           </div>
@@ -168,7 +168,8 @@
     </div>
   </form>
 </div>
-<script src="<?= base_url() ?>assets/js/autocomplete.js"></script>
+<?php $acVer = file_exists(FCPATH.'assets/js/autocomplete.js') ? filemtime(FCPATH.'assets/js/autocomplete.js') : time(); ?>
+<script src="<?= base_url() ?>assets/js/autocomplete.js?v=<?= $acVer ?>"></script>
 <script id="etudiants_annees_data" type="application/json"><?= json_encode($annees) ?></script>
 <script id="etudiants_classes_data" type="application/json"><?= json_encode($classes) ?></script>
 <script id="etudiants_sections_data" type="application/json"><?= json_encode($sections) ?></script>
@@ -199,6 +200,7 @@ document.getElementById('photoInput')?.addEventListener('change', async function
       fd.append('chunk_index', i);
       fd.append('total_chunks', totalChunks);
       fd.append('original_name', file.name);
+      fd.append('csrf_test_name', typeof CSRF_TOKEN !== 'undefined' ? CSRF_TOKEN : '');
       const res = await fetch(API.base_url + 'api/etudiants/upload_photo', {
         method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
@@ -270,8 +272,43 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     if (typeof jQuery !== 'undefined' && $.fn && $.fn.DataTable && typeof API !== 'undefined') {
       clearInterval(wait);
       autoSetup('id_annee_search', 'id_annee', 'id_annee_results', JSON.parse(document.getElementById('etudiants_annees_data').textContent).map(function(a) { return {id: a.id_annee, libelle: a.libelle}; }), function(a) { return a.libelle; });
-      autoSetup('id_classe_search', 'id_classe', 'id_classe_results', JSON.parse(document.getElementById('etudiants_classes_data').textContent).map(function(c) { return {id: c.id_classe, libelle: c.libelle}; }), function(c) { return c.libelle; });
-      autoSetup('id_section_search', 'id_section', 'id_section_results', JSON.parse(document.getElementById('etudiants_sections_data').textContent).map(function(s) { return {id: s.id_section, libelle: s.libelle}; }), function(s) { return s.libelle; });
+      var sectionsData = JSON.parse(document.getElementById('etudiants_sections_data').textContent);
+      var classesData = JSON.parse(document.getElementById('etudiants_classes_data').textContent);
+      var classInput = document.getElementById('id_classe_search');
+      var classCtrl = autoSetup('id_classe_search', 'id_classe', 'id_classe_results', classesData.map(function(c) { return {id: c.id_classe, libelle: c.libelle, id_section: c.id_section}; }), function(c) { return c.libelle; });
+      var sectionCtrl = autoSetup('id_section_search', 'id_section', 'id_section_results', sectionsData.map(function(s) { return {id: s.id_section, libelle: s.libelle}; }), function(s) { return s.libelle; }, function(s) {
+        filterClassesBySection(s.id);
+      });
+
+      function filterClassesBySection(sectionId, keepSelection) {
+        var filtered = sectionId ? classesData.filter(function(c) { return String(c.id_section) === String(sectionId); }) : [];
+        classCtrl.updateItems(filtered.map(function(c) { return {id: c.id_classe, libelle: c.libelle, id_section: c.id_section}; }));
+        if (!keepSelection) {
+          document.getElementById('id_classe').value = '';
+          classInput.value = '';
+          classInput.classList.remove('border-success', 'border-2');
+        }
+        document.getElementById('id_classe_results').style.display = 'none';
+        classInput.disabled = !sectionId;
+        classInput.placeholder = sectionId ? 'Rechercher...' : 'Sélectionnez d\'abord une section';
+      }
+
+      var initialSectionId = document.getElementById('id_section').value;
+      var initialClasseId = document.getElementById('id_classe').value;
+      if (initialSectionId) {
+        var belongs = classesData.some(function(c) {
+          return String(c.id_classe) === String(initialClasseId) && String(c.id_section) === String(initialSectionId);
+        });
+        filterClassesBySection(initialSectionId, belongs);
+      } else {
+        filterClassesBySection(null);
+      }
+
+      document.getElementById('id_section_search').addEventListener('input', function() {
+        if (!document.getElementById('id_section').value) {
+          filterClassesBySection(null);
+        }
+      });
     }
   }, 50);
 })();

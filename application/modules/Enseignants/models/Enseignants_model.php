@@ -11,9 +11,8 @@ class Enseignants_model extends Model
     public function get_all($filters = [])
     {
         $this->db->where('e.deleted_at', null);
-        $this->db->select('e.*, d.libelle as departement_libelle');
+        $this->db->select('e.*');
         $this->db->from('enseignants e');
-        $this->db->join('departements d', 'e.id_departement = d.id_departement', 'left');
         if (!empty($filters['search'])) {
             $this->db->group_start()
                 ->like('e.fullname', $filters['search'])
@@ -30,9 +29,8 @@ class Enseignants_model extends Model
     {
         $this->db->where('e.deleted_at', null);
         $this->db->where('e.uuid', $id);
-        $this->db->select('e.*, d.libelle as departement_libelle, u.email');
+        $this->db->select('e.*, u.email');
         $this->db->from('enseignants e');
-        $this->db->join('departements d', 'e.id_departement = d.id_departement', 'left');
         $this->db->join('utilisateurs u', 'e.id_utilisateur = u.id_utilisateur', 'left');
         $q = $this->db->get();
         if ($q === false) return null;
@@ -41,12 +39,13 @@ class Enseignants_model extends Model
 
     public function create_record($data)
     {
-        $required = ['nom', 'prenom', 'email', 'id_departement'];
+        $required = ['fullname', 'email'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 return ['success' => false, 'message' => "Champ requis manquant: $field"];
             }
         }
+        $this->load->helper('uuid');
         $data['uuid'] = generate_uuid();
         $data['cree_le'] = date('Y-m-d H:i:s');
         $data['modifie_le'] = date('Y-m-d H:i:s');

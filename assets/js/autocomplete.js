@@ -11,7 +11,10 @@ function autoSetup(inputId, hiddenId, resultsId, items, labelFn, onSelect) {
   const input = document.getElementById(inputId);
   const hidden = document.getElementById(hiddenId);
   const results = document.getElementById(resultsId);
-  if (!input) return;
+  if (!input) return {
+    updateItems: function(newItems) { items = newItems; },
+    getItems: function() { return items; }
+  };
 
   function doSelect(btn) {
     if (!btn) return;
@@ -27,7 +30,8 @@ function autoSetup(inputId, hiddenId, resultsId, items, labelFn, onSelect) {
   }
 
   function show() {
-    if (!hidden.value) results.innerHTML = autoRender(items, input.value, labelFn);
+    var q = hidden.value ? '' : input.value;
+    results.innerHTML = autoRender(items, q, labelFn);
     results.style.display = 'block';
   }
 
@@ -51,6 +55,9 @@ function autoSetup(inputId, hiddenId, resultsId, items, labelFn, onSelect) {
       if (active && active.closest('#' + resultsId) && active.tagName === 'BUTTON') {
         e.preventDefault();
         doSelect(active);
+      } else if (results.style.display !== 'none' && results.querySelector('button')) {
+        e.preventDefault();
+        doSelect(results.querySelector('button'));
       }
     }
     if (e.key === 'Escape') results.style.display = 'none';
@@ -65,4 +72,18 @@ function autoSetup(inputId, hiddenId, resultsId, items, labelFn, onSelect) {
       results.style.display = 'none';
     }
   });
+
+  return {
+    updateItems: function(newItems) {
+      items = newItems;
+      // Si la liste change, s'assurer que si l'input a le focus, le rendu se met à jour
+      if (document.activeElement === input) {
+        results.innerHTML = autoRender(items, input.value, labelFn);
+        results.style.display = 'block';
+      }
+    },
+    getItems: function() {
+      return items;
+    }
+  };
 }

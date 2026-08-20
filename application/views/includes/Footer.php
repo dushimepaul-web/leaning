@@ -23,7 +23,7 @@
   <?php $appVer = file_exists(FCPATH.'assets/js/app.js') ? filemtime(FCPATH.'assets/js/app.js') : time(); ?>
   <script src="<?=base_url()?>assets/js/app.js?v=<?= $appVer ?>"></script>
   <!-- API JS -->
-  <script>var BASE_URL = '<?= base_url() ?>'; var DEVISE = '<?= get_setting('devise', 'BIF') ?>';</script>
+  <script>var BASE_URL = '<?= base_url() ?>'; var DEVISE = '<?= get_setting('devise', 'BIF') ?>'; var CSRF_TOKEN = '<?= $this->security->get_csrf_hash() ?>';</script>
   <?php $apiVer = file_exists(FCPATH.'assets/js/api.js') ? filemtime(FCPATH.'assets/js/api.js') : time(); ?>
   <script src="<?=base_url()?>assets/js/api.js?v=<?= $apiVer ?>"></script>
 <script>

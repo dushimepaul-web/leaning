@@ -26,7 +26,9 @@ class Matieres extends MY_Controller {
         if (empty($data['code']) || empty($data['libelle'])) {
             $this->json_error('Code et libellé obligatoires'); return;
         }
-        $id = $this->Model->createLastId('matieres', $data);
+        $allowed = ['code', 'libelle'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('matieres', $insert);
         if ($id) $this->json_success(null, 'Matière créée');
         else $this->json_error('Erreur');
     }
@@ -36,7 +38,10 @@ class Matieres extends MY_Controller {
         if (!$this->Model->readOne('matieres', ['uuid' => $id])) {
             $this->json_error('Matière non trouvée', 404); return;
         }
-        if ($this->Model->update('matieres', ['uuid' => $id], $data))
+        $allowed = ['code', 'libelle'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('matieres', ['uuid' => $id], $update))
             $this->json_success(null, 'Matière mise à jour');
         else $this->json_error('Erreur');
     }

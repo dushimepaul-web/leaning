@@ -13,6 +13,10 @@
       <span class="d-flex text-md"><i class="ri-add-large-line"></i></span>
       Ajouter une année
     </button>
+    <button type="button" class="btn btn-warning d-flex align-items-center gap-6" onclick="openClotureModal()">
+      <span class="d-flex text-md"><i class="ri-lock-password-line"></i></span>
+      Clôture & Report d'année
+    </button>
   </div>
 
   <div class="mt-24">
@@ -29,8 +33,8 @@
                 <span><i class="ri-arrow-down-s-line"></i></span>
               </button>
               <ul class="dropdown-menu p-12 border bg-base shadow">
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export PDF',text:'Fonctionnalité à venir'})"><i class="ri-file-3-line"></i> PDF</button></li>
-                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export Excel',text:'Fonctionnalité à venir'})"><i class="ri-file-excel-line"></i> Excel</button></li>
+                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="exportTable('csv')"><i class="ri-file-text-line"></i> CSV</button></li>
+                <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="exportTable('print')"><i class="ri-printer-line"></i> Imprimer</button></li>
               </ul>
             </div>
             <form class="navbar-search dt-search m-0">
@@ -38,15 +42,25 @@
               <i class="ri-search-line icon"></i>
             </form>
           </div>
-          <div class="d-flex align-items-center gap-8 text-secondary-light">
-            <span>Lignes par page :</span>
-            <select id="dtLength" class="form-control form-select" style="width:auto;padding:0.375rem 2rem 0.375rem 0.75rem;">
-              <option value="5">5</option>
-              <option value="10" selected>10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
+          <div class="d-flex align-items-center gap-16">
+            <div class="d-flex align-items-center gap-8 text-secondary-light">
+              <span>Statut :</span>
+              <select id="statusFilter" class="form-control form-select form-select-sm" onchange="loadData()" style="width:auto;">
+                <option value="">Tous</option>
+                <option value="active" selected>Actifs</option>
+                <option value="deleted">Supprimés</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-8 text-secondary-light">
+              <span>Lignes par page :</span>
+              <select id="dtLength" class="form-control form-select" style="width:auto;padding:0.375rem 2rem 0.375rem 0.75rem;">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
           </div>
         </div>
         <table class="table bordered-table mb-0" id="dataTable" style="width:100%">
@@ -80,7 +94,8 @@
     <div class="row g-3">
       <div class="col-sm-12">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label>
-        <input type="text" class="form-control" id="libelle" placeholder="Ex: 2024-2025">
+        <input type="text" class="form-control" id="libelle" placeholder="Ex: 2024-2025" pattern="^\d{4}-\d{4}$" title="Format requis : 4 chiffres - 4 chiffres (ex: 2024-2025)" required>
+        <small class="text-secondary-light">Format attendu : AAAA-AAAA (ex: 2024-2025)</small>
       </div>
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Date début</label>
@@ -116,6 +131,62 @@
         <div class="d-flex align-items-center justify-content-center gap-3 mt-24">
           <button type="button" class="flex-grow-1 border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-24 py-11 radius-8" data-bs-dismiss="modal">Annuler</button>
           <button type="button" id="confirmDeleteBtn" class="flex-grow-1 btn btn-danger border border-danger-600 text-md px-16 py-12 radius-8">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Clôture & Report -->
+<div class="modal fade" id="clotureModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content radius-16 bg-base">
+      <div class="modal-header px-24 py-16 border-bottom">
+        <h5 class="modal-title text-lg fw-semibold">Clôture d'année & Report des inscriptions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-24">
+        <form id="clotureForm">
+          <div class="mb-3">
+            <label class="form-label text-sm fw-semibold">Année à clôturer (Source) *</label>
+            <select class="form-control form-select" id="clotureSource" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-sm fw-semibold">Nouvelle année active (Cible) *</label>
+            <select class="form-control form-select" id="clotureCible" required></select>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="reporterEleves" checked>
+            <label class="form-check-label text-sm fw-semibold" for="reporterEleves">Reporter automatiquement les élèves inscrits vers la nouvelle année</label>
+          </div>
+          <div class="d-flex justify-content-end gap-3 mt-4">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-warning" id="btnApercu">Voir l'aperçu des élèves</button>
+          </div>
+        </form>
+
+        <div id="apercuSection" class="mt-4" style="display:none;">
+          <h6 class="fw-semibold mb-2">Aperçu du report — ajustez la classe de destination (surtout pour les élèves en REPÊCHAGE)</h6>
+          <div class="table-responsive" style="max-height:380px;overflow:auto;">
+            <table class="table bordered-table mb-0" style="width:100%">
+              <thead>
+                <tr>
+                  <th>Élève</th>
+                  <th>Matricule</th>
+                  <th>Classe actuelle</th>
+                  <th>Moyenne %</th>
+                  <th>Décision</th>
+                  <th>Matières en échec</th>
+                  <th>Classe destination</th>
+                </tr>
+              </thead>
+              <tbody id="apercuBody"></tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-end gap-3 mt-4">
+            <button type="button" class="btn btn-secondary" id="btnRetour">Retour</button>
+            <button type="button" class="btn btn-primary" id="btnConfirmerReport">Confirmer le report</button>
+          </div>
         </div>
       </div>
     </div>
@@ -160,20 +231,32 @@ function closeSidebar() {
 }
 
 async function loadData() {
-  const res = await API.annees.list();
+  const status = document.getElementById('statusFilter').value;
+  const query = status ? `?status=${status}` : '';
+  const res = await API.annees.list(query);
   if (!res.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
   let rows = '';
   res.data.forEach((s, i) => {
     const isDeleted = s.deleted_at !== null;
     const statusBadge = isDeleted ? 'bg-danger-100 text-danger-600' : 'bg-success-100 text-success-600';
-    const statusText = isDeleted ? 'Inactif' : 'Actif';
+    const statusText = isDeleted ? 'Supprimé' : 'Actif';
     const enCoursBadge = s.est_en_cours == 1 ? 'bg-success-100 text-success-600' : 'bg-neutral-100 text-neutral-600';
     const enCoursText = s.est_en_cours == 1 ? 'Oui' : 'Non';
+
+    // Format dates (YYYY-MM-DD -> DD/MM/YYYY)
+    const formatDate = (d) => {
+      if (!d) return '-';
+      const parts = d.split('-');
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+    };
+
+    const libelleSafe = $('<div>').text(s.libelle || '').html();
+
     rows += `<tr>
       <td>${i + 1}</td>
-      <td><span class="fw-semibold">${s.libelle}</span></td>
-      <td>${s.debut || '-'}</td>
-      <td>${s.fin || '-'}</td>
+      <td><span class="fw-semibold">${libelleSafe}</span></td>
+      <td>${formatDate(s.debut)}</td>
+      <td>${formatDate(s.fin)}</td>
       <td><span class="${enCoursBadge} px-24 py-4 radius-4 fw-medium text-sm">${enCoursText}</span></td>
       <td><span class="${statusBadge} px-24 py-4 radius-4 fw-medium text-sm">${statusText}</span></td>
       <td>
@@ -183,10 +266,12 @@ async function loadData() {
             <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord('${s.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
             ${s.deleted_at !== null
               ? `<li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="activateYear('${s.uuid}')"><i class="ri-check-line"></i> Activer</button></li>`
-              : `<li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deactivateYear('${s.uuid}')"><i class="ri-close-line"></i> Désactiver</button></li>`
+              : `<li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="setActiveYear('${s.uuid}')"><i class="ri-check-double-line"></i> Rendre en cours</button></li>`
             }
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="setActiveYear('${s.uuid}')"><i class="ri-check-double-line"></i> Rendre en cours</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete('${s.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
+            ${s.deleted_at !== null
+              ? ''
+              : `<li><button class="dropdown-item rounded text-danger d-flex align-items-center gap-2 py-6" onclick="confirmDelete('${s.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>`
+            }
           </ul>
         </div>
       </td>
@@ -202,6 +287,31 @@ async function loadData() {
   });
 }
 
+function exportTable(type) {
+  const table = $('#dataTable').DataTable();
+  if (type === 'print') {
+    window.print();
+  } else if (type === 'csv') {
+    let csv = [];
+    const rows = document.querySelectorAll('#dataTable tr');
+    rows.forEach(row => {
+      let cols = row.querySelectorAll('td, th');
+      let data = [];
+      cols.forEach((col, idx) => {
+        if (idx < 6) data.push('"' + col.innerText.replace(/"/g, '""') + '"');
+      });
+      csv.push(data.join(','));
+    });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'annees_scolaires.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
 async function editRecord(id) {
   const res = await API.annees.get(id);
   if (res.success) openEditSidebar(res.data);
@@ -209,12 +319,6 @@ async function editRecord(id) {
 
 async function activateYear(id) {
   const res = await API.annees.activate(id);
-  if (res.success) { loadData(); }
-  else { Swal.fire({ icon: 'error', title: 'Erreur', text: res.message }); }
-}
-
-async function deactivateYear(id) {
-  const res = await API.annees.deactivate(id);
   if (res.success) { loadData(); }
   else { Swal.fire({ icon: 'error', title: 'Erreur', text: res.message }); }
 }
@@ -253,6 +357,114 @@ function confirmDelete(id) {
   deleteId = id;
   new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
+
+async function openClotureModal() {
+  const res = await API.annees.list('?status=active');
+  if (res.success && res.data.length > 0) {
+    let options = '';
+    res.data.forEach(a => {
+      options += `<option value="${a.id_annee}">${sEscape(a.libelle)} ${a.est_en_cours == 1 ? '(En cours)' : ''}</option>`;
+    });
+    document.getElementById('clotureSource').innerHTML = options;
+    document.getElementById('clotureCible').innerHTML = options;
+    if (res.data.length > 1) {
+      document.getElementById('clotureCible').selectedIndex = 1;
+    }
+    new bootstrap.Modal(document.getElementById('clotureModal')).show();
+  } else {
+    Swal.fire({ icon: 'warning', title: 'Attention', text: 'Aucune année active disponible.' });
+  }
+}
+
+const sEscape = (str) => $('<div>').text(str || '').html();
+
+let apercuData = null;
+
+document.getElementById('btnApercu').addEventListener('click', async function() {
+  const source = document.getElementById('clotureSource').value;
+  const cible = document.getElementById('clotureCible').value;
+
+  if (!source || !cible || source === cible) {
+    Swal.fire({ icon: 'warning', title: 'Erreur', text: 'L\'année source et l\'année cible doivent être différentes.' });
+    return;
+  }
+
+  const res = await API.annees.apercu({ id_annee_source: source, id_annee_cible: cible });
+  if (!res.success) {
+    Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
+    return;
+  }
+
+  apercuData = res.data;
+  let rows = '';
+  apercuData.forEach(s => {
+    const decisionBadge = s.decision === 'admis' || s.decision === 'admis_sans_bulletin'
+      ? '<span class="badge bg-success-100 text-success-600">Admis</span>'
+      : s.decision === 'repechage'
+        ? '<span class="badge bg-warning-100 text-warning-600">Repêchage</span>'
+        : s.decision === 'sortant'
+          ? '<span class="badge bg-primary-100 text-primary-600">Sortant</span>'
+          : '<span class="badge bg-danger-100 text-danger-600">Ajourné / Redouble</span>';
+    const echecs = (s.matieres_echec || []).join(', ') || '-';
+    const opts = (s.classes_dispo || []).map(c =>
+      `<option value="${c.id}" ${parseInt(c.id) === parseInt(s.classe_dest_id) ? 'selected' : ''}>${sEscape(c.libelle)}</option>`).join('');
+    rows += `<tr>
+      <td class="fw-semibold">${sEscape(s.nom)}</td>
+      <td>${sEscape(s.matricule)}</td>
+      <td>${sEscape(s.classe_actuelle)}</td>
+      <td>${s.moyenne > 0 ? s.moyenne.toFixed(2) : '-'}</td>
+      <td>${decisionBadge}</td>
+      <td class="text-danger">${sEscape(echecs)}</td>
+      <td><select class="form-control form-select form-select-sm dest-select" data-student="${s.id_etudiant}" style="width:auto;">${opts}</select></td>
+    </tr>`;
+  });
+  document.getElementById('apercuBody').innerHTML = rows;
+  document.getElementById('clotureForm').style.display = 'none';
+  document.getElementById('apercuSection').style.display = '';
+});
+
+document.getElementById('btnRetour').addEventListener('click', function() {
+  apercuData = null;
+  document.getElementById('apercuSection').style.display = 'none';
+  document.getElementById('clotureForm').style.display = '';
+});
+
+document.getElementById('btnConfirmerReport').addEventListener('click', async function() {
+  if (!apercuData) return;
+  const source = document.getElementById('clotureSource').value;
+  const cible = document.getElementById('clotureCible').value;
+  const reporter = document.getElementById('reporterEleves').checked;
+
+  const decisions_override = [];
+  document.querySelectorAll('#apercuBody .dest-select').forEach(sel => {
+    decisions_override.push({ id_etudiant: parseInt(sel.dataset.student), classe_dest_id: parseInt(sel.value) });
+  });
+
+  Swal.fire({
+    title: 'Confirmer la clôture ?',
+    text: 'Cette action va verrouiller l\'année source, activer la nouvelle année et reporter les inscriptions selon l\'aperçu ajusté.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Oui, clôturer',
+    cancelButtonText: 'Annuler'
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      const res = await API.annees.cloturer({
+        id_annee_source: source,
+        id_annee_cible: cible,
+        reporter_eleves: reporter,
+        decisions_override: decisions_override
+      });
+      if (res.success) {
+        bootstrap.Modal.getInstance(document.getElementById('clotureModal')).hide();
+        Swal.fire({ icon: 'success', title: 'Clôture réussie', text: res.message });
+        loadData();
+      } else {
+        Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
+      }
+    }
+  });
+});
 
 document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
 

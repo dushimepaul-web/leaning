@@ -129,7 +129,13 @@ function formatDate(d) {
 }
 
 async function loadData() {
-  const res = await API.etudiants.list();
+  const params = {
+    classe: $('#filterClass').val(),
+    section: $('#filterSection').val(),
+    sexe: $('#filterGender').val(),
+    statut: $('#filterStatus').val()
+  };
+  const res = await API.etudiants.list(params);
   if (!res.success) { $('#dataBody').html('<tr><td colspan="9" class="text-center text-danger">Error loading data</td></tr>'); return; }
   let rows = '';
   res.data.forEach((e, i) => {

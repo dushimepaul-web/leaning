@@ -53,11 +53,17 @@ class Menus extends MY_Controller {
     }
 
     public function api_delete($id) {
-        $children = $this->Model->read('menus', ['parent_id' => $id]);
+        $menu = $this->Model->readOne('menus', ['uuid' => $id]);
+        if (!$menu) { $this->json_error('Menu non trouvé', 404); return; }
+        $children = $this->Model->read('menus', ['parent_id' => $menu['id_menu']]);
         if (!empty($children)) {
             $this->json_error('Supprimez d\'abord les sous-menus'); return;
         }
-        if ($this->db->where('uuid', $id)->delete('menus'))
+        $this->db->trans_start();
+        $this->db->where('id_menu', $menu['id_menu'])->delete('roles_menus');
+        $this->db->where('uuid', $id)->delete('menus');
+        $this->db->trans_complete();
+        if ($this->db->trans_status())
             $this->json_success(null, 'Menu supprimé');
         else $this->json_error('Erreur');
     }

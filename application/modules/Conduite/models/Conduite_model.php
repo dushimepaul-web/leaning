@@ -5,7 +5,11 @@ class Conduite_model extends Model
 {
     public function get_eleves_conduite($id_classe, $id_annee, $id_periode)
     {
-        if (empty($id_classe) || empty($id_annee) || empty($id_periode)) return array();
+        if (empty($id_classe) || empty($id_annee)) return array();
+
+        $periode_condition = ($id_periode !== null && $id_periode !== '')
+            ? "AND pc.id_periode = ?" : "";
+        $params = $periode_condition ? array($id_annee, $id_periode, $id_classe, $id_annee) : array($id_annee, $id_classe, $id_annee);
 
         $sql = "
             SELECT
@@ -18,12 +22,12 @@ class Conduite_model extends Model
             LEFT JOIN points_conduite pc
                 ON pc.id_etudiant = e.id_etudiant
                 AND pc.id_annee = ?
-                AND pc.id_periode = ?
                 AND pc.deleted_at IS NULL
+                " . $periode_condition . "
             WHERE i.id_classe = ? AND i.id_annee = ? AND i.deleted_at IS NULL
             ORDER BY e.fullname ASC
         ";
-        $rows = $this->db->query($sql, array($id_annee, $id_periode, $id_classe, $id_annee))->result_array();
+        $rows = $this->db->query($sql, $params)->result_array();
 
         $points_defaut = $this->get_points_initial_defaut(60);
         foreach ($rows as &$row) {

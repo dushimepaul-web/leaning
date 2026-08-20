@@ -12,7 +12,7 @@ function nf2($v){return $v>0?number_format($v,2):'-';}
   .bulletin-page { background: #fff; width: 297mm; min-height: 210mm; margin: 0 auto 30px auto; padding: 10mm 8mm; box-shadow: 0 4px 12px rgba(0,0,0,0.15); page-break-after: always; box-sizing: border-box; }
   .h-row { display: flex; justify-content: space-between; font-size: 12pt; font-weight: 700; line-height: 1.7; padding: 0 2px; }
   .h-row .h-right { text-align: right; }
-  table.bul-table { border-collapse: collapse; width: 100%; font-size: 8.5pt; margin-top: 8px; }
+  table.bul-table { border-collapse: collapse; width: 100%; font-size: 8.5pt; margin-top: 8px; table-layout: fixed; }
   table.bul-table th, table.bul-table td { border: 1px solid #000; padding: 3px 4px; text-align: center; font-weight: 400; }
   table.bul-table thead th { background: #D9D9D9; font-weight: 700; font-size: 8pt; }
   table.bul-table thead th.branches-header { background: #fff; width: 130px; min-width: 130px; }
@@ -34,6 +34,18 @@ $notes_map = [];
 foreach ($aggregated_data as $row) {
     $notes_map[$row['inscription_id']][$row['subject_id']] = $row;
 }
+
+$ress_active = isset($ressources_active) ? intval($ressources_active) !== 0 : true;
+$comp_active = isset($competences_active) ? intval($competences_active) !== 0 : true;
+$both_active = $ress_active && $comp_active;
+$pct_comp = isset($competences_pourcentage) ? floatval($competences_pourcentage) : 40;
+$pct_ress = isset($ressources_pourcentage) ? floatval($ressources_pourcentage) : 60;
+$facteur_points = isset($facteur_points_heure) ? floatval($facteur_points_heure) : floatval(get_setting('facteur_points_heure', 15));
+$col_span = $both_active ? 4 : 3;
+$sub_head = $both_active ? '<th>TJ</th><th>RESS</th><th>COMP</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+// Un seul actif : la catégorie active absorbe tout l'EX (EX = TJ)
+$cat_active_ress = $ress_active && !$comp_active; // seule RESS active
+$cat_active_comp = $comp_active && !$ress_active; // seule COMP active
 
 $conduiteVal = 60;
 $relTj = 10; $relEx = 10; $relTot = 20;
@@ -66,17 +78,17 @@ foreach ($eleves as $eleve_id => $eleve):
     <thead>
       <tr>
         <th class="branches-header" rowspan="2"></th>
-        <th colspan="4">MAXIMA</th>
-        <th colspan="4">1er TRIMESTRE</th>
-        <th colspan="4">2e TRIMESTRE</th>
-        <th colspan="4">3e TRIMESTRE</th>
+        <th colspan="<?= $col_span ?>">MAXIMA</th>
+        <th colspan="<?= $col_span ?>">1er TRIMESTRE</th>
+        <th colspan="<?= $col_span ?>">2e TRIMESTRE</th>
+        <th colspan="<?= $col_span ?>">3e TRIMESTRE</th>
         <th colspan="3">TOTAUX ANNUELS</th>
       </tr>
       <tr>
-        <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
-        <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
-        <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
-        <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
+        <?= $sub_head ?>
+        <?= $sub_head ?>
+        <?= $sub_head ?>
+        <?= $sub_head ?>
         <th>MAX</th><th>TOT</th><th>%</th>
       </tr>
     </thead>
@@ -91,27 +103,38 @@ $aAnnMax = 0; $aAnnNote = 0;
 
 foreach ($subjects as $subj):
     $s_data = $stud_notes[$subj['id']] ?? null;
-    $coeff = isset($subj['coefficient']) ? (float)$subj['coefficient'] : 0;
+    $heures = isset($subj['nb_heures_par_semaine']) ? (float)$subj['nb_heures_par_semaine'] : 0;
 
-    // Maxima from coefficient (like Bulletins_model)
-    $max_tj = $coeff;
-    $max_ex = round($coeff * 0.6, 1);
-    $max_tp = round($coeff * 0.4, 1);
-    $max_tot = $max_tj + $max_ex + $max_tp;
+    // Maxima : TJ = coefficient calculé (heures × facteur) ; EX = TJ ; RESS/COMP selon les pourcentages (ou 100% si seul actif)
+    $max_tj = $heures * $facteur_points;
+    if ($both_active) {
+        $max_comp = round($max_tj * $pct_comp / 100, 1);
+        $max_ress = round($max_tj * $pct_ress / 100, 1);
+    } elseif ($cat_active_ress) {
+        $max_comp = 0;
+        $max_ress = $max_tj;
+    } else {
+        $max_comp = $max_tj;
+        $max_ress = 0;
+    }
+    $max_tot = $max_tj + $max_comp + $max_ress;
     $max_sub_annuel = $max_tot * 3; // 3 periods
 
-    // Actual notes from evaluations
+    // Actual notes from evaluations (catégorie inactive = 0)
     $t1_tj = $s_data ? (float)$s_data['note_t1_tj'] : 0;
     $t1_comp = $s_data ? (float)$s_data['note_t1_comp'] : 0;
     $t1_ress = $s_data ? (float)$s_data['note_t1_ress'] : 0;
+    if (!$both_active) { if ($cat_active_ress) $t1_comp = 0; else $t1_ress = 0; }
     $t1_tot = $t1_tj + $t1_comp + $t1_ress;
     $t2_tj = $s_data ? (float)$s_data['note_t2_tj'] : 0;
     $t2_comp = $s_data ? (float)$s_data['note_t2_comp'] : 0;
     $t2_ress = $s_data ? (float)$s_data['note_t2_ress'] : 0;
+    if (!$both_active) { if ($cat_active_ress) $t2_comp = 0; else $t2_ress = 0; }
     $t2_tot = $t2_tj + $t2_comp + $t2_ress;
     $t3_tj = $s_data ? (float)$s_data['note_t3_tj'] : 0;
     $t3_comp = $s_data ? (float)$s_data['note_t3_comp'] : 0;
     $t3_ress = $s_data ? (float)$s_data['note_t3_ress'] : 0;
+    if (!$both_active) { if ($cat_active_ress) $t3_comp = 0; else $t3_ress = 0; }
     $t3_tot = $t3_tj + $t3_comp + $t3_ress;
 
     $tot_sub_annuel = $t1_tot + $t2_tot + $t3_tot;
@@ -125,25 +148,49 @@ foreach ($subjects as $subj):
 ?>
       <tr>
         <td class="text-left matiere"><?= htmlspecialchars($subj['name']) ?></td>
+        <?php if ($both_active): ?>
         <td><?= nf($max_tj) ?></td>
-        <td><?= nf($max_ex) ?></td>
-        <td><?= nf($max_tp) ?></td>
+        <td><?= nf($max_ress) ?></td>
+        <td><?= nf($max_comp) ?></td>
         <td><strong><?= nf($max_tot) ?></strong></td>
+        <?php else: ?>
+        <td><?= nf($max_tj) ?></td>
+        <td><?= nf($max_tj) ?></td>
+        <td><strong><?= nf($max_tot) ?></strong></td>
+        <?php endif; ?>
 
+        <?php if ($both_active): ?>
         <td><?= nf($t1_tj) ?></td>
-        <td><?= nf($t1_comp) ?></td>
         <td><?= nf($t1_ress) ?></td>
+        <td><?= nf($t1_comp) ?></td>
         <td><strong><?= nf($t1_tot) ?></strong></td>
+        <?php else: ?>
+        <td><?= nf($t1_tj) ?></td>
+        <td><?= nf($t1_comp + $t1_ress) ?></td>
+        <td><strong><?= nf($t1_tot) ?></strong></td>
+        <?php endif; ?>
 
+        <?php if ($both_active): ?>
         <td><?= nf($t2_tj) ?></td>
-        <td><?= nf($t2_comp) ?></td>
         <td><?= nf($t2_ress) ?></td>
+        <td><?= nf($t2_comp) ?></td>
         <td><strong><?= nf($t2_tot) ?></strong></td>
+        <?php else: ?>
+        <td><?= nf($t2_tj) ?></td>
+        <td><?= nf($t2_comp + $t2_ress) ?></td>
+        <td><strong><?= nf($t2_tot) ?></strong></td>
+        <?php endif; ?>
 
+        <?php if ($both_active): ?>
         <td><?= nf($t3_tj) ?></td>
-        <td><?= nf($t3_comp) ?></td>
         <td><?= nf($t3_ress) ?></td>
+        <td><?= nf($t3_comp) ?></td>
         <td><strong><?= nf($t3_tot) ?></strong></td>
+        <?php else: ?>
+        <td><?= nf($t3_tj) ?></td>
+        <td><?= nf($t3_comp + $t3_ress) ?></td>
+        <td><strong><?= nf($t3_tot) ?></strong></td>
+        <?php endif; ?>
 
         <td><strong><?= nf($max_sub_annuel) ?></strong></td>
         <td><strong><?= nf($tot_sub_annuel) ?></strong></td>
@@ -154,10 +201,10 @@ foreach ($subjects as $subj):
       <!-- B: Sous-Tot -->
       <tr>
         <td class="text-left branches">Sous-Tot</td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td><strong><?= nf($perTot[1]['tot']) ?></strong></td>
-        <td></td><td></td><td></td><td><strong><?= nf($perTot[2]['tot']) ?></strong></td>
-        <td></td><td></td><td></td><td><strong><?= nf($perTot[3]['tot']) ?></strong></td>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><strong><?= nf($perTot[1]['tot']) ?></strong></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><strong><?= nf($perTot[2]['tot']) ?></strong></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><strong><?= nf($perTot[3]['tot']) ?></strong></td>
         <td><strong><?= nf($aAnnMax) ?></strong></td>
         <td><strong><?= nf($aAnnNote) ?></strong></td>
         <td><strong><?= $aAnnMax>0?number_format($aAnnNote/$aAnnMax*100,2):'-' ?>%</strong></td>
@@ -166,10 +213,10 @@ foreach ($subjects as $subj):
       <!-- C: Conduite -->
       <tr>
         <td class="text-left branches">Conduite</td>
-        <td class="gris"><?= $conduiteVal ?></td><td></td><td></td><td><?= $conduiteVal ?></td>
-        <td></td><td></td><td></td><td><?= $cd1 ?></td>
-        <td></td><td></td><td></td><td><?= $cd2 ?></td>
-        <td></td><td></td><td></td><td><?= $cd3 ?></td>
+        <td class="gris"><?= $conduiteVal ?></td><?= str_repeat('<td></td>', $col_span-2) ?><td><?= $conduiteVal ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd1 ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd2 ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd3 ?></td>
         <td><strong><?= $conduiteVal * $nbPeriodes ?></strong></td>
         <td><strong><?= $cdAnn ?></strong></td>
         <td><strong><?= $cdAnn>0?number_format($cdAnn/($conduiteVal*$nbPeriodes)*100,2):'-' ?>%</strong></td>
@@ -178,10 +225,10 @@ foreach ($subjects as $subj):
       <!-- D: Totaux -->
       <tr>
         <td class="text-left branches">Totaux</td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td><strong><?= nf($perTot[1]['tot']+$cd1) ?></strong></td>
-        <td></td><td></td><td></td><td><strong><?= nf($perTot[2]['tot']+$cd2) ?></strong></td>
-        <td></td><td></td><td></td><td><strong><?= nf($perTot[3]['tot']+$cd3) ?></strong></td>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><strong><?= nf($perTot[1]['tot']+$cd1) ?></strong></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><strong><?= nf($perTot[2]['tot']+$cd2) ?></strong></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><strong><?= nf($perTot[3]['tot']+$cd3) ?></strong></td>
         <td><strong><?= nf($aAnnMax+$conduiteVal*$nbPeriodes) ?></strong></td>
         <td><strong><?= nf($aAnnNote+$cdAnn) ?></strong></td>
         <td><strong><?= ($aAnnMax+$conduiteVal*$nbPeriodes)>0?number_format(($aAnnNote+$cdAnn)/($aAnnMax+$conduiteVal*$nbPeriodes)*100,2):'-' ?>%</strong></td>
@@ -190,40 +237,47 @@ foreach ($subjects as $subj):
       <!-- E: Pourcentage -->
       <tr>
         <td class="text-left branches">Pourcentage</td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
         <td></td><td></td><td></td>
       </tr>
 
       <!-- E2: Mention (dynamique depuis Paramètres) -->
       <tr>
         <td class="text-left branches">Mention</td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
         <td></td><td></td><td><strong><?= htmlspecialchars(get_mention($aAnnMax>0?($aAnnNote/$aAnnMax)*20:0, 20)) ?></strong></td>
       </tr>
 
       <!-- F: Place -->
       <tr>
         <td class="text-left branches">Place</td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
         <td></td><td></td><td></td>
       </tr>
 
       <!-- G: Religion -->
       <tr>
         <td class="text-left branches">Religion</td>
+        <?php if ($both_active): ?>
         <td><?= $relTj ?></td><td><?= $relEx ?></td><td></td><td><?= $relTot ?></td>
         <td><?= $relTj ?></td><td><?= $relEx ?></td><td></td><td><?= $relTot ?></td>
         <td><?= $relTj ?></td><td><?= $relEx ?></td><td></td><td><?= $relTot ?></td>
         <td><?= $relTj ?></td><td><?= $relEx ?></td><td></td><td><?= $relTot ?></td>
+        <?php else: ?>
+        <td><?= $relTj ?></td><td><?= $relEx ?></td><td><?= $relTot ?></td>
+        <td><?= $relTj ?></td><td><?= $relEx ?></td><td><?= $relTot ?></td>
+        <td><?= $relTj ?></td><td><?= $relEx ?></td><td><?= $relTot ?></td>
+        <td><?= $relTj ?></td><td><?= $relEx ?></td><td><?= $relTot ?></td>
+        <?php endif; ?>
         <td><strong><?= $relTot * $nbPeriodes ?></strong></td>
         <td></td><td></td>
       </tr>
@@ -231,17 +285,17 @@ foreach ($subjects as $subj):
       <!-- H: Signatures -->
       <tr>
         <td class="text-left branches" rowspan="2">Signatures</td>
-        <td>PARENTS</td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
+        <td>PARENTS</td><?= str_repeat('<td></td>', $col_span-1) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
         <td></td><td></td><td></td>
       </tr>
       <tr>
-        <td>TITULAIRE</td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td>
+        <td>TITULAIRE</td><?= str_repeat('<td></td>', $col_span-1) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
+        <?= str_repeat('<td></td>', $col_span) ?>
         <td></td><td></td><td></td>
       </tr>
     </tbody>

@@ -162,14 +162,20 @@
 
 
 function applyFilters() {
+  const table = $('#dataTable').DataTable();
   const searchVal = document.getElementById('filterSearch')?.value || '';
-  $('#dataTable').DataTable().search(searchVal).draw();
+  const statutVal = document.getElementById('filterStatut')?.value || '';
+  table.search(searchVal);
+  table.column(4).search(statutVal === 'actif' ? 'disponible' : statutVal === 'inactif' ? 'indisponible' : '', false, true).draw();
 }
 
 function resetFilters() {
   if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
   if (document.getElementById('filterStatut')) document.getElementById('filterStatut').value = '';
-  $('#dataTable').DataTable().search('').draw();
+  const table = $('#dataTable').DataTable();
+  table.search('');
+  table.column(4).search('');
+  table.draw();
 }
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editingId = null;

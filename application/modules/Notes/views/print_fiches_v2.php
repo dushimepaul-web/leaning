@@ -9,7 +9,7 @@
   .fiche-page { background: #fff; width: 297mm; margin: 0 auto 30px auto; padding: 10mm; box-sizing: border-box; }
   .h-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 10pt; font-weight: bold; }
   .titre-cours { text-align: center; font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 12px 0; }
-  table.f-table { border-collapse: collapse; width: 100%; font-size: 8pt; margin-top: 10px; }
+  table.f-table { border-collapse: collapse; width: 100%; font-size: 8pt; margin-top: 10px; table-layout: fixed; }
   table.f-table th, table.f-table td { border: 1px solid #000; padding: 4px 5px; text-align: center; }
   table.f-table th { background: #D9D9D9; font-weight: bold; font-size: 9pt; }
   .text-left { text-align: left !important; }
@@ -34,6 +34,16 @@ $matieres = $c['matieres'] ?? [];
 $eleves = $c['eleves'] ?? [];
 $maxima = $c['maxima'] ?? [];
 $pids = array_column($periodes, 'id_periode');
+$ress_active = isset($c['ressources_active']) ? intval($c['ressources_active']) !== 0 : true;
+$comp_active = isset($c['competences_active']) ? intval($c['competences_active']) !== 0 : true;
+$both_active = $ress_active && $comp_active;
+$col_span = $both_active ? 4 : 3;
+$sub_head = $both_active ? '<th>TJ</th><th>RESS</th><th>COMP</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+function fcells($t) { global $both_active;
+  $fmt = function($v){ return $v > 0 ? number_format($v, 1) : '-'; };
+  if ($both_active) return [$fmt($t['tj']), $fmt($t['ress']), $fmt($t['comp']), '<strong>'.$fmt($t['tot']).'</strong>'];
+  return [$fmt($t['tj']), $fmt(($t['comp'] ?? 0) + ($t['ress'] ?? 0)), '<strong>'.$fmt($t['tot']).'</strong>'];
+}
 ?>
 
 <div class="fiche-page">
@@ -56,16 +66,16 @@ $pids = array_column($periodes, 'id_periode');
     <thead>
       <tr>
         <th rowspan="2" class="text-left" style="width: 180px;">BRANCHE</th>
-        <th colspan="4">MAXIMA</th>
+        <th colspan="<?= $col_span ?>">MAXIMA</th>
         <?php foreach ($periodes as $pe): ?>
-        <th colspan="4"><?= htmlspecialchars($pe['libelle']) ?></th>
+        <th colspan="<?= $col_span ?>"><?= htmlspecialchars($pe['libelle']) ?></th>
         <?php endforeach; ?>
         <th colspan="3">TOTAUX ANNUELS</th>
       </tr>
       <tr>
-        <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
+        <?= $sub_head ?>
         <?php foreach ($periodes as $pe): ?>
-        <th>TJ</th><th>EX</th><th>TP</th><th>TOT</th>
+        <?= $sub_head ?>
         <?php endforeach; ?>
         <th>MAX</th><th>TOT</th><th>%</th>
       </tr>
@@ -88,12 +98,9 @@ $pids = array_column($periodes, 'id_periode');
       <!-- Ligne MAXIMA -->
       <tr class="bg-g" style="font-weight:700">
         <td class="text-left">MAXIMA</td>
-        <td><?= $mTot['tj'] > 0 ? number_format($mTot['tj'], 1) : '-' ?></td>
-        <td><?= $mTot['comp'] > 0 ? number_format($mTot['comp'], 1) : '-' ?></td>
-        <td><?= $mTot['ress'] > 0 ? number_format($mTot['ress'], 1) : '-' ?></td>
-        <td><strong><?= $mTot['tot'] > 0 ? number_format($mTot['tot'], 1) : '-' ?></strong></td>
+        <?= implode('', array_map(function($c){ return '<td>'.$c.'</td>'; }, fcells($mTot))) ?>
         <?php foreach ($periodes as $pe): ?>
-        <td>-</td><td>-</td><td>-</td><td><strong>-</strong></td>
+        <?= str_repeat('<td>-</td>', $col_span) ?>
         <?php endforeach; ?>
         <td><strong><?= number_format($mTot['tot'], 1) ?></strong></td>
         <td><strong><?= number_format($mTot['tot'], 1) ?></strong></td>
@@ -114,10 +121,7 @@ $pids = array_column($periodes, 'id_periode');
       ?>
       <tr>
         <td class="text-left" style="font-weight:700"><?= htmlspecialchars($mat['libelle']) ?></td>
-        <td><?= $matMaxTj > 0 ? number_format($matMaxTj, 1) : '-' ?></td>
-        <td><?= $matMaxComp > 0 ? number_format($matMaxComp, 1) : '-' ?></td>
-        <td><?= $matMaxRess > 0 ? number_format($matMaxRess, 1) : '-' ?></td>
-        <td><strong><?= $matMaxTot > 0 ? number_format($matMaxTot, 1) : '-' ?></strong></td>
+        <?= implode('', array_map(function($c){ return '<td>'.$c.'</td>'; }, fcells(['tj' => $matMaxTj, 'comp' => $matMaxComp, 'ress' => $matMaxRess, 'tot' => $matMaxTot]))) ?>
 
         <?php 
         $annTj = 0; $annComp = 0; $annRess = 0;
@@ -135,10 +139,7 @@ $pids = array_column($periodes, 'id_periode');
           $tTot = $tTj + $tComp + $tRess;
           $annTj += $tTj; $annComp += $tComp; $annRess += $tRess;
         ?>
-        <td><?= $tTj > 0 ? number_format($tTj, 1) : '-' ?></td>
-        <td><?= $tComp > 0 ? number_format($tComp, 1) : '-' ?></td>
-        <td><?= $tRess > 0 ? number_format($tRess, 1) : '-' ?></td>
-        <td><strong><?= $tTot > 0 ? number_format($tTot, 1) : '-' ?></strong></td>
+        <?= implode('', array_map(function($c){ return '<td>'.$c.'</td>'; }, fcells(['tj' => $tTj, 'comp' => $tComp, 'ress' => $tRess, 'tot' => $tTot]))) ?>
         <?php endforeach; ?>
         <?php $annTot = $annTj + $annComp + $annRess; ?>
         <td><strong><?= number_format($matMaxTot, 1) ?></strong></td>
@@ -161,10 +162,7 @@ $pids = array_column($periodes, 'id_periode');
       ?>
       <tr class="bg-g" style="font-weight:bold">
         <td class="text-left">TOTAUX ÉLÈVES</td>
-        <td><?= number_format($mTot['tj'], 1) ?></td>
-        <td><?= number_format($mTot['comp'], 1) ?></td>
-        <td><?= number_format($mTot['ress'], 1) ?></td>
-        <td><strong><?= number_format($mTot['tot'], 1) ?></strong></td>
+        <?= implode('', array_map(function($c){ return '<td>'.$c.'</td>'; }, fcells($mTot))) ?>
         <?php foreach ($periodes as $pe):
           $pid = $pe['id_periode'];
           $sTj = 0; $sComp = 0; $sRess = 0;
@@ -181,10 +179,7 @@ $pids = array_column($periodes, 'id_periode');
           }
           $sTot = $sTj + $sComp + $sRess;
         ?>
-        <td><?= number_format($sTj, 1) ?></td>
-        <td><?= number_format($sComp, 1) ?></td>
-        <td><?= number_format($sRess, 1) ?></td>
-        <td><strong><?= number_format($sTot, 1) ?></strong></td>
+        <?= implode('', array_map(function($c){ return '<td>'.$c.'</td>'; }, fcells(['tj' => $sTj, 'comp' => $sComp, 'ress' => $sRess, 'tot' => $sTot]))) ?>
         <?php endforeach; ?>
         <td><strong><?= number_format($mTot['tot'], 1) ?></strong></td>
         <td><strong><?= number_format($gTot, 1) ?></strong></td>

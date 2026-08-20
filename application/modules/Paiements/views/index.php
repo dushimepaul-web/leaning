@@ -148,9 +148,9 @@
       <input type="hidden" id="paySectionId">
     </div>
     <div class="mb-3 position-relative">
-      <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Type de frais</label>
+      <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Frais *</label>
       <input type="hidden" id="payType">
-      <input type="text" class="form-control" id="payType_search" placeholder="Rechercher un type..." autocomplete="off">
+      <input type="text" class="form-control" id="payType_search" placeholder="Rechercher un frais..." autocomplete="off">
       <div id="payType_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
     </div>
     <div class="mb-3">
@@ -199,6 +199,7 @@
 
 <script id="etudiants_data" type="application/json"><?= json_encode($etudiants) ?></script>
 <script id="types_frais_data" type="application/json"><?= json_encode($types_frais) ?></script>
+<script id="frais_data" type="application/json"><?= json_encode($frais) ?></script>
 <script src="<?= base_url() ?>assets/js/autocomplete.js?v=2"></script>
 <script src="<?= base_url() ?>assets/js/api.js?v=2"></script>
 <?php include VIEWPATH.'includes/Footer.php'; ?>
@@ -210,8 +211,10 @@ let currentRecuUuid = null;
 let allPaiements = [];
 let etudiantsData = [];
 let typesFraisData = [];
+let fraisData = [];
 try { const el = document.getElementById('etudiants_data'); if (el) etudiantsData = JSON.parse(el.textContent); } catch(e) {}
 try { const el = document.getElementById('types_frais_data'); if (el) typesFraisData = JSON.parse(el.textContent); } catch(e) {}
+try { const el = document.getElementById('frais_data'); if (el) fraisData = JSON.parse(el.textContent); } catch(e) {}
 
 async function loadFilters() {
   try {
@@ -361,17 +364,13 @@ async function voirRecu(uuid) {
   try {
     var p = allPaiements.find(function(x) { return x.uuid === uuid; });
     if (!p) return;
+    var linksRes = await API.paiements_recus.list();
+    if (!linksRes.success) { Swal.fire({icon:'error',title:'Erreur',text:'Impossible de charger les reçus'}); return; }
+    var link = (linksRes.data || []).find(function(l) { return String(l.id_paiement) === String(p.id_paiement); });
+    if (!link) { Swal.fire({icon:'info',title:'Info',text:'Aucun reçu lié à ce paiement'}); return; }
     var recusRes = await API.recus.list();
     if (!recusRes.success) { Swal.fire({icon:'error',title:'Erreur',text:'Reçus non trouvés'}); return; }
-    var found = null;
-    var recus = recusRes.data || [];
-    for (var i = 0; i < recus.length; i++) {
-      var detailRes = await API.recus.get(recus[i].uuid);
-      if (detailRes.success && detailRes.data && String(detailRes.data.id_etudiant) === String(p.id_etudiant)) {
-        found = detailRes.data;
-        break;
-      }
-    }
+    var found = (recusRes.data || []).find(function(r) { return String(r.id_recu) === String(link.id_recu); });
     if (!found) { Swal.fire({icon:'info',title:'Info',text:'Aucun reçu trouvé pour ce paiement'}); return; }
     currentRecuUuid = found.uuid;
     document.getElementById('recuContent').innerHTML =
@@ -426,8 +425,9 @@ async function uploadPreuve(input) {
   if (!input.files || !input.files[0]) return;
   var fd = new FormData();
   fd.append('preuve', input.files[0]);
+  fd.append('csrf_test_name', typeof CSRF_TOKEN !== 'undefined' ? CSRF_TOKEN : '');
   try {
-    var res = await fetch(API.base_url + 'api/paiements/upload_preuve', { method: 'POST', body: fd });
+    var res = await fetch(API.base_url + 'api/paiements_data/upload_preuve', { method: 'POST', body: fd });
     var r = await res.json();
     if (r.success) {
       document.getElementById('payPreuvePath').value = r.data.path;
@@ -510,7 +510,7 @@ function exportCSV() {
     if (done) return; done = true;
     loadFilters();
     loadData();
-    autoSetup('payEtudiant_search', 'payEtudiant', 'payEtudiant_results',
+    var etuCtrl = autoSetup('payEtudiant_search', 'payEtudiant', 'payEtudiant_results',
       etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.fullname || e.nom, prenom: e.prenom || '', matricule: e.matricule, id_classe: e.id_classe, id_section: e.id_section, classe_libelle: e.classe_libelle, section_libelle: e.section_libelle }; }),
       function(e) { return (e.nom || '') + ' (' + (e.matricule || '') + ')'; },
       function(e) {
@@ -518,13 +518,17 @@ function exportCSV() {
         document.getElementById('payClasseId').value = e.id_classe || '';
         document.getElementById('paySection').value = e.section_libelle || '';
         document.getElementById('paySectionId').value = e.id_section || '';
+        var filtered = fraisData.filter(function(f) { return String(f.id_classe) === String(e.id_classe); }).map(function(f) { return { id: f.id_frais, libelle: f.type_libelle, classe_libelle: f.classe_libelle, montant: f.montant, id_classe: f.id_classe }; });
+        payTypeCtrl.updateItems(filtered);
+        document.getElementById('payType_search').value = '';
+        document.getElementById('payType').value = '';
       }
     );
-    autoSetup('payType_search', 'payType', 'payType_results',
-      typesFraisData.map(function(t) { return { id: t.id_type_frais, libelle: t.libelle }; }),
-      function(t) { return t.libelle; },
-      function(t) {
-        document.getElementById('payType').value = t.id || '';
+    var payTypeCtrl = autoSetup('payType_search', 'payType', 'payType_results',
+      fraisData.map(function(f) { return { id: f.id_frais, libelle: f.type_libelle, classe_libelle: f.classe_libelle, montant: f.montant, id_classe: f.id_classe }; }),
+      function(f) { return f.libelle + ' (' + (f.classe_libelle || '') + ') - ' + parseFloat(f.montant || 0).toLocaleString(); },
+      function(f) {
+        document.getElementById('payType').value = f.id || '';
       }
     );
   };

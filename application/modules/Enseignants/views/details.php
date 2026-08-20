@@ -172,8 +172,8 @@
                       <td><?= $ens['nb_heures_par_jour'] ?></td>
                       <td><?= $ens['nb_heures_par_semaine'] ?></td>
                       <td>
-                        <button class="btn btn-sm btn-primary-600 px-12 py-4 radius-4" onclick="openEditCourse(<?= htmlspecialchars(json_encode($ens)) ?>)"><i class="ri-edit-2-line"></i></button>
-                        <button class="btn btn-sm btn-danger px-12 py-4 radius-4" onclick="confirmDeleteCourse(<?= $ens['uuid'] ?>)"><i class="ri-delete-bin-6-line"></i></button>
+                        <button class="btn btn-sm btn-primary-600 px-12 py-4 radius-4" data-uuid="<?= htmlspecialchars($ens['uuid']) ?>" data-coefficient="<?= htmlspecialchars($ens['coefficient']) ?>" data-nb-heures-par-jour="<?= htmlspecialchars($ens['nb_heures_par_jour'] ?? '') ?>" data-nb-heures-par-semaine="<?= htmlspecialchars($ens['nb_heures_par_semaine'] ?? '') ?>" onclick="openEditCourse(this)"><i class="ri-edit-2-line"></i></button>
+                        <button class="btn btn-sm btn-danger px-12 py-4 radius-4" onclick="confirmDeleteCourse('<?= $ens['uuid'] ?>')"><i class="ri-delete-bin-6-line"></i></button>
                       </td>
                     </tr>
                     <?php endforeach; ?>
@@ -231,11 +231,12 @@
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 
-function openEditCourse(ens) {
+function openEditCourse(btn) {
+  const ens = btn.dataset;
   document.getElementById('edit_id_matiere_classe').value = ens.uuid || '';
   document.getElementById('edit_coefficient').value = ens.coefficient || '';
-  document.getElementById('edit_nb_heures_par_jour').value = ens.nb_heures_par_jour || '';
-  document.getElementById('edit_nb_heures_par_semaine').value = ens.nb_heures_par_semaine || '';
+  document.getElementById('edit_nb_heures_par_jour').value = ens.nbHeuresParJour || '';
+  document.getElementById('edit_nb_heures_par_semaine').value = ens.nbHeuresParSemaine || '';
   new bootstrap.Modal(document.getElementById('editCourseModal')).show();
 }
 

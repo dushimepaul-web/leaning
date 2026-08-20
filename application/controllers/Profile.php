@@ -65,12 +65,12 @@ class Profile extends MY_Controller {
         if (empty($_FILES['photo'])) {
             $this->json_error('Aucun fichier'); return;
         }
-        $config['upload_path'] = './uploads/profiles/';
+        $config['upload_path'] = FCPATH . 'uploads/profiles/';
         $config['allowed_types'] = 'jpg|jpeg|png|gif|webp';
         $config['max_size'] = 2048;
         $config['file_name'] = 'profile_' . $uuid . '_' . time();
         if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
-        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
         if (!$this->upload->do_upload('photo')) {
             $this->json_error($this->upload->display_errors('', ''));
             return;

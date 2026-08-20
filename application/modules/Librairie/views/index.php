@@ -133,6 +133,7 @@
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editId = null;
+let currentStock = 0;
 let currentCategory = '';
 
 function toggleBookFields() {
@@ -211,6 +212,7 @@ function openForm(data) {
     document.getElementById('fPrixAchat').value = data.prix_achat || 0;
     document.getElementById('fPrix').value = data.prix_unitaire || 0;
     document.getElementById('fStock').value = data.stock_actuel || 0;
+    currentStock = parseInt(data.stock_actuel) || 0;
     document.getElementById('fStockMin').value = data.stock_mini || 0;
     document.getElementById('fUnite').value = data.unite || 'pièce';
     document.getElementById('fDescription').value = data.description || '';
@@ -232,15 +234,20 @@ async function editProduct(uuid) {
 }
 
 async function saveProduct() {
+  let original = null;
+  if (editId) {
+    const o = await API.librairie.get(editId);
+    if (o.success) original = o.data;
+  }
   const data = {
     id_categorie: document.getElementById('fCategorie').value,
     libelle: document.getElementById('fLibelle').value,
     editeur: document.getElementById('fEditeur').value,
     annee_edition: document.getElementById('fAnnee').value,
-    prix_achat: document.getElementById('fPrixAchat').value || 0,
-    prix_unitaire: document.getElementById('fPrix').value || 0,
-    stock_actuel: document.getElementById('fStock').value || 0,
-    stock_mini: document.getElementById('fStockMin').value || 0,
+    prix_achat: document.getElementById('fPrixAchat').value || (original ? original.prix_achat : 0),
+    prix_unitaire: document.getElementById('fPrix').value || (original ? original.prix_unitaire : 0),
+    stock_actuel: editId && document.getElementById('fStock').value === '' ? currentStock : (document.getElementById('fStock').value || 0),
+    stock_mini: document.getElementById('fStockMin').value || (original ? original.stock_mini : 0),
     unite: document.getElementById('fUnite').value || 'pièce',
     description: document.getElementById('fDescription').value
   };

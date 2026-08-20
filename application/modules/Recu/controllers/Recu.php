@@ -36,15 +36,37 @@ class Recu extends MY_Controller {
         if (empty($data['numero_recu']) || empty($data['id_etudiant'])) {
             $this->json_error('Numéro de reçu et étudiant obligatoires'); return;
         }
-        $data['id_annee'] = $this->id_annee_active;
-        $id = $this->Model->createLastId('recus', $data);
+        $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+        if (!$etudiant) { $this->json_error('Étudiant introuvable'); return; }
+        $existe = $this->Model->readOne('recus', ['numero_recu' => $data['numero_recu'], 'deleted_at' => null]);
+        if ($existe) { $this->json_error('Ce numéro de reçu existe déjà'); return; }
+        $this->load->helper('uuid');
+        $allowed = ['numero_recu', 'id_etudiant', 'montant_total', 'date_edition'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $insert['uuid'] = generate_uuid();
+        $insert['id_annee'] = $this->id_annee_active;
+        $insert['id_utilisateur'] = $this->session->userdata('id_utilisateur');
+        $id = $this->Model->createLastId('recus', $insert);
         if ($id) $this->json_success(['id_recu' => $id], 'Reçu créé');
         else $this->json_error('Erreur de création');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('recus', ['uuid' => $id], $data))
+        $recu = $this->Model->readOne('recus', ['uuid' => $id, 'deleted_at' => null]);
+        if (!$recu) { $this->json_error('Reçu introuvable', 404); return; }
+        if (isset($data['numero_recu']) && !empty($data['numero_recu']) && $data['numero_recu'] !== $recu['numero_recu']) {
+            $existe = $this->Model->readOne('recus', ['numero_recu' => $data['numero_recu'], 'deleted_at' => null]);
+            if ($existe) { $this->json_error('Ce numéro de reçu existe déjà'); return; }
+        }
+        if (isset($data['id_etudiant']) && !empty($data['id_etudiant'])) {
+            $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+            if (!$etudiant) { $this->json_error('Étudiant introuvable'); return; }
+        }
+        $allowed = ['numero_recu', 'id_etudiant', 'montant_total', 'date_edition'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('recus', ['uuid' => $id], $update))
             $this->json_success(null, 'Reçu mis à jour');
         else $this->json_error('Erreur de mise à jour');
     }

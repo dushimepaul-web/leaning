@@ -18,7 +18,12 @@ class Annees extends MY_Controller {
     public function api_create() {
         $data = $this->get_json_input();
         if (empty($data['libelle'])) { $this->json_error('Libellé obligatoire'); return; }
-        $id = $this->Model->createLastId('annees_scolaires', $data);
+        $allowed = ['libelle', 'debut', 'fin', 'est_en_cours'];
+        $clean = [];
+        foreach ($allowed as $col) {
+            if (isset($data[$col])) { $clean[$col] = $data[$col]; }
+        }
+        $id = $this->Model->createLastId('annees_scolaires', $clean);
         if ($id) $this->json_success(['id_annee' => $id], 'Année scolaire créée');
         else $this->json_error('Erreur');
     }

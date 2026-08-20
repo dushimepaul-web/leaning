@@ -31,6 +31,7 @@
         </div>
         <?php if (!empty($this->session->flashdata('sms'))) echo $this->session->flashdata('sms'); ?>
         <form action="<?= base_url('Admin/do_login') ?>" method="POST" class="d-flex flex-column gap-32 submit-form">
+          <?= form_hidden($this->security->get_csrf_token_name(), $this->security->get_csrf_hash()) ?>
           <div class="d-flex flex-column gap-16">
             <div>
               <label for="email" class="text-sm fw-semibold text-primary-light d-inline-block mb-8">

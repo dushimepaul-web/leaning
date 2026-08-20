@@ -50,20 +50,16 @@
                 <li><button type="button" class="dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-10" onclick="Swal.fire({icon:'info',title:'Export Excel',text:'Fonctionnalité à venir'})"><i class="ri-file-excel-line"></i> Excel</button></li>
               </ul>
             </div>
+            <div class="d-flex align-items-center gap-8">
+              <span class="text-secondary-light text-sm fw-semibold">Classe :</span>
+              <select id="classeFilter" class="form-control form-select" style="width:auto;padding:0.375rem 2rem 0.375rem 0.75rem;">
+                <option value="">Toutes les classes</option>
+              </select>
+            </div>
             <form class="navbar-search dt-search m-0">
               <input type="text" id="dtSearch" class="dt-input bg-transparent radius-4" placeholder="Rechercher...">
               <i class="ri-search-line icon"></i>
             </form>
-          </div>
-          <div class="d-flex align-items-center gap-8 text-secondary-light">
-            <span>Lignes par page :</span>
-            <select id="dtLength" class="form-control form-select" style="width:auto;padding:0.375rem 2rem 0.375rem 0.75rem;">
-              <option value="5">5</option>
-              <option value="10" selected>10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
           </div>
         </div>
         <table class="table mb-0" id="dataTable" style="width:100%; border-collapse: collapse; border: 1px solid #ced4da;">
@@ -80,6 +76,13 @@
           </thead>
           <tbody id="dataBody"></tbody>
         </table>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-top border-neutral-200">
+          <span id="pageInfo" class="text-secondary-light text-sm"></span>
+          <div class="d-flex align-items-center gap-8">
+            <button type="button" id="pagePrev" class="px-12 py-5-px border border-neutral-300 radius-8 d-flex align-items-center gap-8 text-secondary-light text-sm" onclick="goPage(-1)"><i class="ri-arrow-left-s-line"></i> Précédent</button>
+            <button type="button" id="pageNext" class="px-12 py-5-px border border-neutral-300 radius-8 d-flex align-items-center gap-8 text-secondary-light text-sm" onclick="goPage(1)">Suivant <i class="ri-arrow-right-s-line"></i></button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -95,24 +98,31 @@
   <form id="mainForm" class="d-flex flex-column p-20">
     <input type="hidden" id="recordId">
     <input type="hidden" id="id_matiere">
-    <input type="hidden" id="id_classe">
     <input type="hidden" id="id_enseignant">
     <input type="hidden" id="id_section">
     <div class="row g-3">
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Matière *</label>
-        <input type="text" class="form-control" id="matiereSearch" placeholder="Rechercher une matière...">
-        <div class="autocomplete-results" id="matiereResults"></div>
+        <input type="text" class="form-control" id="matiereSearch" placeholder="Rechercher une matière..." autocomplete="off">
+        <div class="list-group position-absolute z-99 w-100 shadow radius-8 border" id="matiereResults" style="display:none;max-height:200px;overflow-y:auto;"></div>
       </div>
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Section</label>
-        <input type="text" class="form-control" id="sectionSearch" placeholder="Rechercher une section...">
-        <div class="autocomplete-results" id="sectionResults"></div>
+        <select class="form-control form-select" id="sectionSelect">
+          <option value="">-- Toutes les sections --</option>
+          <?php foreach ($sections as $s): ?>
+          <option value="<?= $s['id_section'] ?>"><?= htmlspecialchars($s['libelle']) ?></option>
+          <?php endforeach; ?>
+        </select>
       </div>
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe *</label>
-        <input type="text" class="form-control" id="classeSearch" placeholder="Rechercher une classe...">
-        <div class="autocomplete-results" id="classeResults"></div>
+        <select class="form-control form-select" id="id_classe">
+          <option value="">Sélectionnez d'abord une section...</option>
+          <?php foreach ($classes as $c): ?>
+          <option value="<?= $c['id_classe'] ?>" data-section="<?= $c['id_section'] ?? '' ?>"><?= htmlspecialchars($c['libelle']) ?></option>
+          <?php endforeach; ?>
+        </select>
       </div>
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Coefficient</label>
@@ -162,42 +172,39 @@
 let editingId = null;
 let deleteId = null;
 
+const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
+
 var allClasses = JSON.parse(document.getElementById('classesData').textContent);
-const classItems = allClasses.map(function(c) { return {id: c.id_classe, libelle: c.libelle, code: c.code, id_section: c.id_section}; });
 const matieresItems = JSON.parse(document.getElementById('matieresData').textContent).map(function(m) { return {id: m.id_matiere, libelle: m.libelle, code: m.code}; });
 const allSections = JSON.parse(document.getElementById('sectionsData').textContent || '[]');
 
 autoSetup('matiereSearch', 'id_matiere', 'matiereResults', matieresItems, function(m) { return m.libelle + ' (' + (m.code || '') + ')'; });
-var classCtrl = autoSetup('classeSearch', 'id_classe', 'classeResults', classItems, function(c) { return c.libelle; });
-autoSetup('sectionSearch', 'id_section', 'sectionResults', allSections.map(function(s) { return {id: s.id_section, libelle: s.libelle}; }), function(s) { return s.libelle; }, function(section) {
-  if (!classCtrl) return;
-  if (!section || !section.id) {
-    classCtrl.updateItems(classItems);
-  } else {
-    var filtered = allClasses.filter(function(c) { return String(c.id_section) === String(section.id); });
-    classCtrl.updateItems(filtered.map(function(c) { return {id: c.id_classe, libelle: c.libelle, id_section: c.id_section}; }));
-  }
-  document.getElementById('id_classe').value = '';
-  document.getElementById('classeSearch').value = '';
-  document.getElementById('classeSearch').classList.remove('border-success', 'border-2');
+
+function filterClassesBySection(secId) {
+  const classSelect = document.getElementById('id_classe');
+  Array.from(classSelect.options).forEach(function(opt) {
+    if (!opt.value) return;
+    opt.style.display = (!secId || opt.getAttribute('data-section') === secId) ? '' : 'none';
+  });
+  classSelect.value = '';
+  document.getElementById('id_section').value = secId || '';
+}
+
+document.getElementById('sectionSelect').addEventListener('change', function() {
+  filterClassesBySection(this.value);
 });
 
 function openAddSidebar() {
   editingId = null;
   document.getElementById('sidebarTitle').textContent = 'Ajouter un programme';
+  document.getElementById('mainForm').reset();
   document.getElementById('recordId').value = '';
   document.getElementById('id_matiere').value = '';
-  document.getElementById('id_classe').value = '';
   document.getElementById('id_section').value = '';
-  document.getElementById('matiereSearch').value = '';
-  document.getElementById('classeSearch').value = '';
-  document.getElementById('sectionSearch').value = '';
-  document.getElementById('coefficient').value = '';
-  document.getElementById('nb_heures_par_jour').value = '';
-  document.getElementById('nb_heures_par_semaine').value = '';
+  document.getElementById('sectionSelect').value = '';
+  filterClassesBySection(null);
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
-  if (classCtrl) classCtrl.updateItems(classItems);
 }
 
 function openEditSidebar(data) {
@@ -205,27 +212,15 @@ function openEditSidebar(data) {
   document.getElementById('sidebarTitle').textContent = 'Modifier le programme';
   document.getElementById('recordId').value = data.uuid;
   document.getElementById('id_matiere').value = data.id_matiere;
-  document.getElementById('id_classe').value = data.id_classe;
   document.getElementById('matiereSearch').value = data.matiere_libelle || '';
-  document.getElementById('classeSearch').value = data.classe_libelle || '';
   document.getElementById('coefficient').value = data.coefficient || '';
   document.getElementById('nb_heures_par_jour').value = data.nb_heures_par_jour || '';
   document.getElementById('nb_heures_par_semaine').value = data.nb_heures_par_semaine || '';
-  // Section from class
   var cls = allClasses.find(function(c) { return String(c.id_classe) === String(data.id_classe); });
-  if (cls && cls.id_section) {
-    document.getElementById('id_section').value = cls.id_section;
-    var sec = allSections.find(function(s) { return String(s.id_section) === String(cls.id_section); });
-    document.getElementById('sectionSearch').value = sec ? sec.libelle : '';
-    if (classCtrl) {
-      var filtered = allClasses.filter(function(c) { return String(c.id_section) === String(cls.id_section); });
-      classCtrl.updateItems(filtered.map(function(c) { return {id: c.id_classe, libelle: c.libelle, id_section: c.id_section}; }));
-    }
-  } else {
-    document.getElementById('id_section').value = '';
-    document.getElementById('sectionSearch').value = '';
-    if (classCtrl) classCtrl.updateItems(classItems);
-  }
+  var secId = cls && cls.id_section ? String(cls.id_section) : '';
+  document.getElementById('sectionSelect').value = secId;
+  filterClassesBySection(secId);
+  document.getElementById('id_classe').value = data.id_classe;
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -235,42 +230,81 @@ function closeSidebar() {
   document.getElementById('sidebarOverlay').classList.remove('active');
 }
 
+let currentFilter = '';
+let currentPage = 1;
+let groupsCache = [];
+let totalProgrammes = 0;
+
 async function loadData() {
   const res = await API.matieres_classes.list();
-  if (!res.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
+  if (!res.success) { $('#dataBody').html('<tr><td colspan="7" class="text-center text-danger">Erreur de chargement</td></tr>'); $('#pageInfo').html(''); return; }
+  
+  // Filtrer par classe si une sélection est active
+  let data = res.data;
+  if (currentFilter) {
+    data = data.filter(function(s) { return String(s.id_classe) === String(currentFilter); });
+  }
   
   // Regrouper par classe
   const grouped = {};
-  res.data.forEach(function(s) {
+  data.forEach(function(s) {
     const cName = s.classe_libelle || 'Inconnue';
     if (!grouped[cName]) grouped[cName] = [];
     grouped[cName].push(s);
   });
+  groupsCache = Object.keys(grouped).map(function(c) { return { classe: c, items: grouped[c] }; });
+  totalProgrammes = data.length;
+
+  if (currentPage > groupsCache.length) currentPage = groupsCache.length;
+  if (currentPage < 1) currentPage = 1;
+
+  render();
+}
+
+function render() {
+  if (!groupsCache.length) {
+    $('#dataBody').html('<tr><td colspan="7" class="text-center text-secondary-light py-40">Aucun programme pour cette classe</td></tr>');
+    $('#pageInfo').html('');
+    document.getElementById('pagePrev').disabled = true;
+    document.getElementById('pageNext').disabled = true;
+    return;
+  }
+
+  // Une page = une classe
+  const g = groupsCache[currentPage - 1];
+  const rowSpan = g.items.length;
 
   let rows = '';
-  let index = 1;
-
-  Object.keys(grouped).forEach(function(classe) {
-    const items = grouped[classe];
-    const rowSpan = items.length;
-
-    items.forEach(function(s, idx) {
-      rows += '<tr style="transition:0.2s;">';
-      if (idx === 0) {
-        rows += '<td rowspan="' + rowSpan + '" class="align-middle text-center fw-bold" style="font-size:0.95rem; vertical-align:middle; padding: 12px 16px; border: 1px solid #ced4da; background-color: #f1f3f5;">' + classe + '</td>';
-      }
-      rows += '<td class="align-middle text-start" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.matiere_code || '-') + '</td>';
-      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.coefficient ?? '-') + '</td>';
-      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_jour ?? '0.0') + '</td>';
-      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_semaine ?? '0.0') + '</td>';
-      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.enseignant_fullname || '-') + '</td>';
-      rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da;"><div class="btn-group"><button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button><ul class="dropdown-menu dropdown-menu-lg-end border p-12"><li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord(\'' + s.uuid + '\')"><i class="ri-edit-2-line"></i> Modifier</button></li><li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete(\'' + s.uuid + '\')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li></ul></div></td>';
-      rows += '</tr>';
-    });
+  g.items.forEach(function(s, idx) {
+    rows += '<tr style="transition:0.2s;">';
+    if (idx === 0) {
+      rows += '<td rowspan="' + rowSpan + '" class="align-middle text-center fw-bold" style="font-size:0.95rem; vertical-align:middle; padding: 12px 16px; border: 1px solid #ced4da; background-color: #f1f3f5;">' + g.classe + '</td>';
+    }
+    rows += '<td class="align-middle text-start" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.matiere_code || '-') + '</td>';
+    rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.coefficient ?? '-') + '</td>';
+    rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_jour ?? '0.0') + '</td>';
+    rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_semaine ?? '0.0') + '</td>';
+    rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.enseignant_fullname || '-') + '</td>';
+    rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da;"><div class="btn-group"><button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button><ul class="dropdown-menu dropdown-menu-lg-end border p-12"><li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord(\'' + s.uuid + '\')"><i class="ri-edit-2-line"></i> Modifier</button></li><li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete(\'' + s.uuid + '\')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li></ul></div></td>';
+    rows += '</tr>';
   });
 
   $('#dataBody').html(rows);
-  // DataTables désactivé pour ce tableau groupé avec rowspan pour éviter les conflits d'indexation de colonnes.
+
+  const info = document.getElementById('pageInfo');
+  info.textContent = g.classe
+    + ' — page ' + currentPage + ' / ' + groupsCache.length
+    + ' · ' + rowSpan + ' programme' + (rowSpan > 1 ? 's' : '')
+    + ' (' + totalProgrammes + ' au total)';
+  document.getElementById('pagePrev').disabled = currentPage <= 1;
+  document.getElementById('pageNext').disabled = currentPage >= groupsCache.length;
+}
+
+function goPage(delta) {
+  currentPage += delta;
+  if (currentPage < 1) currentPage = 1;
+  if (currentPage > groupsCache.length) currentPage = groupsCache.length;
+  render();
 }
 
 async function editRecord(id) {
@@ -297,6 +331,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   if (res.success) {
     closeSidebar();
     loadData();
+    Toast.fire({ icon: 'success', title: res.message || 'Programme enregistré' });
   } else {
     Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
   }
@@ -315,6 +350,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
   if (res.success) {
     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
     loadData();
+    Toast.fire({ icon: 'success', title: res.message || 'Programme supprimé' });
   } else {
     Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
   }
@@ -325,6 +361,24 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
   var wait = setInterval(function() {
     if (typeof jQuery !== 'undefined' && typeof API !== 'undefined') {
       clearInterval(wait);
+
+      // Remplir le filtre des classes
+      var classFilterEl = document.getElementById('classeFilter');
+      var sortedClasses = allClasses.slice().sort(function(a, b) {
+        return String(a.libelle).localeCompare(String(b.libelle));
+      });
+      sortedClasses.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c.id_classe;
+        opt.textContent = c.libelle;
+        classFilterEl.appendChild(opt);
+      });
+      classFilterEl.addEventListener('change', function() {
+        currentFilter = this.value;
+        currentPage = 1;
+        loadData();
+      });
+
       loadData();
       $('#dtSearch').on('keyup', function() {
         var q = this.value.toLowerCase();
@@ -333,7 +387,6 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
           $(this).toggle(text.indexOf(q) > -1);
         });
       });
-      $('#dtLength').parent().hide();
     }
   }, 50);
 })();

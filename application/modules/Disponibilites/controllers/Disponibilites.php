@@ -54,6 +54,17 @@ class Disponibilites extends MY_Controller {
             !is_numeric($data['id_enseignant']) || !is_numeric($data['id_creneau']) || !is_numeric($data['id_jour'])) {
             $this->json_error('Enseignant, créneau et jour obligatoires'); return;
         }
+        if (!$this->Model->readOne('enseignants', ['id_enseignant' => $data['id_enseignant'], 'deleted_at' => null])) {
+            $this->json_error('Enseignant introuvable'); return;
+        }
+        if (!$this->Model->readOne('jours_semaine', ['id_jour' => $data['id_jour']])) {
+            $this->json_error('Jour invalide'); return;
+        }
+        $this->load->model('Horaires/Horaires_model');
+        $creneaux = $this->Horaires_model->get_creneaux_cours();
+        if (!in_array((int)$data['id_creneau'], array_column($creneaux, 'id_creneau'))) {
+            $this->json_error('Créneau invalide'); return;
+        }
         $data['type'] = !empty($data['type']) ? $data['type'] : 'disponible';
         $existing = $this->Model->readOne('disponibilites_enseignants', [
             'id_enseignant' => $data['id_enseignant'],
@@ -65,14 +76,22 @@ class Disponibilites extends MY_Controller {
             $this->json_error('Cette disponibilité existe déjà pour cet enseignant');
             return;
         }
-        $id = $this->Model->createLastId('disponibilites_enseignants', $data);
+        $allowed = ['id_enseignant', 'id_creneau', 'id_jour', 'type'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('disponibilites_enseignants', $insert);
         if ($id) $this->json_success(['id_disponibilite' => $id], 'Disponibilité créée');
         else $this->json_error('Erreur');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('disponibilites_enseignants', ['uuid' => $id], $data))
+        if (!$this->Model->readOne('disponibilites_enseignants', ['uuid' => $id])) {
+            $this->json_error('Disponibilité non trouvée', 404); return;
+        }
+        $allowed = ['id_enseignant', 'id_creneau', 'id_jour', 'type'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('disponibilites_enseignants', ['uuid' => $id], $update))
             $this->json_success(null, 'Disponibilité mise à jour');
         else $this->json_error('Erreur');
     }

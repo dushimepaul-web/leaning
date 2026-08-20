@@ -40,7 +40,15 @@ class Paiement_recu extends MY_Controller {
         if (empty($data['id_recu']) || empty($data['id_paiement'])) {
             $this->json_error('Reçu et paiement obligatoires'); return;
         }
-        $id = $this->Model->createLastId('paiements_recus', $data);
+        if (!$this->Model->readOne('recus', ['id_recu' => $data['id_recu'], 'deleted_at' => null])) {
+            $this->json_error('Reçu introuvable'); return;
+        }
+        if (!$this->Model->readOne('paiements', ['id_paiement' => $data['id_paiement'], 'deleted_at' => null])) {
+            $this->json_error('Paiement introuvable'); return;
+        }
+        $allowed = ['id_recu', 'id_paiement'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('paiements_recus', $insert);
         if ($id) $this->json_success(['id_paiement_recu' => $id], 'Association créée');
         else $this->json_error('Erreur de création');
     }

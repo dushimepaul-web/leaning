@@ -60,9 +60,9 @@
                   </div>
                   <div>
                     <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Recherche</label>
-                    <input type="text" id="filterSearch" class="form-control" placeholder="Mot-cl�...">
+                    <input type="text" id="filterSearch" class="form-control" placeholder="Mot-clé...">
                   </div>
-                  <div><button type="reset" class="btn btn-danger-200 text-danger-600 w-100" onclick="resetFilters()">R�initialiser</button></div>
+                  <div><button type="reset" class="btn btn-danger-200 text-danger-600 w-100" onclick="resetFilters()">Réinitialiser</button></div>
                   <div><button type="button" class="btn btn-primary-600 w-100" onclick="applyFilters()">Appliquer</button></div>
                 </form>
               </div>
@@ -157,14 +157,20 @@
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 function applyFilters() {
+  const table = $('#dataTable').DataTable();
   const searchVal = document.getElementById('filterSearch')?.value || '';
-  $('#dataTable').DataTable().search(searchVal).draw();
+  const statutVal = document.getElementById('filterStatut')?.value || '';
+  table.search(searchVal);
+  table.column(5).search(statutVal === 'actif' ? 'Actif' : statutVal === 'inactif' ? 'Inactif' : '').draw();
 }
 
 function resetFilters() {
   if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
   if (document.getElementById('filterStatut')) document.getElementById('filterStatut').value = '';
-  $('#dataTable').DataTable().search('').draw();
+  const table = $('#dataTable').DataTable();
+  table.search('');
+  table.column(5).search('');
+  table.draw();
 }
 
 let editingId = null;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RÃ©initialiser le mot de passe - <?= $this->Model->get_setting('nom_ecole', 'VIP School') ?></title>
+  <title>Réinitialiser le mot de passe - <?= $this->Model->get_setting('nom_ecole', 'VIP School') ?></title>
   <?php $fav = $this->Model->get_setting('favicon_ecole', 'assets/images/favicon.png'); ?>
   <link rel="icon" type="image/png" href="<?= base_url($fav) ?>">
   <link rel="stylesheet" href="<?= base_url('assets/css/remixicon.css') ?>">
@@ -15,7 +15,7 @@
   <div class="d-lg-flex bg-white" style="min-height:100vh;">
     <div class="w-50 d-lg-flex d-none overflow-hidden">
       <?php $login_img = $this->Model->get_setting('login_img', 'assets/images/thumbs/login-img.png'); ?>
-      <img src="<?= base_url($login_img) ?>" alt="RÃ©initialisation" class="w-100 h-100 object-fit-cover" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#25A194 0%,#1C7F73 100%)'">
+      <img src="<?= base_url($login_img) ?>" alt="Réinitialisation" class="w-100 h-100 object-fit-cover" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#25A194 0%,#1C7F73 100%)'">
     </div>
     <div class="lg-w-50 px-24 py-32 d-flex justify-content-center align-items-center">
       <div class="max-w-540-px mx-auto w-100">
@@ -24,11 +24,12 @@
           <img src="<?= base_url($logo) ?>" alt="Logo">
         </a>
         <div class="mt-32 mb-32">
-          <h1 class="h6 fw-bold text-primary-light mb-8">RÃ©initialiser le mot de passe</h1>
+          <h1 class="h6 fw-bold text-primary-light mb-8">Réinitialiser le mot de passe</h1>
           <p class="text-sm text-secondary-light mb-0">Choisissez un nouveau mot de passe pour votre compte</p>
         </div>
         <?php if (!empty($this->session->flashdata('sms'))) echo $this->session->flashdata('sms'); ?>
         <form action="<?= base_url('Admin/do_reset_password') ?>" method="POST" class="d-flex flex-column gap-32">
+          <?= form_hidden($this->security->get_csrf_token_name(), $this->security->get_csrf_hash()) ?>
           <input type="hidden" name="token" value="<?= isset($token) ? htmlspecialchars($token) : '' ?>">
           <div class="d-flex flex-column gap-16">
             <div>
@@ -59,12 +60,12 @@
             </div>
           </div>
           <div>
-            <button type="submit" class="btn btn-primary-600 text-sm btn-sm px-12 py-16 w-100 radius-8">RÃ©initialiser</button>
+            <button type="submit" class="btn btn-primary-600 text-sm btn-sm px-12 py-16 w-100 radius-8">Réinitialiser</button>
           </div>
         </form>
         <div class="mt-32 text-center text-sm">
           <a href="<?= base_url('Admin') ?>" class="text-primary-600 fw-semibold text-decoration-underline">
-            <i class="ri-arrow-left-line"></i> Retour Ã  la connexion
+            <i class="ri-arrow-left-line"></i> Retour à la connexion
           </a>
         </div>
       </div>

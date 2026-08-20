@@ -29,6 +29,7 @@
         </div>
         <?php if (!empty($this->session->flashdata('sms'))) echo $this->session->flashdata('sms'); ?>
         <form action="<?= base_url('Admin/do_register') ?>" method="POST" class="d-flex flex-column gap-24">
+          <?= form_hidden($this->security->get_csrf_token_name(), $this->security->get_csrf_hash()) ?>
           <div>
             <label class="text-sm fw-semibold text-primary-light mb-8">
               Nom complet <span class="text-danger-600">*</span>

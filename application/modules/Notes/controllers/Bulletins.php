@@ -14,6 +14,21 @@ class Bulletins extends MY_Controller {
         $this->load->view('bulletins', $data);
     }
 
+    public function api_get($id) {
+        $this->db->where('b.uuid', $id);
+        $this->db->where('b.deleted_at', null);
+        $this->db->select("b.*, e.fullname AS nom, '' AS prenom, e.matricule, c.libelle as classe, p.libelle as periode, a.libelle as annee");
+        $this->db->from('bulletins b');
+        $this->db->join('etudiants e', 'b.id_etudiant = e.id_etudiant', 'left');
+        $this->db->join('classes c', 'b.id_classe = c.id_classe', 'left');
+        $this->db->join('periodes p', 'b.id_periode = p.id_periode', 'left');
+        $this->db->join('annees_scolaires a', 'b.id_annee = a.id_annee', 'left');
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
+        if (!$d) { $this->json_error('Bulletin introuvable', 404); return; }
+        $this->json_success($d);
+    }
+
     public function api_list() {
         $this->db->where('b.deleted_at', null);
         $this->db->select("b.*, e.fullname AS nom, '' AS prenom, e.matricule, c.libelle as classe, p.libelle as periode, a.libelle as annee");
@@ -32,6 +47,29 @@ class Bulletins extends MY_Controller {
         if (empty($data['id_etudiant']) || empty($data['id_classe']) || empty($data['id_periode']) || empty($data['id_annee'])) {
             $this->json_error('Étudiant, classe, période et année obligatoires'); return;
         }
+        if (!$this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null])) {
+            $this->json_error('Étudiant introuvable'); return;
+        }
+        if (!$this->Model->readOne('classes', ['id_classe' => $data['id_classe'], 'deleted_at' => null])) {
+            $this->json_error('Classe introuvable'); return;
+        }
+        $periode = $this->Model->readOne('periodes', ['id_periode' => $data['id_periode'], 'deleted_at' => null]);
+        if (!$periode) { $this->json_error('Période introuvable'); return; }
+        if ((int)$periode['id_annee'] !== (int)$data['id_annee']) {
+            $this->json_error('La période ne correspond pas à l\'année choisie'); return;
+        }
+        if (!$this->Model->readOne('annees_scolaires', ['id_annee' => $data['id_annee'], 'deleted_at' => null])) {
+            $this->json_error('Année scolaire introuvable'); return;
+        }
+        $inscription = $this->Model->readOne('inscriptions', [
+            'id_etudiant' => $data['id_etudiant'],
+            'id_annee' => $data['id_annee'],
+            'deleted_at' => null
+        ]);
+        if (!$inscription) { $this->json_error('Aucune inscription pour cet étudiant cette année'); return; }
+        if ((int)$inscription['id_classe'] !== (int)$data['id_classe']) {
+            $this->json_error('La classe ne correspond pas à l\'inscription de l\'étudiant'); return;
+        }
         $existing = $this->Model->readOne('bulletins', [
             'id_etudiant' => $data['id_etudiant'],
             'id_periode' => $data['id_periode'],
@@ -39,6 +77,13 @@ class Bulletins extends MY_Controller {
             'deleted_at' => null
         ]);
         if ($existing) { $this->json_error('Un bulletin existe déjà pour cet étudiant sur cette période'); return; }
+        $moyenne = isset($data['moyenne']) && $data['moyenne'] !== '' && $data['moyenne'] !== null ? floatval($data['moyenne']) : null;
+        if ($moyenne !== null && ($moyenne < 0 || $moyenne > 100)) { $this->json_error('Moyenne invalide'); return; }
+        if (isset($data['rang']) && $data['rang'] !== '' && $data['rang'] !== null && intval($data['rang']) < 1) {
+            $this->json_error('Rang invalide'); return;
+        }
+        $decision = $data['decision'] ?? 'admis';
+        if (!in_array($decision, ['admis', 'ajourne', 'echoue'], true)) { $this->json_error('Décision invalide'); return; }
         $this->load->helper('uuid');
         $insert = [
             'uuid' => generate_uuid(),
@@ -46,9 +91,9 @@ class Bulletins extends MY_Controller {
             'id_classe' => $data['id_classe'],
             'id_periode' => $data['id_periode'],
             'id_annee' => $data['id_annee'],
-            'moyenne' => isset($data['moyenne']) ? $data['moyenne'] : null,
-            'rang' => isset($data['rang']) ? $data['rang'] : null,
-            'decision' => isset($data['decision']) ? $data['decision'] : 'admis',
+            'moyenne' => $moyenne,
+            'rang' => isset($data['rang']) && $data['rang'] !== '' ? intval($data['rang']) : null,
+            'decision' => $decision,
             'date_edition' => !empty($data['date_edition']) ? $data['date_edition'] : date('Y-m-d'),
         ];
         $id = $this->Model->createLastId('bulletins', $insert);
@@ -61,6 +106,17 @@ class Bulletins extends MY_Controller {
         $allowed = ['moyenne', 'rang', 'decision', 'date_edition'];
         $update = array_intersect_key($data, array_flip($allowed));
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if (isset($update['moyenne']) && $update['moyenne'] !== '' && $update['moyenne'] !== null) {
+            $moyenne = floatval($update['moyenne']);
+            if ($moyenne < 0 || $moyenne > 100) { $this->json_error('Moyenne invalide'); return; }
+            $update['moyenne'] = $moyenne;
+        }
+        if (isset($update['rang']) && $update['rang'] !== '' && $update['rang'] !== null && intval($update['rang']) < 1) {
+            $this->json_error('Rang invalide'); return;
+        }
+        if (isset($update['decision']) && !in_array($update['decision'], ['admis', 'ajourne', 'echoue'], true)) {
+            $this->json_error('Décision invalide'); return;
+        }
         if ($this->Model->update('bulletins', ['uuid' => $id], $update))
             $this->json_success(null, 'Bulletin mis à jour');
         else $this->json_error('Erreur');
@@ -157,7 +213,7 @@ class Bulletins extends MY_Controller {
             $notes = isset($notesByStudent[$student['id_etudiant']]) ? $notesByStudent[$student['id_etudiant']] : [];
             if (empty($notes)) continue;
 
-            // Calculer la moyenne pondérée
+            // Calculer la moyenne pondérée (notes normalisées sur 20)
             $sum = 0;
             $count = 0;
             foreach ($notes as $note) {
@@ -166,7 +222,8 @@ class Bulletins extends MY_Controller {
                     if ($ev['id_evaluation'] == $note['id_evaluation']) { $eval = $ev; break; }
                 }
                 $coeff = $eval ? floatval($eval['coefficient']) : 1.0;
-                $sum += floatval($note['note']) * $coeff;
+                $sur = $eval && floatval($eval['sur']) > 0 ? floatval($eval['sur']) : 20;
+                $sum += (floatval($note['note']) / $sur) * 20 * $coeff;
                 $count += $coeff;
             }
             $moyenne = $count > 0 ? round($sum / $count, 2) : 0;
@@ -301,7 +358,7 @@ class Bulletins extends MY_Controller {
             : 'N/A';
 
         $all_subjects = $this->Model->readQuery("
-            SELECT m.id_matiere AS id, m.libelle AS name, m.code, mc.coefficient, 1 AS is_active
+            SELECT m.id_matiere AS id, m.libelle AS name, m.code, mc.coefficient, mc.nb_heures_par_semaine, 1 AS is_active
             FROM matieres_classes mc
             JOIN matieres m ON m.id_matiere = mc.id_matiere
             WHERE mc.id_classe = ? AND mc.deleted_at IS NULL AND m.deleted_at IS NULL
@@ -393,6 +450,21 @@ class Bulletins extends MY_Controller {
 
         $classe_info = $this->Model->readOne('classes', ['id_classe' => $class_id]);
         $classe_nom = $classe_info ? $classe_info['libelle'] : 'Classe';
+
+        // Activations Ressources/Compétences : niveau classe si renseigné, sinon global
+        $data['ressources_active'] = ($classe_info && $classe_info['ressources_active'] !== null)
+            ? intval($classe_info['ressources_active'])
+            : intval($this->Model->get_setting('ressources_active', 1));
+        $data['competences_active'] = ($classe_info && $classe_info['competences_active'] !== null)
+            ? intval($classe_info['competences_active'])
+            : intval($this->Model->get_setting('competences_active', 1));
+        $data['ressources_pourcentage'] = ($classe_info && $classe_info['ressources_pourcentage'] !== null)
+            ? floatval($classe_info['ressources_pourcentage'])
+            : floatval($this->Model->get_setting('pourcentage_ressources_examen', 60));
+        $data['competences_pourcentage'] = ($classe_info && $classe_info['competences_pourcentage'] !== null)
+            ? floatval($classe_info['competences_pourcentage'])
+            : floatval($this->Model->get_setting('pourcentage_competences_examen', 40));
+        $data['facteur_points_heure'] = floatval($this->Model->get_setting('facteur_points_heure', 15));
 
         $data['title'] = 'Bulletins de la classe ' . $classe_nom;
         $data['eleves'] = $eleves;

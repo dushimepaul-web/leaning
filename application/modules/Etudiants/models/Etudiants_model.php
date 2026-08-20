@@ -67,7 +67,9 @@ class Etudiants_model extends Model
         $data['cree_le'] = date('Y-m-d H:i:s');
         $data['modifie_le'] = date('Y-m-d H:i:s');
 
-        if ($this->db->insert('etudiants', $data)) {
+        $this->db->trans_start();
+        $ok = $this->db->insert('etudiants', $data);
+        if ($ok) {
             $id_etudiant = $this->db->insert_id();
 
             // Créer inscription
@@ -82,10 +84,13 @@ class Etudiants_model extends Model
                 'modifie_le' => date('Y-m-d H:i:s'),
             ];
             $this->db->insert('inscriptions', $inscription);
-
-            return ['success' => true, 'id_etudiant' => $id_etudiant];
         }
-        return ['success' => false, 'message' => 'Erreur insertion étudiant'];
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === false) {
+            return ['success' => false, 'message' => 'Erreur insertion étudiant / inscription'];
+        }
+        return ['success' => true, 'id_etudiant' => isset($id_etudiant) ? $id_etudiant : null];
     }
 
     public function update_record($id, $data)

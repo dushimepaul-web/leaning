@@ -30,13 +30,20 @@ class Evaluations extends MY_Controller {
     public function api_create() {
         $data = $this->get_json_input();
         if (empty($data['libelle'])) { $this->json_error('Libellé obligatoire'); return; }
-        $data['id_annee'] = $this->id_annee_active;
-        $data['id_periode'] = !empty($data['id_periode']) ? $data['id_periode'] : $this->id_periode_active;
-        $data['date_eval'] = !empty($data['date_eval']) ? $data['date_eval'] : date('Y-m-d');
-        $data['type'] = !empty($data['type']) ? $data['type'] : 'devoir';
-        $data['coefficient'] = !empty($data['coefficient']) ? $data['coefficient'] : 1.0;
-        $data['sur'] = !empty($data['sur']) ? $data['sur'] : 20.0;
-        $id = $this->Model->createLastId('evaluations', $data);
+        foreach (['id_classe', 'id_matiere', 'id_periode'] as $f) {
+            if (empty($data[$f])) { $this->json_error('Classe, matière et période obligatoires'); return; }
+        }
+        if (!$this->Model->readOne('classes', ['id_classe' => $data['id_classe'], 'deleted_at' => null])) { $this->json_error('Classe introuvable'); return; }
+        if (!$this->Model->readOne('matieres', ['id_matiere' => $data['id_matiere'], 'deleted_at' => null])) { $this->json_error('Matière introuvable'); return; }
+        if (!$this->Model->readOne('periodes', ['id_periode' => $data['id_periode'], 'deleted_at' => null])) { $this->json_error('Période introuvable'); return; }
+        $allowed = ['libelle', 'type', 'coefficient', 'sur', 'date_eval', 'id_periode', 'id_classe', 'id_matiere'];
+        $insert = array_intersect_key($data, array_flip($allowed));
+        $insert['id_annee'] = $this->id_annee_active;
+        $insert['date_eval'] = !empty($insert['date_eval']) ? $insert['date_eval'] : date('Y-m-d');
+        $insert['type'] = !empty($insert['type']) ? $insert['type'] : 'devoir';
+        $insert['coefficient'] = !empty($insert['coefficient']) ? $insert['coefficient'] : 1.0;
+        $insert['sur'] = !empty($insert['sur']) ? $insert['sur'] : 20.0;
+        $id = $this->Model->createLastId('evaluations', $insert);
         if ($id) $this->json_success(['id_evaluation' => $id], 'Évaluation créée');
         else $this->json_error('Erreur');
     }

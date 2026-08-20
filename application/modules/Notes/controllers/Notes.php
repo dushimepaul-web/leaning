@@ -15,6 +15,20 @@ class Notes extends MY_Controller {
         $this->load->view('index', $data);
     }
 
+    public function api_get($id) {
+        $this->db->where('n.uuid', $id);
+        $this->db->where('n.deleted_at', null);
+        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, m.libelle as matiere, ev.libelle as evaluation, ev.sur");
+        $this->db->from('notes n');
+        $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
+        $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
+        $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
+        $q = $this->db->get();
+        $d = $q !== false ? $q->row_array() : null;
+        if (!$d) { $this->json_error('Note introuvable', 404); return; }
+        $this->json_success($d);
+    }
+
     public function api_list() {
         $this->db->where('n.deleted_at', null);
         $this->db->select("n.*, e.fullname AS nom, '' AS prenom, m.libelle as matiere, ev.libelle as evaluation");
@@ -42,7 +56,17 @@ class Notes extends MY_Controller {
         if (empty($data['id_etudiant']) || !isset($data['note'])) {
             $this->json_error('Étudiant et note obligatoires'); return;
         }
-        $id = $this->Model->createLastId('notes', $data);
+        $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+        if (!$etudiant) { $this->json_error('Étudiant introuvable'); return; }
+        if (!empty($data['id_evaluation'])) {
+            $eval = $this->Model->readOne('evaluations', ['id_evaluation' => $data['id_evaluation'], 'deleted_at' => null]);
+            if (!$eval) { $this->json_error('Évaluation introuvable'); return; }
+            $max = floatval($eval['sur'] ?: 20);
+            if (floatval($data['note']) > $max) { $this->json_error('La note ne peut pas dépasser ' . $max); return; }
+        }
+        $allowed = ['id_etudiant', 'id_evaluation', 'note', 'appreciation'];
+        $clean = array_intersect_key($data, array_flip($allowed));
+        $id = $this->Model->createLastId('notes', $clean);
         if ($id) $this->json_success(['id_note' => $id], 'Note ajoutée');
         else $this->json_error('Erreur');
     }
@@ -56,6 +80,10 @@ class Notes extends MY_Controller {
         $updated = 0;
         foreach ($data['notes'] as $note) {
             if (empty($note['id_etudiant']) || !isset($note['note']) || empty($note['id_evaluation'])) continue;
+            $eval = $this->Model->readOne('evaluations', ['id_evaluation' => $note['id_evaluation'], 'deleted_at' => null]);
+            if (!$eval) continue;
+            $max = floatval($eval['sur'] ?: 20);
+            if (floatval($note['note']) > $max) continue;
             $existing = $this->Model->readOne('notes', [
                 'id_etudiant' => $note['id_etudiant'],
                 'id_evaluation' => $note['id_evaluation'],
@@ -119,8 +147,19 @@ class Notes extends MY_Controller {
 
     public function api_grille_notes($id_classe, $id_matiere) {
         $id_periode = $this->input->get('periode');
+        $id_annee = $this->input->get('annee');
+        if ($id_annee) {
+            $annee_existe = $this->Model->readOne('annees_scolaires', ['id_annee' => $id_annee, 'deleted_at' => null]);
+            if (!$annee_existe) { $this->json_error('Année introuvable'); return; }
+        } else {
+            $id_annee = $this->id_annee_active;
+        }
+        if ($id_periode) {
+            $periode = $this->Model->readOne('periodes', ['id_periode' => $id_periode, 'id_annee' => $id_annee, 'deleted_at' => null]);
+            if (!$periode) { $this->json_error('Période introuvable pour cette année'); return; }
+        }
         $this->db->where('i.id_classe', $id_classe);
-        $this->db->where('i.id_annee', $this->id_annee_active);
+        $this->db->where('i.id_annee', (int)$id_annee);
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
         $this->db->select("e.id_etudiant, e.fullname AS nom, '' AS prenom, e.matricule");
@@ -132,6 +171,7 @@ class Notes extends MY_Controller {
 
         $this->db->where('ev.id_classe', $id_classe);
         $this->db->where('ev.id_matiere', $id_matiere);
+        $this->db->where('ev.id_annee', (int)$id_annee);
         $this->db->where('ev.deleted_at', null);
         if ($id_periode) $this->db->where('ev.id_periode', $id_periode);
         $this->db->select('ev.id_evaluation, ev.libelle, ev.sur, ev.date_eval, ev.type, ev.coefficient');

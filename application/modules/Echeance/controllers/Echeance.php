@@ -6,7 +6,12 @@ class Echeance extends MY_Controller {
 
     public function index() {
         $data['title'] = 'Gestion des échéances';
-        $data['etudiants'] = $this->Model->read('etudiants', ['deleted_at' => null]);
+        $this->db->select('e.*, i.id_classe, i.id_section');
+        $this->db->from('etudiants e');
+        $this->db->join('inscriptions i', 'e.id_etudiant = i.id_etudiant AND i.deleted_at IS NULL AND i.id_annee = ' . (int)$this->id_annee_active, 'left');
+        $this->db->where('e.deleted_at', null);
+        $q_e = $this->db->get();
+        $data['etudiants'] = $q_e !== false ? $q_e->result_array() : array();
         $data['frais'] = $this->Model->read('frais', ['deleted_at' => null]);
         $this->load->view('index', $data);
     }
@@ -38,17 +43,54 @@ class Echeance extends MY_Controller {
 
     public function api_create() {
         $data = $this->get_json_input();
-        if (empty($data['id_etudiant']) || empty($data['montant']) || empty($data['date_echeance'])) {
+        if (empty($data['id_etudiant']) || !isset($data['montant']) || $data['montant'] === '' || empty($data['date_echeance'])) {
             $this->json_error('Étudiant, montant et date d\'échéance obligatoires'); return;
         }
-        $id = $this->Model->createLastId('echeances', $data);
+        $montant = floatval($data['montant']);
+        if ($montant <= 0) { $this->json_error('Montant invalide'); return; }
+        if (strtotime($data['date_echeance']) === false) { $this->json_error('Date d\'échéance invalide'); return; }
+        $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+        if (!$etudiant) { $this->json_error('Étudiant introuvable'); return; }
+        if (!empty($data['id_frais'])) {
+            $frais = $this->Model->readOne('frais', ['id_frais' => $data['id_frais'], 'deleted_at' => null]);
+            if (!$frais) { $this->json_error('Frais introuvable'); return; }
+        }
+        $allowed = ['id_etudiant', 'id_frais', 'montant', 'date_echeance', 'statut'];
+        $clean = array_intersect_key($data, array_flip($allowed));
+        $statuts = ['impaye', 'partiel', 'paye', 'annule'];
+        $clean['statut'] = in_array($clean['statut'] ?? '', $statuts) ? $clean['statut'] : 'impaye';
+        $clean['montant'] = $montant;
+        $id = $this->Model->createLastId('echeances', $clean);
         if ($id) $this->json_success(['id_echeance' => $id], 'Échéance créée');
         else $this->json_error('Erreur de création');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        if ($this->Model->update('echeances', ['uuid' => $id], $data))
+        if (isset($data['id_etudiant']) && !empty($data['id_etudiant'])) {
+            $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null]);
+            if (!$etudiant) { $this->json_error('Étudiant introuvable'); return; }
+        }
+        if (isset($data['id_frais']) && !empty($data['id_frais'])) {
+            $frais = $this->Model->readOne('frais', ['id_frais' => $data['id_frais'], 'deleted_at' => null]);
+            if (!$frais) { $this->json_error('Frais introuvable'); return; }
+        }
+        if (isset($data['montant']) && $data['montant'] !== '') {
+            $montant = floatval($data['montant']);
+            if ($montant <= 0) { $this->json_error('Montant invalide'); return; }
+            $data['montant'] = $montant;
+        }
+        if (!empty($data['date_echeance']) && strtotime($data['date_echeance']) === false) {
+            $this->json_error('Date d\'échéance invalide'); return;
+        }
+        $allowed = ['id_etudiant', 'id_frais', 'montant', 'date_echeance', 'statut'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        $statuts = ['impaye', 'partiel', 'paye', 'annule'];
+        if (isset($update['statut']) && !in_array($update['statut'], $statuts)) {
+            $this->json_error('Statut invalide'); return;
+        }
+        if ($this->Model->update('echeances', ['uuid' => $id], $update))
             $this->json_success(null, 'Échéance mise à jour');
         else $this->json_error('Erreur de mise à jour');
     }

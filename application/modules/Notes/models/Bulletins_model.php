@@ -36,10 +36,12 @@ class Bulletins_model extends Model
 
         if (empty($matieres)) return null;
 
-        // Pass 3: Périodes — toutes les périodes (sans filtre année pour éviter DB vide).
-        // En mode cumul (fiche de points), on garde toutes les périodes : l'affichage
+        // Pass 3: Périodes de l'année scolaire sélectionnée uniquement
+        // (les périodes des autres années sont ignorées pour ne pas polluer le bulletin).
+        // En mode cumul (fiche de points), on garde toutes les périodes de l'année : l'affichage
         // cumule progressivement selon le trimestre choisi.
         $toutes_periodes = $this->db
+            ->where('id_annee', $id_annee)
             ->where('deleted_at', null)
             ->order_by('id_periode ASC')
             ->get('periodes')->result_array();
@@ -67,6 +69,48 @@ class Bulletins_model extends Model
 
         // Pass 6: Construire le résultat
         $result = $this->_build_result($eleves, $matieres, $toutes_periodes, $notes_map, $maxima, $conduite_map);
+
+        // Activations Ressources/Compétences : niveau classe si renseigné, sinon global
+        $classe = $this->db->select('ressources_active, competences_active, ressources_pourcentage, competences_pourcentage')
+            ->from('classes')->where('id_classe', $id_classe)->where('deleted_at', null)->get()->row_array();
+        $result['ressources_active'] = ($classe && $classe['ressources_active'] !== null)
+            ? intval($classe['ressources_active'])
+            : intval($this->get_setting('ressources_active', 1));
+        $result['competences_active'] = ($classe && $classe['competences_active'] !== null)
+            ? intval($classe['competences_active'])
+            : intval($this->get_setting('competences_active', 1));
+        $result['ressources_pourcentage'] = ($classe && $classe['ressources_pourcentage'] !== null)
+            ? floatval($classe['ressources_pourcentage'])
+            : floatval($this->get_setting('pourcentage_ressources_examen', 60));
+        $result['competences_pourcentage'] = ($classe && $classe['competences_pourcentage'] !== null)
+            ? floatval($classe['competences_pourcentage'])
+            : floatval($this->get_setting('pourcentage_competences_examen', 40));
+
+        // Neutraliser la catégorie désactivée : l'EX absorbe tout le TJ (EX = TJ)
+        // Les deux actifs : RESS = TJ×%, COMP = TJ×%  |  Un seul actif : la catégorie active = TJ (100%), l'autre = 0
+        $ress_active = intval($result['ressources_active']) !== 0;
+        $comp_active = intval($result['competences_active']) !== 0;
+        if (!$ress_active || !$comp_active) {
+            $cat_active = $ress_active ? 'ress' : 'comp';
+            foreach ($result['maxima'] as &$mid) {
+                foreach ($mid as &$pid) {
+                    if ($cat_active === 'ress') { $pid['ress'] = $pid['tj']; $pid['comp'] = 0; }
+                    else { $pid['comp'] = $pid['tj']; $pid['ress'] = 0; }
+                }
+            }
+            unset($mid, $pid);
+            foreach ($result['eleves'] as &$el) {
+                foreach ($el['matieres'] as &$m) {
+                    foreach ($m['periodes'] as &$per) {
+                        if ($cat_active === 'ress') { $per['comp'] = 0; }
+                        else { $per['ress'] = 0; }
+                    }
+                }
+                unset($m, $per);
+            }
+            unset($el);
+        }
+
         $result['periode_filtree'] = ($id_periode && $id_periode !== 'all') ? intval($id_periode) : null;
         return $result;
     }
@@ -75,8 +119,14 @@ class Bulletins_model extends Model
     {
         if (empty($matiere_ids)) return [];
 
+        $facteur_points = floatval($this->get_setting('facteur_points_heure', 15));
+        $pct_comp = floatval($this->get_setting('pourcentage_competences_examen', 40));
+        $pct_ress = floatval($this->get_setting('pourcentage_ressources_examen', 60));
+
+        // Coefficient calculé = nb_heures_par_semaine × facteur_points_heure → TJ = ce coefficient calculé
+        // (comp et ress = pourcentages configurés dans Paramètres du TJ)
         $coeffs = $this->db
-            ->select('id_matiere, coefficient')
+            ->select('id_matiere, nb_heures_par_semaine')
             ->from('matieres_classes')
             ->where('id_classe', $id_classe)
             ->where_in('id_matiere', $matiere_ids)
@@ -85,16 +135,15 @@ class Bulletins_model extends Model
 
         $coeff_map = [];
         foreach ($coeffs as $c) {
-            $coeff = floatval($c['coefficient'] ?: 1);
-            $coeff_map[$c['id_matiere']] = $coeff;
+            $heures = floatval($c['nb_heures_par_semaine'] ?: 0);
+            $coeff_map[$c['id_matiere']] = $heures * $facteur_points;
         }
 
         $maxima = [];
         foreach ($matiere_ids as $mid) {
-            $coeff = $coeff_map[$mid] ?? 1;
-            $tj = $coeff;
-            $comp = round($coeff * 0.6, 1);
-            $ress = round($coeff * 0.4, 1);
+            $tj = $coeff_map[$mid] ?? 0;
+            $comp = round($tj * $pct_comp / 100, 1);
+            $ress = round($tj * $pct_ress / 100, 1);
             foreach ($periode_ids as $pid) {
                 $maxima[$mid][$pid] = [
                     'tj' => $tj,

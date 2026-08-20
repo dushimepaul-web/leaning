@@ -51,9 +51,14 @@ class Produits extends MY_Controller {
                 $clean[$col] = $data[$col];
             }
         }
+        if (isset($clean['id_categorie']) && !$this->Model->readOne('categories_produits', ['id_categorie' => $clean['id_categorie'], 'deleted_at' => null])) {
+            $this->json_error('Catégorie introuvable'); return;
+        }
+        if (isset($clean['stock_actuel']) && intval($clean['stock_actuel']) < 0) { $this->json_error('Stock invalide'); return; }
+        if (isset($clean['prix_unitaire']) && floatval($clean['prix_unitaire']) < 0) { $this->json_error('Prix invalide'); return; }
         $id = $this->Model->createLastId('produits', $clean);
         if ($id) {
-            $stock_initial = !empty($data['stock_initial']) ? intval($data['stock_initial']) : 0;
+            $stock_initial = intval($data['stock_actuel'] ?? $data['stock_initial'] ?? 0);
             if ($stock_initial > 0) {
                 $this->Model->create('mouvements_stock', [
                     'id_produit' => $id,
@@ -76,9 +81,15 @@ class Produits extends MY_Controller {
         if (isset($data['id_categorie']) && empty($data['id_categorie'])) {
             unset($data['id_categorie']);
         }
+        if (isset($data['id_categorie']) && !$this->Model->readOne('categories_produits', ['id_categorie' => $data['id_categorie'], 'deleted_at' => null])) {
+            $this->json_error('Catégorie introuvable'); return;
+        }
 
         $old_stock = intval($produit['stock_actuel']);
         $new_stock = isset($data['stock_actuel']) ? intval($data['stock_actuel']) : $old_stock;
+        if ($new_stock < 0) { $this->json_error('Stock invalide'); return; }
+
+        $this->db->trans_begin();
 
         if ($new_stock != $old_stock) {
             $diff = $new_stock - $old_stock;
@@ -92,9 +103,18 @@ class Produits extends MY_Controller {
             ]);
         }
 
-        if ($this->Model->update('produits', ['uuid' => $id], $data))
-            $this->json_success(null, 'Produit mis à jour');
-        else $this->json_error('Erreur');
+        $allowed = ['libelle', 'id_categorie', 'prix_unitaire', 'prix_achat', 'stock_actuel', 'stock_mini', 'unite', 'description', 'taille'];
+        $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->db->trans_rollback(); $this->json_error('Aucune donnée à modifier'); return; }
+
+        $ok = $this->Model->update('produits', ['uuid' => $id], $update);
+        if (!$ok || $this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+            $this->json_error('Erreur');
+            return;
+        }
+        $this->db->trans_commit();
+        $this->json_success(null, 'Produit mis à jour');
     }
 
     public function api_delete($id) {

@@ -152,7 +152,7 @@ async function editData(uuid) {
   document.getElementById('formTitle').textContent = 'Modifier l\'échéance';
   document.getElementById('fEtudiant').value = d.id_etudiant || '';
   const _e = etudiantsData.find(function(x) { return String(x.id_etudiant) === String(d.id_etudiant); });
-  if (_e) document.getElementById('fEtudiant_search').value = _e.nom + ' (' + (_e.matricule || '') + ')';
+  if (_e) document.getElementById('fEtudiant_search').value = (_e.fullname || _e.nom || '') + ' (' + (_e.matricule || '') + ')';
   document.getElementById('fFrais').value = d.id_frais || '';
   document.getElementById('fMontant').value = d.montant || '';
   document.getElementById('fDate').value = d.date_echeance || '';
@@ -184,8 +184,16 @@ document.getElementById('dtLength').addEventListener('change', function() { if (
   var _f = function() {
     if (typeof $ === 'undefined' || typeof API === 'undefined' || typeof autoSetup === 'undefined') { setTimeout(_f, 50); return; }
     loadData();
-    autoSetup('fEtudiant_search', 'fEtudiant', 'fEtudiant_results', etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.fullname || e.nom, prenom: e.prenom || '', matricule: e.matricule }; }), function(e) { return e.nom + ' (' + (e.matricule || '') + ')'; });
-    API.frais.list().then(function(r) { if (r.success) { var sel = document.getElementById('fFrais'); r.data.forEach(function(d) { var o = document.createElement('option'); o.value = d.id_frais; o.textContent = (d.type_libelle || d.libelle || '') + ' - ' + parseFloat(d.montant || 0).toLocaleString(); sel.appendChild(o); }); } });
+    var fraisOptions = [];
+    API.frais.list().then(function(r) { if (r.success) fraisOptions = r.data; });
+    var fillFrais = function(classeId) {
+      var sel = document.getElementById('fFrais');
+      sel.innerHTML = '<option value="">Sélectionner...</option>';
+      fraisOptions.filter(function(f) { return !classeId || String(f.id_classe) === String(classeId); })
+        .forEach(function(d) { var o = document.createElement('option'); o.value = d.id_frais; o.textContent = (d.type_libelle || '') + ' - ' + parseFloat(d.montant || 0).toLocaleString(); sel.appendChild(o); });
+    };
+    autoSetup('fEtudiant_search', 'fEtudiant', 'fEtudiant_results', etudiantsData.map(function(e) { return { id: e.id_etudiant, nom: e.fullname || e.nom, prenom: e.prenom || '', matricule: e.matricule, id_classe: e.id_classe }; }), function(e) { return e.nom + ' (' + (e.matricule || '') + ')'; }, function(item) { fillFrais(item.id_classe); });
+    fillFrais(null);
   };
   _f();
 })();

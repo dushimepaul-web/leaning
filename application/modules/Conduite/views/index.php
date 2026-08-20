@@ -42,7 +42,7 @@
         <div class="col" style="min-width:140px;">
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Trimestre</label>
           <select class="form-control form-select" id="id_periode">
-            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
+            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" data-annee="<?=$p['id_annee']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
           </select>
         </div>
         <div class="col" style="min-width:140px;">
@@ -143,7 +143,21 @@ let currentPointView = null;
 let currentClasseId = null;
 const pointsDefautEcole = <?= (float)($points_defaut_ecole ?? 60) ?>;
 
-['id_periode', 'id_annee'].forEach(id => {
+document.getElementById('id_annee').addEventListener('change', function() {
+  const aid = this.value;
+  const sel = document.getElementById('id_periode');
+  let ok = false;
+  Array.from(sel.options).forEach(function(opt) {
+    if (!opt.value) return;
+    const visible = opt.dataset.annee === aid;
+    opt.style.display = visible ? '' : 'none';
+    if (visible && opt.selected) ok = true;
+  });
+  if (!ok) sel.value = '';
+  if (currentClasseId) loadData();
+});
+
+['id_periode'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     if (currentClasseId) loadData();
   });
