@@ -6,11 +6,11 @@
 <title><?= htmlspecialchars($title) ?></title>
 <style>
   body { font-family: 'Times New Roman', Times, serif; font-size: 10pt; color: #000; margin: 0; padding: 20px; background: #e5e5e5; }
-  .fiche-page { background: #fff; width: 297mm; margin: 0 auto 30px auto; padding: 10mm; box-sizing: border-box; }
+  .fiche-page { background: #fff; width: 210mm; max-width: 100%; margin: 0 auto 30px auto; padding: 8mm; box-sizing: border-box; }
   .h-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 10pt; font-weight: bold; }
   .titre-cours { text-align: center; font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 12px 0; }
-  table.f-table { border-collapse: collapse; width: 100%; font-size: 8pt; margin-top: 10px; table-layout: fixed; }
-  table.f-table th, table.f-table td { border: 1px solid #000; padding: 3px 4px; text-align: center; }
+  table.f-table { border-collapse: collapse; width: 100%; font-size: 7.5pt; margin-top: 10px; table-layout: fixed; }
+  table.f-table th, table.f-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; overflow-wrap: anywhere; word-break: break-word; }
   table.f-table th { background: #D9D9D9; font-weight: bold; font-size: 9pt; }
   table.f-table td.branche { background: #fff; }
   table.f-table td.gris { background: #D9D9D9; }
@@ -22,6 +22,7 @@
     .fiche-page { box-shadow: none; margin: 0; width: 100%; }
     .no-print { display: none; }
   }
+  @page { size: A4 portrait; margin: 8mm; }
 </style>
 </head>
 <body>
@@ -62,7 +63,14 @@ $maxCells = function($g) {
     return [$tj, $comp, $ress, $tj + $comp + $ress];
 };
 $maxTa = 0;
-foreach ($groups as $g) { $m = $maxCells($g); $maxTa += $m[3]; }
+$dataIdx = count($groups) - 1;
+$periodeId = isset($periode_id) ? $periode_id : 'all';
+if ($periodeId !== 'all') {
+    $dataIdx = -1;
+    foreach ($groups as $gi => $g) { if ((string)$g['id'] === (string)$periodeId) { $dataIdx = $gi; break; } }
+}
+foreach ($groups as $gi => $g) { if ($gi <= $dataIdx) { $m = $maxCells($g); $maxTa += $m[3]; } }
+$hasData = function($gi) use ($dataIdx) { return $gi <= $dataIdx; };
 ?>
 
 <div class="fiche-page">
@@ -103,27 +111,27 @@ foreach ($groups as $g) { $m = $maxCells($g); $maxTa += $m[3]; }
     <tbody>
       <tr>
         <td class="bareme" colspan="2"></td>
-        <?php foreach ($groups as $g): $m = $maxCells($g); ?>
+        <?php foreach ($groups as $gi => $g): if (!$hasData($gi)) { echo '<td class="bareme"></td><td class="bareme"></td><td class="bareme"></td><td class="bareme"></td>'; continue; } $m = $maxCells($g); ?>
         <td class="bareme"><?= $nf($m[0]) ?></td>
         <td class="bareme"><?= $nf($m[1]) ?></td>
         <td class="bareme"><?= $nf($m[2]) ?></td>
         <td class="bareme gris"><?= $nf($m[3]) ?></td>
         <?php endforeach; ?>
         <td class="bareme"><?= $nf($maxTa) ?></td>
-        <td class="bareme">100%</td>
+        <td class="bareme" style="white-space:nowrap">100%</td>
       </tr>
-      <?php $i = 1; foreach ($students as $st): $ta = 0; foreach ($groups as $g) { $c = $cellsOf($st, $g); $ta += $c[3]; } ?>
+      <?php $i = 1; foreach ($students as $st): $ta = 0; foreach ($groups as $gi => $g) { if ($hasData($gi)) { $c = $cellsOf($st, $g); $ta += $c[3]; } } ?>
       <tr>
         <td><?= $i++ ?></td>
         <td class="mat"><?= htmlspecialchars($st['nom']) ?></td>
-        <?php foreach ($groups as $g): $c = $cellsOf($st, $g); ?>
+        <?php foreach ($groups as $gi => $g): if (!$hasData($gi)) { echo '<td></td><td></td><td></td><td></td>'; continue; } $c = $cellsOf($st, $g); ?>
         <td><?= $nf($c[0]) ?></td>
         <td><?= $nf($c[1]) ?></td>
         <td><?= $nf($c[2]) ?></td>
         <td class="gris"><?= $nf($c[3]) ?></td>
         <?php endforeach; ?>
         <td><?= $nf($ta) ?></td>
-        <td><?= $maxTa > 0 ? number_format($ta / $maxTa * 100, 2).'%' : '-' ?></td>
+        <td style="white-space:nowrap"><?= $maxTa > 0 ? number_format($ta / $maxTa * 100, 2).'%' : '-' ?></td>
       </tr>
       <?php endforeach; ?>
     </tbody>

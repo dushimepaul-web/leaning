@@ -124,6 +124,18 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   document.getElementById('statNbEval').textContent=(data.evaluations||[]).length+' éval.';
   var evals=data.evaluations||[];
   var coursNom=evals.length?evals[0].matiere:'';
+
+  var dataIdx=groups.length-1;
+  var pSel=document.getElementById('id_periode').value;
+  if(pSel!=='all'){
+    dataIdx=-1;
+    groups.forEach(function(g,gi){if(String(g.id)===String(pSel)){dataIdx=gi;}});
+  }
+  function hasData(gi){return gi<=dataIdx;}
+
+  var nbEvals=0;
+  groups.forEach(function(g,gi){if(hasData(gi)){nbEvals+=g.items.length;}});
+  document.getElementById('statNbEval').textContent=nbEvals+' éval.';
   document.getElementById('ficheHeader').innerHTML=
     '<div class="h-row"><span>SECTION: '+(data.section||data.classe||'')+'</span><span class="h-right">ANNEE SCOLAIRE : '+(data.annee_scolaire||'')+'</span></div>'+
     '<div class="h-row"><span>Classe : '+(data.classe||'')+'</span><span class="h-right">Nombre d\'Eleves : '+data.students.length+'</span></div>'+
@@ -179,13 +191,22 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
     return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
   }
 
+  var dataIdx=groups.length-1;
+  var pSel=document.getElementById('id_periode').value;
+  if(pSel!=='all'){
+    dataIdx=-1;
+    groups.forEach(function(g,gi){if(String(g.id)===String(pSel)){dataIdx=gi;}});
+  }
+  function hasData(gi){return gi<=dataIdx;}
+
   var maxTa=0;
-  groups.forEach(function(g){maxTa+=maxTotOf(g);});
+  groups.forEach(function(g,gi){if(hasData(gi)){maxTa+=maxTotOf(g);}});
 
   var body='';
   body+='<tr class="fiche-row-g" style="font-weight:700">';
   body+='<td class="matiere" colspan="2"></td>';
-  groups.forEach(function(g){
+  groups.forEach(function(g,gi){
+    if(!hasData(gi)){body+='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>';return;}
     var m=maxCells(g);
     body+='<td class="num">'+nf(m.tj)+'</td><td class="num">'+nf(m.comp)+'</td><td class="num">'+nf(m.ress)+'</td><td class="num gris"><strong>'+nf(m.tot)+'</strong></td>';
   });
@@ -193,14 +214,17 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   body+='<td class="num">100%</td></tr>';
 
   var gTa=0;
+  var mks=[];
   data.students.forEach(function(s,i){
     var ta=0;
-    groups.forEach(function(g){var c=cellsOf(s,g);ta+=c.tot;});
+    groups.forEach(function(g,gi){if(hasData(gi)){var c=cellsOf(s,g);ta+=c.tot;}});
     gTa+=ta;
+    mks.push(ta);
     body+='<tr>';
     body+='<td class="num" style="min-width:22px">'+(i+1)+'</td>';
     body+='<td class="matiere">'+s.etudiant.nom+' '+(s.etudiant.prenom||'')+'</td>';
-    groups.forEach(function(g){
+    groups.forEach(function(g,gi){
+      if(!hasData(gi)){body+='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>';return;}
       var c=cellsOf(s,g);
       body+='<td class="num">'+nf(c.tj)+'</td><td class="num">'+nf(c.comp)+'</td><td class="num">'+nf(c.ress)+'</td><td class="num gris"><strong>'+nf(c.tot)+'</strong></td>';
     });
@@ -209,7 +233,11 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   });
   document.getElementById('ficheBody').innerHTML=body;
 
-  // Pied : TOTAUX ÉLÈVES (sommes TJ/COMP/RESS/TOT par période)
+  var moyClasse=mks.reduce(function(s,k){return s+k},0)/mks.length;
+  var taux=mks.filter(function(k){return maxTa>0&&k>=maxTa/2;}).length/mks.length*100;
+  document.getElementById('statMoyClasse').textContent=moyClasse.toFixed(1)+' / '+maxTa;
+  document.getElementById('statTaux').textContent=Math.round(taux)+'%';
+
   document.getElementById('ficheFoot').innerHTML='';
 }
 
@@ -399,6 +427,4 @@ function exportFiche(){
   window.open(url,'_blank');
 }
 
-(function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;},function(){chargerCours(document.getElementById('id_classe').value);});autoSetup('id_matiere_search','id_matiere','id_matiere_results',matieresList,function(m){return m.libelle;});filterPeriodeFiches();}},50);})();
-</script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
+(function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSet

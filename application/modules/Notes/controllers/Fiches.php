@@ -27,16 +27,13 @@ class Fiches extends MY_Controller {
             ->where('i.id_classe', $id_classe)->where('i.id_annee', $id_annee)->where('i.deleted_at', null)->where('e.deleted_at', null)
             ->order_by('e.fullname ASC')->get()->result_array();
 
+        // Cumul : trimestre N => périodes 1..N (colonnes suivantes vides côté vue) ; 'all' => toute l'année
         $this->db->select('ev.*, m.libelle as matiere, pe.libelle as periode_libelle');
         $this->db->from('evaluations ev');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
         $this->db->join('periodes pe', 'ev.id_periode = pe.id_periode', 'left');
         $this->db->where('ev.id_classe', $id_classe)->where('ev.deleted_at', null);
-        if ($id_periode === 'all') {
-            $this->db->where('ev.id_annee', $id_annee);
-        } else {
-            $this->db->where('ev.id_periode', $id_periode);
-        }
+        $this->db->where('ev.id_annee', $id_annee);
         if ($id_matiere) $this->db->where('ev.id_matiere', $id_matiere);
         $this->db->order_by('ev.id_periode')->order_by('ev.date_eval');
         $evaluations = $this->db->get()->result_array();
@@ -396,11 +393,7 @@ class Fiches extends MY_Controller {
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
         $this->db->join('periodes pe', 'ev.id_periode = pe.id_periode', 'left');
         $this->db->where('ev.id_classe', $class_id)->where('ev.deleted_at', null);
-        if ($id_periode && $id_periode !== 'all') {
-            $this->db->where('ev.id_periode', $id_periode);
-        } else {
-            $this->db->where('ev.id_annee', $id_annee);
-        }
+        $this->db->where('ev.id_annee', $id_annee);
         $this->db->where('ev.id_matiere', $id_matiere);
         $this->db->order_by('ev.id_periode')->order_by('ev.date_eval');
         $evaluations = $this->db->get()->result_array();
@@ -423,6 +416,7 @@ class Fiches extends MY_Controller {
         $data['groups'] = $groups;
         $data['students'] = $students;
         $data['notes'] = $notes;
+        $data['periode_id'] = $id_periode;
         $data['classe_nom'] = $classe_nom;
         $data['section_nom'] = $section_nom;
         $data['matiere_nom'] = $matiere_nom;
