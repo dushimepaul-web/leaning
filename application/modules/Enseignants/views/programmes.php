@@ -125,8 +125,8 @@
         </select>
       </div>
       <div class="col-sm-6">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Coefficient</label>
-        <input type="number" step="0.1" min="0" class="form-control" id="coefficient" placeholder="Ex: 1.0">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Note max matière</label>
+        <input type="number" step="0.1" min="0" class="form-control" id="note_max_matiere" placeholder="Ex: 1.0">
       </div>
       <div class="col-sm-6">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Nb heures / jour</label>
@@ -213,7 +213,7 @@ function openEditSidebar(data) {
   document.getElementById('recordId').value = data.uuid;
   document.getElementById('id_matiere').value = data.id_matiere;
   document.getElementById('matiereSearch').value = data.matiere_libelle || '';
-  document.getElementById('coefficient').value = data.coefficient || '';
+  document.getElementById('note_max_matiere').value = data.note_max_matiere || '';
   document.getElementById('nb_heures_par_jour').value = data.nb_heures_par_jour || '';
   document.getElementById('nb_heures_par_semaine').value = data.nb_heures_par_semaine || '';
   var cls = allClasses.find(function(c) { return String(c.id_classe) === String(data.id_classe); });
@@ -281,7 +281,7 @@ function render() {
       rows += '<td rowspan="' + rowSpan + '" class="align-middle text-center fw-bold" style="font-size:0.95rem; vertical-align:middle; padding: 12px 16px; border: 1px solid #ced4da; background-color: #f1f3f5;">' + g.classe + '</td>';
     }
     rows += '<td class="align-middle text-start" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.matiere_code || '-') + '</td>';
-    rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.coefficient ?? '-') + '</td>';
+    rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.note_max_matiere ?? '-') + '</td>';
     rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_jour ?? '0.0') + '</td>';
     rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.nb_heures_par_semaine ?? '0.0') + '</td>';
     rows += '<td class="align-middle text-center" style="padding: 12px 16px; border: 1px solid #ced4da; color: #212529;">' + (s.enseignant_fullname || '-') + '</td>';
@@ -317,7 +317,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   const data = {
     id_matiere: document.getElementById('id_matiere').value,
     id_classe: document.getElementById('id_classe').value,
-    coefficient: document.getElementById('coefficient').value || null,
+    note_max_matiere: document.getElementById('note_max_matiere').value || null,
     nb_heures_par_jour: document.getElementById('nb_heures_par_jour').value || null,
     nb_heures_par_semaine: document.getElementById('nb_heures_par_semaine').value || null
   };

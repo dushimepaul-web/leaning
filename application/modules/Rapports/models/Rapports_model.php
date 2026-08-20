@@ -51,7 +51,7 @@ class Rapports_model extends Model
 
     public function rapport_notes_par_matiere($id_classe, $id_periode)
     {
-        $this->db->select('m.libelle as matiere, AVG((n.note/ev.sur)*20) as moyenne');
+        $this->db->select('m.libelle as matiere, AVG((n.note/ev.ponderee_sur)*20) as moyenne');
         $this->db->from('notes n');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere');

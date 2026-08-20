@@ -338,7 +338,7 @@ class Horaires extends MY_Controller {
                     'uuid' => generate_uuid(),
                     'id_matiere' => $data['id_matiere'],
                     'id_classe' => $data['id_classe'],
-                    'coefficient' => 1.0,
+                    'note_max_matiere' => 1.0,
                 ]);
                 if ($mc_id) $mc = $this->Model->readOne('matieres_classes', ['id_matiere_classe' => $mc_id]);
             }

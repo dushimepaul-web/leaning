@@ -16,6 +16,7 @@ class Fiches extends MY_Controller {
         $id_classe = $id_classe ?: $this->input->get('classe');
         $id_periode = $this->input->get('periode') ?: $this->id_periode_active;
         $id_annee = $this->input->get('annee') ?: $this->id_annee_active;
+        $id_matiere = $this->input->get('matiere');
 
         if (!$id_classe || !$id_periode) { $this->json_error('Classe et période requis'); return; }
 
@@ -26,12 +27,30 @@ class Fiches extends MY_Controller {
             ->where('i.id_classe', $id_classe)->where('i.id_annee', $id_annee)->where('i.deleted_at', null)->where('e.deleted_at', null)
             ->order_by('e.fullname ASC')->get()->result_array();
 
-        $evaluations = $this->db
-            ->select('ev.*, m.libelle as matiere')
-            ->from('evaluations ev')
-            ->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left')
-            ->where('ev.id_classe', $id_classe)->where('ev.id_periode', $id_periode)->where('ev.deleted_at', null)
-            ->order_by('ev.date_eval')->get()->result_array();
+        $this->db->select('ev.*, m.libelle as matiere, pe.libelle as periode_libelle');
+        $this->db->from('evaluations ev');
+        $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
+        $this->db->join('periodes pe', 'ev.id_periode = pe.id_periode', 'left');
+        $this->db->where('ev.id_classe', $id_classe)->where('ev.deleted_at', null);
+        if ($id_periode === 'all') {
+            $this->db->where('ev.id_annee', $id_annee);
+        } else {
+            $this->db->where('ev.id_periode', $id_periode);
+        }
+        if ($id_matiere) $this->db->where('ev.id_matiere', $id_matiere);
+        $this->db->order_by('ev.id_periode')->order_by('ev.date_eval');
+        $evaluations = $this->db->get()->result_array();
+
+        $mc_rows = $this->db
+            ->select('id_matiere, note_max_matiere')
+            ->from('matieres_classes')
+            ->where('id_classe', $id_classe)
+            ->where('deleted_at', null)
+            ->get()->result_array();
+        $coeff_map = [];
+        foreach ($mc_rows as $mc) { $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1); }
+        foreach ($evaluations as &$ev) { $ev['coefficient'] = $coeff_map[$ev['id_matiere']] ?? 1; }
+        unset($ev);
 
         $evalIds = array_column($evaluations, 'id_evaluation');
         $notes = empty($evalIds) ? [] : $this->db
@@ -85,7 +104,15 @@ class Fiches extends MY_Controller {
             'taux_reussite' => count($moyennes) ? round(count(array_filter($moyennes, function($m){return $m>=10;})) / count($moyennes) * 100, 1) : 0,
         ];
 
-        $this->json_success(['students' => $result, 'evaluations' => $evaluations, 'stats' => $stats]);
+        $classe = $this->Model->readOne('classes', ['id_classe' => $id_classe]);
+        $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $id_annee]);
+        $section = $classe ? $this->Model->readOne('sections', ['id_section' => $classe['id_section']]) : null;
+        $this->json_success([
+            'classe' => $classe ? $classe['libelle'] : '',
+            'section' => $section ? $section['libelle'] : '',
+            'annee_scolaire' => $annee ? $annee['libelle'] : '',
+            'students' => $result, 'evaluations' => $evaluations, 'stats' => $stats,
+        ]);
     }
 
     public function api_fiche_par_cours($id_classe = null) {
@@ -166,11 +193,11 @@ class Fiches extends MY_Controller {
                     $examNote = null; $examCoef = 1; $examMax = 0;
                     foreach ($coursItem['devoirs'] as $ev) {
                         $noteVal = isset($notesByStudent[$s['id_etudiant']][$ev['id_evaluation']]) ? $notesByStudent[$s['id_etudiant']][$ev['id_evaluation']] : null;
-                        if ($noteVal !== null) { $devSum += $noteVal * $ev['coefficient']; $devCount += $ev['coefficient']; $devMax += $ev['sur']; }
+                        if ($noteVal !== null) { $devSum += $noteVal * $ev['coefficient']; $devCount += $ev['coefficient']; $devMax += $ev['ponderee_sur']; }
                     }
                     foreach ($coursItem['examens'] as $ev) {
                         $noteVal = isset($notesByStudent[$s['id_etudiant']][$ev['id_evaluation']]) ? $notesByStudent[$s['id_etudiant']][$ev['id_evaluation']] : null;
-                        if ($noteVal !== null) { $examNote = $noteVal; $examCoef = $ev['coefficient']; $examMax = $ev['sur']; }
+                        if ($noteVal !== null) { $examNote = $noteVal; $examCoef = $ev['coefficient']; $examMax = $ev['ponderee_sur']; }
                     }
                     $devAvg = $devCount > 0 ? round($devSum / $devCount, 2) : null;
                     $courseData = [
@@ -221,8 +248,20 @@ class Fiches extends MY_Controller {
     }
 
     private function _buildCoursForPeriod($id_classe, $id_periode, $id_annee, $matieres) {
+        $coeff_map = [];
+        $mc_rows = $this->db
+            ->select('id_matiere, note_max_matiere')
+            ->from('matieres_classes')
+            ->where('id_classe', $id_classe)
+            ->where('deleted_at', null)
+            ->get()->result_array();
+        foreach ($mc_rows as $mc) {
+            $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1);
+        }
+
         $cours = [];
         foreach ($matieres as $mat) {
+            $coef = $coeff_map[$mat['id_matiere']] ?? 1;
             $devoirs = $this->db
                 ->where('id_classe', $id_classe)->where('id_matiere', $mat['id_matiere'])
                 ->where('id_periode', $id_periode)->where('deleted_at', null)
@@ -234,8 +273,8 @@ class Fiches extends MY_Controller {
                 ->where('type', 'examen')
                 ->order_by('date_eval')->get('evaluations')->result_array();
             if (!empty($devoirs) || !empty($examens)) {
-                $devoirsClean = array_map(function($ev) { return ['id_evaluation' => $ev['id_evaluation'], 'libelle' => $ev['libelle'], 'sur' => $ev['sur'], 'coefficient' => $ev['coefficient'], 'type' => $ev['type']]; }, $devoirs);
-                $examensClean = array_map(function($ev) { return ['id_evaluation' => $ev['id_evaluation'], 'libelle' => $ev['libelle'], 'sur' => $ev['sur'], 'coefficient' => $ev['coefficient'], 'type' => $ev['type']]; }, $examens);
+                $devoirsClean = array_map(function($ev) use ($coef) { return ['id_evaluation' => $ev['id_evaluation'], 'libelle' => $ev['libelle'], 'ponderee_sur' => $ev['ponderee_sur'], 'coefficient' => $coef, 'type' => $ev['type']]; }, $devoirs);
+                $examensClean = array_map(function($ev) use ($coef) { return ['id_evaluation' => $ev['id_evaluation'], 'libelle' => $ev['libelle'], 'ponderee_sur' => $ev['ponderee_sur'], 'coefficient' => $coef, 'type' => $ev['type']]; }, $examens);
                 $cours[] = ['id_matiere' => $mat['id_matiere'], 'libelle' => $mat['libelle'], 'code' => $mat['code'] ?? '', 'devoirs' => $devoirsClean, 'examens' => $examensClean];
             }
         }
@@ -336,6 +375,60 @@ class Fiches extends MY_Controller {
         $data['annee_libelle'] = $complet['annee_scolaire'] ?? 'N/A';
         $data['nb_eleves'] = count($complet['eleves'] ?? []);
 
+        if ($id_matiere) {
+            $this->_export_fiche_eleve($class_id, $id_matiere, $id_periode, $id_annee, $classe_nom, $section_nom, $matiere_nom);
+            return;
+        }
+
         $this->load->view('print_fiches_v2', $data);
+    }
+
+    private function _export_fiche_eleve($class_id, $id_matiere, $id_periode, $id_annee, $classe_nom, $section_nom, $matiere_nom) {
+        $students = $this->db
+            ->select('e.id_etudiant, e.fullname AS nom')
+            ->from('inscriptions i')
+            ->join('etudiants e', 'i.id_etudiant = e.id_etudiant')
+            ->where('i.id_classe', $class_id)->where('i.id_annee', $id_annee)->where('i.deleted_at', null)->where('e.deleted_at', null)
+            ->order_by('e.fullname ASC')->get()->result_array();
+
+        $this->db->select('ev.*, m.libelle as matiere, pe.libelle as periode_libelle');
+        $this->db->from('evaluations ev');
+        $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
+        $this->db->join('periodes pe', 'ev.id_periode = pe.id_periode', 'left');
+        $this->db->where('ev.id_classe', $class_id)->where('ev.deleted_at', null);
+        if ($id_periode && $id_periode !== 'all') {
+            $this->db->where('ev.id_periode', $id_periode);
+        } else {
+            $this->db->where('ev.id_annee', $id_annee);
+        }
+        $this->db->where('ev.id_matiere', $id_matiere);
+        $this->db->order_by('ev.id_periode')->order_by('ev.date_eval');
+        $evaluations = $this->db->get()->result_array();
+
+        $groups = [];
+        foreach ($evaluations as $ev) {
+            $key = $ev['id_periode'];
+            if (!isset($groups[$key])) {
+                $groups[$key] = ['id' => $key, 'libelle' => $ev['periode_libelle'] ?: ('P'.$key), 'items' => []];
+            }
+            $groups[$key]['items'][] = $ev;
+        }
+
+        $evalIds = array_column($evaluations, 'id_evaluation');
+        $notes = $this->_getNotesForEvals($evalIds, $students);
+
+        $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $id_annee]);
+
+        $data['title'] = 'Fiche de points - ' . $matiere_nom;
+        $data['groups'] = $groups;
+        $data['students'] = $students;
+        $data['notes'] = $notes;
+        $data['classe_nom'] = $classe_nom;
+        $data['section_nom'] = $section_nom;
+        $data['matiere_nom'] = $matiere_nom;
+        $data['annee_libelle'] = $annee ? $annee['libelle'] : 'N/A';
+        $data['nb_eleves'] = count($students);
+
+        $this->load->view('print_fiche_eleve', $data);
     }
 }

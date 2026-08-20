@@ -157,6 +157,12 @@ $(function() {
 });
 </script>
 
+<script>
+document.addEventListener('wheel', function(e) {
+  if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'number') e.preventDefault();
+}, { passive: false });
+</script>
+
 </body>
 
 

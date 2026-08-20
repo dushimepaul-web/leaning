@@ -269,9 +269,9 @@ function renderBulletins(data,periodeNom,periodeId){
   function colBlank(i){return cumulMode&&i>selIdx;}
 
   const colSpan = bothActive ? 4 : 3;
-  const subHead = bothActive ? '<th>TJ</th><th>RESS</th><th>COMP</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+  const subHead = bothActive ? '<th>TJ</th><th>COMP</th><th>RESS</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
   function cells(t){ return bothActive
-    ? [nf(t.tj), nf(t.ress), nf(t.comp), `<strong>${nf(t.tot)}</strong>`]
+    ? [nf(t.tj), nf(t.comp), nf(t.ress), `<strong>${nf(t.tot)}</strong>`]
     : [nf(t.tj), nf(t.comp + t.ress), `<strong>${nf(t.tot)}</strong>`]; }
 
   let html='';
@@ -305,17 +305,31 @@ function renderBulletins(data,periodeNom,periodeId){
       <div class="bul-body">
         <table>
           <thead>
+            ${bothActive ? `
+            <tr>
+              <th class="branches-header" rowspan="3"></th>
+              <th colspan="4">MAXIMA</th>
+              ${periodes.map(p=>`<th colspan="4">${p.libelle||''}</th>`).join('')}
+              <th colspan="3" rowspan="2">TOTAUX ANNUELS</th>
+            </tr>
+            <tr>
+              ${periodes.map(()=>`<th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>`).join('')}
+            </tr>
+            <tr>
+              ${periodes.map(()=>`<th>COMP</th><th>RESS</th>`).join('')}
+              <th>MAX</th><th>TOT</th><th>%</th>
+            </tr>` : `
             <tr>
               <th class="branches-header" rowspan="2"></th>
-              <th colspan="${colSpan}">MAXIMA</th>
-              ${periodes.map(p=>`<th colspan="${colSpan}">${p.libelle||''}</th>`).join('')}
+              <th colspan="3">MAXIMA</th>
+              ${periodes.map(p=>`<th colspan="3">${p.libelle||''}</th>`).join('')}
               <th colspan="3">TOTAUX ANNUELS</th>
             </tr>
             <tr>
               ${subHead}
               ${periodes.map(()=>subHead).join('')}
               <th>MAX</th><th>TOT</th><th>%</th>
-            </tr>
+            </tr>`}
           </thead>
           <tbody>`;
 

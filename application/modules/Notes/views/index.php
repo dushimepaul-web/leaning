@@ -27,7 +27,7 @@
 .notes-toolbar button:hover{background:linear-gradient(to bottom,#f0f0f0,#e0e0e0)}
 .notes-toolbar button.primary{background:#217346;color:#fff;border-color:#1a5c38}
 .notes-toolbar button.primary:hover{background:#1a5c38}
-.notes-grid-container{overflow-x:auto;max-height:65vh;border:1px solid #c0c0c0;background:#fff}
+.notes-grid-container{overflow-x:auto;border:1px solid #c0c0c0;background:#fff}
 .notes-table{border-collapse:collapse;width:100%;min-width:900px;table-layout:auto;font-size:12px}
 .notes-table thead{position:sticky;top:0;z-index:5}
 .notes-table thead th{background:var(--excel-header);color:#333;font-size:11px;font-weight:600;padding:6px 4px;border:1px solid var(--excel-border);white-space:nowrap;text-align:center}
@@ -139,7 +139,7 @@
     <div class="add-eval-bar" id="addEvalRow" style="display:none">
       <span class="badge bg-primary-100 text-primary-600 px-12 py-6 radius-4 fw-semibold text-sm" id="evalCoursBadge">—</span>
       <input type="text" id="addEvalLibelle" placeholder="Libellé (ex: Interro 2)" style="width:180px">
-      <select id="addEvalType"><option value="devoir">Devoir</option><option value="interrogation">Interro</option><option value="controle">Contrôle</option><option value="composition">Compo</option><option value="examen">Examen</option></select>
+      <select id="addEvalType"><option value="interrogation">Interro</option><option value="devoir">Devoir</option><option value="ressource">Ressource</option><option value="competance">Compétence</option><option value="examen">Examen</option></select>
       <input type="number" id="addEvalSur" value="20" min="1" max="999" style="width:65px" title="Note maximale">
       <input type="date" id="addEvalDate" value="<?=date('Y-m-d')?>" style="width:135px">
       <button class="primary" onclick="addEvaluation()" style="height:34px"><i class="ri-check-line"></i> Ajouter</button>
@@ -165,7 +165,7 @@
     <div class="col-md-6"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Matière</label><input type="text" class="form-control" id="evalMatiere" readonly></div>
     <div class="col-md-8"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label><input type="text" class="form-control" id="evalLibelle" placeholder="Ex: Interrogation 1"></div>
     <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Type</label>
-      <select class="form-control form-select" id="evalType"><option value="devoir">Devoir</option><option value="interrogation">Interrogation</option><option value="controle">Contrôle</option><option value="composition">Composition</option><option value="examen">Examen</option></select>
+      <select class="form-control form-select" id="evalType"><option value="interrogation">Interrogation</option><option value="devoir">Devoir</option><option value="ressource">Ressource</option><option value="competance">Compétence</option><option value="examen">Examen</option></select>
     </div>
     <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Note max.</label><input type="number" class="form-control" id="evalSur" step="0.1" value="20"></div>
     <div class="col-md-4"><label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Période</label>
@@ -307,8 +307,8 @@ async function loadGrilleNotes(){
   if(!r.success){Swal.fire({icon:'error',text:r.message});return}
   gData=r.data;
   let head='<tr><th class="sticky-left col-no">N°</th><th class="sticky-left col-matricule">Matricule</th><th class="sticky-left col-nom">Nom & Prénom</th>';
-  r.data.evaluations.forEach(ev=>head+=`<th class="col-eval">${ev.libelle}<span class="eval-sur">/${ev.sur} ×${ev.coefficient}</span></th>`);
-  head+='<th>Total</th><th>%</th><th>Moyenne</th></tr>';
+  r.data.evaluations.forEach(ev=>head+=`<th class="col-eval">${ev.libelle}<span class="eval-sur">/${ev.ponderee_sur}</span></th>`);
+  head+='<th>Total</th><th>%</th></tr>';
   document.getElementById('grilleHead').innerHTML=head;
 
   let body='';
@@ -319,14 +319,13 @@ async function loadGrilleNotes(){
     r.data.evaluations.forEach(ev=>{
       let n=(r.data.notes[el.id_etudiant]||{})[ev.id_evaluation];
       let val=n?n.note:'';
-      body+=`<td><div class="note-cell"><input class="note-input" type="number" step="any" data-e="${el.id_etudiant}" data-v="${ev.id_evaluation}" data-max="${ev.sur}" value="${val}" onchange="onNoteChange(this)" onkeydown="onNoteKey(event,this)" onfocus="onNoteFocus(this)" onblur="onNoteBlur(this)" placeholder="—"><span class="err-msg"></span></div></td>`;
-      if(val!==''){total+=parseFloat(val);totalSur+=parseFloat(ev.sur);nb++}
+      body+=`<td><div class="note-cell"><input class="note-input" type="number" step="any" data-e="${el.id_etudiant}" data-v="${ev.id_evaluation}" data-max="${ev.ponderee_sur}" value="${val}" onchange="onNoteChange(this)" onkeydown="onNoteKey(event,this)" onfocus="onNoteFocus(this)" onblur="onNoteBlur(this)" onwheel="event.preventDefault()" placeholder="—"><span class="err-msg"></span></div></td>`;
+      if(val!==''){total+=parseFloat(val);totalSur+=parseFloat(ev.ponderee_sur);nb++}
     });
     let moy=nb>0?(total/totalSur)*20:0;
     scores.push({id:el.id_etudiant,moy:nb>0?moy:-1});
     body+=`<td class="cell-total" data-rt="${el.id_etudiant}">${nb>0?total.toFixed(2):'—'}</td>`;
     body+=`<td class="cell-moy" data-rm="${el.id_etudiant}">${nb>0?(total/totalSur*100).toFixed(1)+'%':'—'}</td>`;
-    body+=`<td class="cell-moy" data-moy="${el.id_etudiant}">${nb>0?moy.toFixed(2):'—'}</td>`;
     body+=`</tr>`;
   });
 
@@ -341,7 +340,7 @@ async function loadGrilleNotes(){
 
   document.getElementById('grilleBody').innerHTML=body;
   for(let id in rankMap){let c=document.querySelector(`[data-rr="${id}"]`);if(c)c.textContent=rankMap[id]}
-  document.getElementById('grilleFoot').innerHTML='<tr><td class="sticky-left col-no" colspan="3">Moyennes</td>'+r.data.evaluations.map(ev=>`<td data-cm="${ev.id_evaluation}">—</td>`).join('')+'<td id="ft">—</td><td id="fm">—</td><td id="fmoy">—</td></tr>';
+  document.getElementById('grilleFoot').innerHTML='<tr><td class="sticky-left col-no" colspan="3">Moyennes</td>'+r.data.evaluations.map(ev=>`<td data-cm="${ev.id_evaluation}">—</td>`).join('')+'<td id="ft">—</td><td id="fm">—</td></tr>';
   computeStats();
   colorCells();
   document.getElementById('grilleTitle').textContent=gData.matiere;
@@ -410,10 +409,9 @@ function recalcRow(inp){
   let tr=inp.closest('tr'),total=0,ts=0,nb=0,id=inp.dataset.e;
   tr.querySelectorAll('.note-input').forEach(x=>{let v=parseFloat(x.value);if(!isNaN(v)&&x.value!==''){total+=v;ts+=parseFloat(x.dataset.max)||20;nb++}});
   let moy=nb>0?(total/ts)*20:0;
-  let ct=tr.querySelector(`[data-rt="${id}"]`),cm=tr.querySelector(`[data-rm="${id}"]`),cmo=tr.querySelector(`[data-moy="${id}"]`);
+  let ct=tr.querySelector(`[data-rt="${id}"]`),cm=tr.querySelector(`[data-rm="${id}"]`);
   if(ct)ct.textContent=nb>0?total.toFixed(2):'—';
   if(cm)cm.textContent=nb>0?(total/ts*100).toFixed(1)+'%':'—';
-  if(cmo)cmo.textContent=nb>0?moy.toFixed(2):'—';
   /* rerank */
   let scores=[];
   document.querySelectorAll('#grilleBody tr').forEach(r=>{
@@ -427,10 +425,9 @@ function recalcRow(inp){
 function computeStats(){
   let allMoy=[],footRows=document.querySelectorAll('#grilleBody tr');
   gData.evaluations.forEach(ev=>{let s=0,c=0;footRows.forEach(r=>{let x=r.querySelector(`.note-input[data-v="${ev.id_evaluation}"]`);if(x&&x.value!==''){s+=parseFloat(x.value);c++}});let cell=document.querySelector(`[data-cm="${ev.id_evaluation}"]`);if(cell)cell.textContent=c>0?(s/c).toFixed(2):'—'});
-  let tc=0,nc=0,tm=0,tmoy=0,ne=0;footRows.forEach(r=>{let ct=r.querySelector('[data-rt]'),cm=r.querySelector('[data-rm]'),cmo=r.querySelector('[data-moy]');if(ct&&ct.textContent!=='—'){tc+=parseFloat(ct.textContent);nc++}if(cm&&cm.textContent!=='—'){let pct=parseFloat(cm.textContent);tm+=pct;allMoy.push(pct);ne++}if(cmo&&cmo.textContent!=='—'){tmoy+=parseFloat(cmo.textContent)}});
+  let tc=0,nc=0,tm=0,ne=0;footRows.forEach(r=>{let ct=r.querySelector('[data-rt]'),cm=r.querySelector('[data-rm]');if(ct&&ct.textContent!=='—'){tc+=parseFloat(ct.textContent);nc++}if(cm&&cm.textContent!=='—'){let pct=parseFloat(cm.textContent);tm+=pct;allMoy.push(pct);ne++}});
   document.getElementById('ft').textContent=nc>0?(tc/(nc/Math.max(gData.evaluations.length,1))).toFixed(2):'—';
   document.getElementById('fm').textContent=ne>0?(tm/ne).toFixed(1)+'%':'—';
-  document.getElementById('fmoy').textContent=ne>0?(tmoy/ne).toFixed(2):'—';
   let stAvg=document.getElementById('statAvg'),stMin=document.getElementById('statMin'),stMax=document.getElementById('statMax');
   if(stAvg)stAvg.textContent=ne>0?(tm/ne).toFixed(1)+'%':'—';
   if(stMin)stMin.textContent=allMoy.length?Math.min(...allMoy).toFixed(1)+'%':'—';
@@ -453,7 +450,7 @@ function showAddEval(){document.getElementById('addEvalRow').style.display='flex
 async function addEvaluation(){
   let lib=document.getElementById('addEvalLibelle').value.trim();
   if(!lib){Swal.fire({icon:'warning',text:'Libellé obligatoire'});return}
-  let d={libelle:lib,id_classe:gCId,id_matiere:gMid,id_periode:ACTIVE_PERIODE_ID,id_annee:ACTIVE_ANNEE_ID,date_eval:document.getElementById('addEvalDate').value,type:document.getElementById('addEvalType').value,coefficient:1,sur:document.getElementById('addEvalSur').value||20};
+  let d={libelle:lib,id_classe:gCId,id_matiere:gMid,id_periode:ACTIVE_PERIODE_ID,id_annee:ACTIVE_ANNEE_ID,date_eval:document.getElementById('addEvalDate').value,type:document.getElementById('addEvalType').value,ponderee_sur:document.getElementById('addEvalSur').value||20};
   let r=await API.evaluations.create(d);
   if(r.success){document.getElementById('addEvalLibelle').value='';document.getElementById('addEvalRow').style.display='none';Toast.fire({icon:'success',title:'Évaluation ajoutée'});loadGrilleNotes()}else Swal.fire({icon:'error',text:r.message});
 }
@@ -467,14 +464,16 @@ function backToClasses(){
 
 function filterPeriodeSelect(selectEl, anneeId) {
   if (!selectEl) return;
-  let ok = false;
+  let ok = false, firstVisible = null;
   Array.from(selectEl.options).forEach(function(opt) {
     if (!opt.value) return;
     const visible = opt.dataset.annee === anneeId;
     opt.style.display = visible ? '' : 'none';
     if (visible && opt.selected) ok = true;
+    if (visible && !firstVisible) firstVisible = opt;
   });
-  if (!ok) selectEl.value = '';
+  if (!ok && firstVisible) selectEl.value = firstVisible.value;
+  else if (!ok) selectEl.value = '';
 }
 
 document.getElementById('id_annee').addEventListener('change', function() {
@@ -495,7 +494,7 @@ async function saveNewEval(){
   var cid=document.getElementById('evalClasse').dataset.id,mid=document.getElementById('evalMatiere').dataset.id;
   if(!lib){Swal.fire({icon:'warning',text:'Libellé obligatoire'});return}
   if(!cid||!mid||cid==='null'||mid==='null'){Swal.fire({icon:'error',text:'Classe ou matière invalide'});return}
-  var d={libelle:lib,id_classe:cid,id_matiere:mid,id_periode:document.getElementById('evalPeriode').value,id_annee:ACTIVE_ANNEE_ID,date_eval:document.getElementById('evalDate').value,type:document.getElementById('evalType').value,sur:document.getElementById('evalSur').value||20};
+  var d={libelle:lib,id_classe:cid,id_matiere:mid,id_periode:document.getElementById('evalPeriode').value,id_annee:ACTIVE_ANNEE_ID,date_eval:document.getElementById('evalDate').value,type:document.getElementById('evalType').value,ponderee_sur:document.getElementById('evalSur').value||20};
   var r=await API.evaluations.create(d);
   if(r.success){bootstrap.Modal.getInstance(document.getElementById('addEvalModal')).hide();document.getElementById('evalLibelle').value='';Toast.fire({icon:'success',title:'Évaluation créée'});if(gCId&&gMid)loadGrilleNotes()}else Swal.fire({icon:'error',text:r.message});
 }
@@ -505,6 +504,7 @@ async function saveNewEval(){
       clearInterval(wait);
       autoSetup('id_classe_search','id_classe','id_classe_results',cList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;},function(id){chargerCoursPourNotes(id);});
       autoSetup('id_matiere_search','id_matiere','id_matiere_results',[],function(m){return m.libelle;});
+      filterPeriodeSelect(document.getElementById('id_periode'), document.getElementById('id_annee').value);
     }
   },50);
 })();

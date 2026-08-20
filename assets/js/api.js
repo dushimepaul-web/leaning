@@ -27,6 +27,11 @@ window.API = {
     }
     try {
       const response = await fetch(url, options);
+      const contentType = response.headers.get('content-type') || '';
+      if (!response.ok || contentType.indexOf('application/json') === -1) {
+        console.error('API Error: réponse non JSON', response.status, url);
+        return { success: false, status: response.status, message: 'Réponse invalide du serveur (' + response.status + ')' };
+      }
       return await response.json();
     } catch (error) {
       console.error('API Error:', error);

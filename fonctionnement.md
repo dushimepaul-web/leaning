@@ -9,7 +9,7 @@ Ce document décrit la logique métier implémentée dans l'application. Il est 
 - Exemple : CHIMIE 12 h/semaine → TJ = 12 × 15 = **180 points max**.
 - Si les heures ne sont pas renseignées (`nb_heures_par_semaine` = 0) → TJ = 0 (maxima à 0 tant que les heures sont manquantes).
 
-> Règle confirmée par l'utilisateur : **TJ = coefficient calculé (heures × facteur)** — le coefficient stocké n'est pas utilisé dans le calcul.
+> Règle confirmée par l'utilisateur : **TJ = coefficient calculé (heures × facteur)** — la colonne stockée `matieres_classes.note_max_matiere` (ex-`coefficient`) n'est pas utilisée dans le calcul du TJ.
 
 ## 2. Les deux catégories de notes
 
@@ -106,7 +106,7 @@ La clôture d'année (`Classes → Annees → Clôture & Report`) décide pour c
 ### 6.1. Règles automatiques
 
 - **Seuil de moyenne (%)** (`seuil_moyenne`, défaut 50) : si la **moyenne annuelle du bulletin** est inférieure au seuil → **Ajourné**.
-- **Seuil matière (%)** (`seuil_matiere`, défaut 50) : par matière, % = notes ÷ (coef × 6) × 100. Une matière sous le seuil = **échec**.
+- **Seuil matière (%)** (`seuil_matiere`, défaut 50) : par matière, % = notes ÷ (note_max_matiere × 6) × 100. Une matière sous le seuil = **échec**.
 - **Max de repêchage** (`max_repechage`, défaut 3) : nombre maximal d'échecs toléré.
 
 **Décision :**
@@ -217,7 +217,7 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 | Clé | Valeur | Rôle | Utilisé dans |
 |---|---|---|---|
 | `seuil_moyenne` | 50 | Seuil (%) de moyenne annuelle : en dessous → Ajourné | `Annees.php:163` |
-| `seuil_matiere` | 50 | Seuil (%) par matière : une matière sous le seuil = échec | `Annees.php:164` |
+| `seuil_matiere` | 50 | Seuil (%) par matière : % = notes ÷ (note_max_matiere × 6) × 100 ; une matière sous le seuil = échec | `Annees.php:164` |
 | `max_repechage` | 3 | Nombre maximal d'échecs toléré avant ajournement | `Annees.php:165` |
 
 ### 8.7. Conduite & divers
@@ -260,4 +260,14 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 - **prochain_num_recu et tva supprimés** (orphelins — jamais lus par le code) : n° de reçu saisi manuellement, aucun calcul de TVA. **annee_active conservé** (sélection de la page, l'activation réelle passe par `est_en_cours`). parametres = 43.
 - **Audit complet des paramètres** : chaque clé vérifiée — répertoire complet ajouté en **section 8** (rôle + lieu d'utilisation fichier:ligne pour chacun).
 - **Corruption `?` corrigée en base** : les mots contenant des accents étaient stockés avec des `?` littéraux (0x3F) — `classes.libelle` (1ère PEDAGOGIQUE), `menus.libelle` (Scolarité, Reçus, Échéanciers, Paramètres, Disponibilités, Générer), `produits.unite` (pièce). Vérifié par scan binaire (`LIKE '%?%' COLLATE utf8mb4_bin`) sur les 154 colonnes texte.
+- **`evaluations.sur` → `evaluations.ponderee_sur`** (renommée) : barème de chaque évaluation (défaut 20). Grille de notes, fiches et bulletins utilisent `note / ponderee_sur` pour normaliser.
+- **`matieres_classes.coefficient` → `matieres_classes.note_max_matiere`** (renommée) : « note max matière » (poids de la matière pour la classe, défaut 1.0). Utilisée dans la clôture (`× 6`) et affichée dans la grille de notes (`×note_max_matiere`), les programmes et les horaires. L'API et les vues des enseignants utilisent désormais `note_max_matiere`.
+- **Coefficient supprimé de la table `evaluations`** : le formulaire et l'API d'évaluation n'acceptent que `ponderee_sur` ; la colonne « Coeff. » a été retirée des tableaux d'évaluations.
+- **Types d'évaluation alignés sur l'enum** `('interrogation','devoir','ressource','competance','examen')` : listes déroulantes (ajout/modification) mises à jour dans les modules Notes et Evaluations.
+- **`api_grille_notes` corrigé** : le select des évaluations ne contenait pas `ev.id_matiere` → warning « Undefined array key » → en-têtes déjà envoyés → réponse HTML au lieu de JSON (« Unexpected token '<' »). `ev.id_matiere` ajouté au select ; `api.js` protégé contre les réponses non-JSON (message d'erreur propre au lieu de `response.json()` qui plante).
+- **Grille de notes (page Notes)** : en-tête des colonnes simplifié → seul le barème est affiché (`/15`), le `×note_max_matiere` est retiré de l'affichage (et du payload `api_grille_notes`) ; la molette de la souris ne modifie plus la note saisie (`onwheel preventDefault` sur les champs) ; colonne **Moyenne retirée** (en-tête, cellule élève, pied de tableau et calculs `computeStats`/`recalcRow`) — restent Total et % ; **scroll vertical du tableau supprimé** (plus de `max-height:65vh`) → tout s'affiche ; **filtre Trimestre** : seuls les trimestres de l'année sélectionnée s'affichent (au chargement = année active, mise à jour au changement d'année avec auto-sélection du premier trimestre visible).
+- **Molette souris bloquée sur TOUS les champs numériques** (`Footer.php`, garde global `wheel` + `preventDefault` sur `input[type=number]`) : plus de changement de valeur accidentel en scrollant (notes, montants, paramètres…).
+- **Suppression d'évaluation en cascade** : supprimer une évaluation efface aussi (soft delete) toutes les notes attribuées aux élèves — avec **confirmation** : l'utilisateur est averti du nombre de notes concernées (module Evaluations, `api_get` renvoie `note_count` ; module Notes, message dans la modale). Réponse : `notes_supprimees`.
+- **Fiches de points — fiche élève par cours** (page Fiches) : quand un cours est sélectionné dans le filtre, la fiche garde **exactement le design de la fiche classe** (mêmes classes CSS, en-tête 2 lignes avec blocs par période, pied gris TOTAUX ÉLÈVES). Colonnes : 1 = **N°** (numérotation), 2 = **ÉLÈVES** (tous les élèves de la classe, ordre alphabétique), puis **4 colonnes par période** : **TJ** = somme des notes de type interrogation + devoir, **COMP** = somme type competance, **RESS** = somme type ressource, **TOT** = TJ+COMP+RESS (notes lues dans `notes` en respectant le type de chaque évaluation), puis **T.A** (total annuel = somme des TOT des trimestres affichés) et **%** (= T.A ÷ somme des barèmes `ponderee_sur` × 100). En-tête sur **3 lignes** : par trimestre → **TJ | EXAMEN | TOT** avec **COMP | RESS** sous EXAMEN. Pas de ligne MAXIMA — sauf **ligne BARÈME** : une ligne grise **MAXIMA** avant les lignes élèves, avec par trimestre le barème TJ (= somme `ponderee_sur` interro+devoir), COMP, RESS, TOT et T.A (= somme des barèmes), % = 100%. `api_fiche` accepte `matiere=` et `periode=all` (toute l'année, évaluations groupées par période) et renvoie `classe`/`annee_scolaire`/`periode_libelle`. Sans cours sélectionné, la fiche classe (MAXIMA/TJ/RESS/COMP) reste inchangée.
+- **Bulletins** : en-tête des bulletins mis au même format que la fiche élève — 3 lignes : par trimestre → **TJ | EXAMEN | TOT** avec **COMP | RESS** sous EXAMEN (quand RESS et COMP sont actifs) ; ordre des cellules = TJ, COMP, RESS, TOT. Si seul EX est actif, en-tête 2 lignes TJ/EX/TOT conservé.
 - Dump `DB/vip_school.sql` régénéré après chaque changement de base.

@@ -54,12 +54,12 @@ class Programmes extends MY_Controller {
             if (!$ens) { $this->json_error('Enseignant introuvable'); return; }
         }
 
-        $coefficient = isset($data['coefficient']) ? floatval($data['coefficient']) : 1.0;
+        $note_max_matiere = isset($data['note_max_matiere']) ? floatval($data['note_max_matiere']) : 1.0;
         $nb_heures_jour = isset($data['nb_heures_par_jour']) ? floatval($data['nb_heures_par_jour']) : 0.0;
         $nb_heures_sem = isset($data['nb_heures_par_semaine']) ? floatval($data['nb_heures_par_semaine']) : 0.0;
 
-        if ($coefficient < 0 || $nb_heures_jour < 0 || $nb_heures_sem < 0) {
-            $this->json_error('Les coefficients et les volumes horaires ne peuvent pas être négatifs'); return;
+        if ($note_max_matiere < 0 || $nb_heures_jour < 0 || $nb_heures_sem < 0) {
+            $this->json_error('La note max matière et les volumes horaires ne peuvent pas être négatifs'); return;
         }
 
         $existing = $this->Model->readOne('matieres_classes', [
@@ -78,7 +78,7 @@ class Programmes extends MY_Controller {
         if ($softDeleted) {
             $updateData = [
                 'deleted_at' => null,
-                'coefficient' => $coefficient,
+                'note_max_matiere' => $note_max_matiere,
                 'nb_heures_par_jour' => $nb_heures_jour,
                 'nb_heures_par_semaine' => $nb_heures_sem
             ];
@@ -101,7 +101,7 @@ class Programmes extends MY_Controller {
         $insertData = [
             'id_matiere' => $data['id_matiere'],
             'id_classe' => $data['id_classe'],
-            'coefficient' => $coefficient,
+            'note_max_matiere' => $note_max_matiere,
             'nb_heures_par_jour' => $nb_heures_jour,
             'nb_heures_par_semaine' => $nb_heures_sem
         ];
@@ -149,17 +149,17 @@ class Programmes extends MY_Controller {
             $this->json_error('Cette matière est déjà associée à cette classe'); return;
         }
 
-        $coefficient = isset($data['coefficient']) ? floatval($data['coefficient']) : $record['coefficient'];
+        $note_max_matiere = isset($data['note_max_matiere']) ? floatval($data['note_max_matiere']) : $record['note_max_matiere'];
         $nb_heures_jour = isset($data['nb_heures_par_jour']) ? floatval($data['nb_heures_par_jour']) : $record['nb_heures_par_jour'];
         $nb_heures_sem = isset($data['nb_heures_par_semaine']) ? floatval($data['nb_heures_par_semaine']) : $record['nb_heures_par_semaine'];
 
-        if ($coefficient < 0 || $nb_heures_jour < 0 || $nb_heures_sem < 0) {
-            $this->json_error('Les coefficients et les volumes horaires ne peuvent pas être négatifs'); return;
+        if ($note_max_matiere < 0 || $nb_heures_jour < 0 || $nb_heures_sem < 0) {
+            $this->json_error('La note max matière et les volumes horaires ne peuvent pas être négatifs'); return;
         }
 
-        $allowed = ['id_matiere', 'id_classe', 'id_enseignant', 'coefficient', 'nb_heures_par_jour', 'nb_heures_par_semaine'];
+        $allowed = ['id_matiere', 'id_classe', 'id_enseignant', 'note_max_matiere', 'nb_heures_par_jour', 'nb_heures_par_semaine'];
         $update = array_intersect_key($data, array_flip($allowed));
-        $update['coefficient'] = $coefficient;
+        $update['note_max_matiere'] = $note_max_matiere;
         $update['nb_heures_par_jour'] = $nb_heures_jour;
         $update['nb_heures_par_semaine'] = $nb_heures_sem;
         if (array_key_exists('id_enseignant', $data)) {

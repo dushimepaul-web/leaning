@@ -111,6 +111,108 @@ function chargerCours(idClasse){
 
 function nf(v){return v!==undefined&&v!==null&&v>0?v.toFixed(1):'-'}
 
+async function loadFicheCours(idClasse,idMatiere,p,a){
+  var resp=await fetch(API.base_url+'api/fiches/fiche/'+idClasse+'?periode='+p+'&annee='+a+'&matiere='+idMatiere);
+  var r=await resp.json();
+  Swal.close();
+  if(!r.success){document.getElementById('statsRow').style.display='';document.getElementById('ficheCard').style.display='';document.getElementById('ficheHead').innerHTML='';document.getElementById('ficheBody').innerHTML='<tr><td colspan="20" class="text-center py-32 text-secondary-light">'+r.message+'</td></tr>';document.getElementById('ficheFoot').innerHTML='';return;}
+  var data=r.data;
+  document.getElementById('statsRow').style.display='';document.getElementById('ficheCard').style.display='';
+  document.getElementById('statNbEleves').textContent=data.students.length;
+  document.getElementById('statMoyClasse').textContent=(data.stats&&data.stats.moyenne_classe)||'0';
+  document.getElementById('statTaux').textContent=((data.stats&&data.stats.taux_reussite)||0)+'%';
+  document.getElementById('statNbEval').textContent=(data.evaluations||[]).length+' éval.';
+  var evals=data.evaluations||[];
+  var coursNom=evals.length?evals[0].matiere:'';
+  document.getElementById('ficheHeader').innerHTML=
+    '<div class="h-row"><span>SECTION: '+(data.section||data.classe||'')+'</span><span class="h-right">ANNEE SCOLAIRE : '+(data.annee_scolaire||'')+'</span></div>'+
+    '<div class="h-row"><span>Classe : '+(data.classe||'')+'</span><span class="h-right">Nombre d\'Eleves : '+data.students.length+'</span></div>'+
+    '<div class="h-row"><span class="titre-cours">FICHE DE POINTS — '+coursNom+'</span><span class="h-right"></span></div>';
+
+  var groups=[];
+  evals.forEach(function(e){
+    var g=groups[groups.length-1];
+    if(!g||g.id!==e.id_periode){groups.push({id:e.id_periode,libelle:e.periode_libelle||('P'+e.id_periode),items:[e]});}
+    else{g.items.push(e);}
+  });
+
+  // En-tête 3 lignes : bloc période avec TJ/EXAMEN(COMP/RESS)/TOT + TOTAUX
+  var head='<tr>';
+  head+='<th class="branches-header" rowspan="3" style="width:26px;min-width:26px">N°</th>';
+  head+='<th class="branches-header" rowspan="3" style="width:200px;min-width:200px">ÉLÈVES</th>';
+  groups.forEach(function(g){head+='<th colspan="4">'+g.libelle+'</th>';});
+  head+='<th colspan="2" rowspan="2">TOTAUX</th></tr>';
+  head+='<tr>';
+  groups.forEach(function(){head+='<th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>';});
+  head+='</tr>';
+  head+='<tr>';
+  groups.forEach(function(){head+='<th>COMP</th><th>RESS</th>';});
+  head+='<th>T.A</th><th>%</th></tr>';
+  document.getElementById('ficheHead').innerHTML=head;
+
+  function sumType(student,group,types){
+    var s=0;
+    group.items.forEach(function(e){
+      if(types.indexOf(e.type)!==-1){
+        var n=student.notes[e.id_evaluation];
+        if(n!==null&&n!==undefined){s+=n;}
+      }
+    });
+    return s;
+  }
+  function cellsOf(student,group){
+    var tj=sumType(student,group,['interrogation','devoir']);
+    var comp=sumType(student,group,['competance']);
+    var ress=sumType(student,group,['ressource']);
+    return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
+  }
+
+  function maxTotOf(group){var m=0;group.items.forEach(function(e){m+=parseFloat(e.ponderee_sur)||0;});return m;}
+  function maxCells(group){
+    var tj=0,comp=0,ress=0;
+    group.items.forEach(function(e){
+      var v=parseFloat(e.ponderee_sur)||0;
+      if(e.type==='interrogation'||e.type==='devoir'){tj+=v;}
+      else if(e.type==='competance'){comp+=v;}
+      else if(e.type==='ressource'){ress+=v;}
+    });
+    return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
+  }
+
+  var maxTa=0;
+  groups.forEach(function(g){maxTa+=maxTotOf(g);});
+
+  var body='';
+  body+='<tr class="fiche-row-g" style="font-weight:700">';
+  body+='<td class="matiere" colspan="2"></td>';
+  groups.forEach(function(g){
+    var m=maxCells(g);
+    body+='<td class="num">'+nf(m.tj)+'</td><td class="num">'+nf(m.comp)+'</td><td class="num">'+nf(m.ress)+'</td><td class="num gris"><strong>'+nf(m.tot)+'</strong></td>';
+  });
+  body+='<td class="num"><strong>'+nf(maxTa)+'</strong></td>';
+  body+='<td class="num">100%</td></tr>';
+
+  var gTa=0;
+  data.students.forEach(function(s,i){
+    var ta=0;
+    groups.forEach(function(g){var c=cellsOf(s,g);ta+=c.tot;});
+    gTa+=ta;
+    body+='<tr>';
+    body+='<td class="num" style="min-width:22px">'+(i+1)+'</td>';
+    body+='<td class="matiere">'+s.etudiant.nom+' '+(s.etudiant.prenom||'')+'</td>';
+    groups.forEach(function(g){
+      var c=cellsOf(s,g);
+      body+='<td class="num">'+nf(c.tj)+'</td><td class="num">'+nf(c.comp)+'</td><td class="num">'+nf(c.ress)+'</td><td class="num gris"><strong>'+nf(c.tot)+'</strong></td>';
+    });
+    body+='<td class="num"><strong>'+nf(ta)+'</strong></td>';
+    body+='<td class="num">'+(maxTa>0?(ta/maxTa*100).toFixed(2)+'%':'-')+'</td></tr>';
+  });
+  document.getElementById('ficheBody').innerHTML=body;
+
+  // Pied : TOTAUX ÉLÈVES (sommes TJ/COMP/RESS/TOT par période)
+  document.getElementById('ficheFoot').innerHTML='';
+}
+
 async function loadFiche(){
   var id_classe=document.getElementById('id_classe').value;
   if(!id_classe){Swal.fire({icon:'warning',title:'Sélection',text:'Veuillez choisir une classe'});return;}
@@ -128,7 +230,7 @@ async function loadFiche(){
   var periodes=data.periodes||[];
   var matieres=data.matieres||[];
   var idMatiere=document.getElementById('id_matiere').value;
-  if(idMatiere){matieres=matieres.filter(function(m){return String(m.id_matiere)===String(idMatiere);});}
+  if(idMatiere){return loadFicheCours(id_classe,idMatiere,p,a);}
   var cls=data.classe||'';
   var an=data.annee_scolaire||'';
   var ressActive = (data.ressources_active===undefined ? 1 : parseInt(data.ressources_active)) !== 0;
@@ -297,6 +399,6 @@ function exportFiche(){
   window.open(url,'_blank');
 }
 
-(function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;},function(){chargerCours(document.getElementById('id_classe').value);});autoSetup('id_matiere_search','id_matiere','id_matiere_results',matieresList,function(m){return m.libelle;});}},50);})();
+(function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;},function(){chargerCours(document.getElementById('id_classe').value);});autoSetup('id_matiere_search','id_matiere','id_matiere_results',matieresList,function(m){return m.libelle;});filterPeriodeFiches();}},50);})();
 </script>
 <?php include VIEWPATH.'includes/Footer.php'; ?>

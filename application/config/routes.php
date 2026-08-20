@@ -138,6 +138,7 @@ $route['api/bulletins/(:any)'] = 'Notes/Bulletins/api_get/$1';
 // Fiches de points
 $route['Fiches'] = 'Notes/Fiches/index';
 $route['Evaluations'] = 'Evaluations/Evaluations/index';
+$route['api/fiches/fiche/(:any)'] = 'Notes/Fiches/api_fiche/$1';
 $route['api/fiches/fiche'] = 'Notes/Fiches/api_fiche';
 $route['api/fiches/fiche_par_cours/(:any)'] = 'Notes/Fiches/api_fiche_par_cours/$1';
 $route['api/fiches/fiche_par_cours'] = 'Notes/Fiches/api_fiche_par_cours';

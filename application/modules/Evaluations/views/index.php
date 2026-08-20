@@ -30,7 +30,6 @@
                                 <th>Période</th>
                                 <th>Date</th>
                                 <th>Note max</th>
-                                <th>Coefficient</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -96,22 +95,14 @@
                             <select class="form-select" name="type">
                                 <option value="interrogation">Interrogation</option>
                                 <option value="devoir" selected>Devoir</option>
-                                <option value="controle">Contrôle</option>
-                                <option value="composition">Composition</option>
+                                <option value="ressource">Ressource</option>
+                                <option value="competance">Compétence</option>
                                 <option value="examen">Examen</option>
-                                <option value="tp">TP</option>
-                                <option value="projet">Projet</option>
-                                <option value="participation">Participation</option>
-                                <option value="autre">Autre</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Note maximale</label>
-                            <input type="number" class="form-control" name="note_max" value="20" min="1" max="100">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Coefficient</label>
-                            <input type="number" class="form-control" name="coefficient" value="1" min="0.5" step="0.5">
+                            <label class="form-label">Pondérée sur</label>
+                            <input type="number" class="form-control" name="ponderee_sur" value="20" min="1" max="100">
                         </div>
                     </div>
                 </form>
@@ -131,7 +122,7 @@ BASE_URL = '<?= base_url() ?>';
 
 async function loadData() {
     const res = await API.evaluations.list();
-    if (!res.success) { $('#dataBody').html('<tr><td colspan="9" class="text-center text-danger">Erreur</td></tr>'); return; }
+    if (!res.success) { $('#dataBody').html('<tr><td colspan="8" class="text-center text-danger">Erreur</td></tr>'); return; }
     let rows = '';
     (res.data || []).forEach((e, i) => {
         rows += `<tr>
@@ -141,12 +132,11 @@ async function loadData() {
             <td>${e.classe || '-'}</td>
             <td>${e.periode || '-'}</td>
             <td>${e.date_eval || '-'}</td>
-            <td>${e.sur || 20}</td>
-            <td>${e.coefficient || 1}</td>
+            <td>${e.ponderee_sur || 20}</td>
             <td><button class="btn btn-sm btn-outline-danger" onclick="delEval('${e.uuid}')"><i class="ri-delete-bin-line"></i></button></td>
         </tr>`;
     });
-    $('#dataBody').html(rows || '<tr><td colspan="9" class="text-center text-muted">Aucune évaluation</td></tr>');
+    $('#dataBody').html(rows || '<tr><td colspan="8" class="text-center text-muted">Aucune évaluation</td></tr>');
 }
 
 async function saveEval() {
@@ -164,9 +154,17 @@ async function saveEval() {
 }
 
 async function delEval(id) {
-    const r = await Swal.fire({ title: 'Confirmer?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Oui, supprimer' });
+    let msg = 'Supprimer cette évaluation ?';
+    try {
+        const e = await API.evaluations.get(id);
+        const n = e.success ? parseInt(e.data.note_count || 0, 10) : 0;
+        if (n > 0) msg = `Cette évaluation a <b>${n} note(s)</b> attribuée(s) aux élèves.<br>Ces notes seront aussi effacées.`;
+    } catch (err) {}
+    const r = await Swal.fire({ title: 'Confirmer?', icon: 'warning', html: msg, showCancelButton: true, confirmButtonText: 'Oui, supprimer', cancelButtonText: 'Annuler' });
     if (r.isConfirmed) {
-        await API.evaluations.delete(id);
+        const res = await API.evaluations.delete(id);
+        if (res.success) Swal.fire('Supprimée', res.message || 'Évaluation supprimée', 'success');
+        else Swal.fire('Erreur', res.message || 'Erreur', 'error');
         loadData();
     }
 }

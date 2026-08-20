@@ -58,7 +58,7 @@ class Notes_model extends Model
 
         // Vérifier note dans les bornes
         $note = (float)$data['note'];
-        $note_max = (float)($eval['sur'] ?? 20);
+        $note_max = (float)($eval['ponderee_sur'] ?? 20);
         if ($note < 0 || $note > $note_max) {
             return ['success' => false, 'message' => "Note doit être entre 0 et {$note_max}"];
         }
@@ -191,9 +191,10 @@ class Notes_model extends Model
             $this->db->where('n.deleted_at', null);
             $this->db->where('n.id_etudiant', $id_etudiant);
             $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
+            $this->db->join('matieres_classes mc', 'mc.id_matiere = ev.id_matiere AND mc.id_classe = ev.id_classe AND mc.deleted_at IS NULL', 'left');
             $this->db->where('ev.id_periode', $id_periode);
             $this->db->where('ev.deleted_at', null);
-            $this->db->select('n.note, ev.coefficient, ev.sur');
+            $this->db->select('n.note, mc.note_max_matiere, ev.ponderee_sur AS ev_ponderee_sur');
             $q = $this->db->get('notes');
             $notes = $q === false ? array() : $q->result_array();
 
@@ -202,8 +203,8 @@ class Notes_model extends Model
             $somme_ponderee = 0;
             $somme_coef = 0;
             foreach ($notes as $n) {
-                $coef = (float)($n['coefficient'] ?? 1);
-                $note_max = (float)($n['sur'] ?? 20);
+                $coef = (float)($n['note_max_matiere'] ?? 1);
+                $note_max = (float)($n['ev_ponderee_sur'] ?? 20);
                 $note = (float)$n['note'];
                 $note_sur_20 = $note_max > 0 ? ($note / $note_max) * 20 : 0;
                 $somme_ponderee += $note_sur_20 * $coef;

@@ -30,7 +30,7 @@ class Evaluations extends MY_Controller {
     public function api_get($id) {
         $this->db->where('ev.uuid', $id);
         $this->db->where('ev.deleted_at', null);
-        $this->db->select('ev.*, m.libelle as matiere, c.libelle as classe, p.libelle as periode');
+        $this->db->select('ev.*, m.libelle as matiere, c.libelle as classe, p.libelle as periode, (SELECT COUNT(*) FROM notes nn WHERE nn.id_evaluation = ev.id_evaluation AND nn.deleted_at IS NULL) as note_count');
         $this->db->from('evaluations ev');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
         $this->db->join('classes c', 'ev.id_classe = c.id_classe', 'left');
@@ -55,11 +55,9 @@ class Evaluations extends MY_Controller {
         $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $periode['id_annee'], 'deleted_at' => null]);
         if (!$annee) { $this->json_error('Année de la période introuvable'); return; }
         $this->load->helper('uuid');
-        $types_valides = ['interrogation','devoir','controle','composition','examen','tp','projet','participation','autre'];
-        $sur = (int)($data['note_max'] ?? 20);
+        $types_valides = ['interrogation','devoir','ressource','competance','examen'];
+        $sur = (int)($data['ponderee_sur'] ?? 20);
         if ($sur <= 0 || $sur > 1000) { $this->json_error('Note maximale invalide'); return; }
-        $coefficient = (float)($data['coefficient'] ?? 1);
-        if ($coefficient <= 0 || $coefficient > 100) { $this->json_error('Coefficient invalide'); return; }
         $insert = [
             'uuid' => generate_uuid(),
             'libelle' => $data['libelle'],
@@ -69,8 +67,7 @@ class Evaluations extends MY_Controller {
             'id_annee' => $periode['id_annee'],
             'date_eval' => $data['date_evaluation'] ?? date('Y-m-d'),
             'type' => in_array($data['type'] ?? '', $types_valides) ? $data['type'] : 'devoir',
-            'sur' => $sur,
-            'coefficient' => $coefficient,
+            'ponderee_sur' => $sur,
             'cree_le' => date('Y-m-d H:i:s'),
             'modifie_le' => date('Y-m-d H:i:s'),
         ];
@@ -85,7 +82,7 @@ class Evaluations extends MY_Controller {
         $data = $this->get_json_input();
         $existing = $this->Model->readOne('evaluations', ['uuid' => $id, 'deleted_at' => null]);
         if (!$existing) { $this->json_error('Évaluation introuvable', 404); return; }
-        $allowed = ['libelle','id_classe','id_matiere','id_periode','date_eval','sur','coefficient','type'];
+        $allowed = ['libelle','id_classe','id_matiere','id_periode','date_eval','ponderee_sur','type'];
         $update = ['modifie_le' => date('Y-m-d H:i:s')];
         if (isset($data['id_classe']) && $data['id_classe'] !== '') {
             $classe = $this->Model->readOne('classes', ['id_classe' => $data['id_classe'], 'deleted_at' => null]);
@@ -99,15 +96,10 @@ class Evaluations extends MY_Controller {
             $periode = $this->Model->readOne('periodes', ['id_periode' => $data['id_periode'], 'deleted_at' => null]);
             if (!$periode) { $this->json_error('Période introuvable'); return; }
         }
-        if (!empty($data['note_max'])) {
-            $sur = (int)$data['note_max'];
+        if (!empty($data['ponderee_sur'])) {
+            $sur = (int)$data['ponderee_sur'];
             if ($sur <= 0 || $sur > 1000) { $this->json_error('Note maximale invalide'); return; }
-            $update['sur'] = $sur;
-        }
-        if (isset($data['coefficient']) && $data['coefficient'] !== '') {
-            $coefficient = (float)$data['coefficient'];
-            if ($coefficient <= 0 || $coefficient > 100) { $this->json_error('Coefficient invalide'); return; }
-            $update['coefficient'] = $coefficient;
+            $update['ponderee_sur'] = $sur;
         }
         if (!empty($data['date_evaluation'])) $update['date_eval'] = $data['date_evaluation'];
         foreach ($allowed as $col) {
@@ -124,9 +116,15 @@ class Evaluations extends MY_Controller {
     }
 
     public function api_delete($id) {
+        $ev = $this->Model->readOne('evaluations', ['uuid' => $id]);
+        if (!$ev) { $this->json_error('Évaluation introuvable', 404); return; }
+        $now = date('Y-m-d H:i:s');
+        $count = (int)$this->db->where('id_evaluation', $ev['id_evaluation'])->where('deleted_at', null)->count_all_results('notes');
+        $this->db->where('id_evaluation', $ev['id_evaluation'])->where('deleted_at', null);
+        $this->db->update('notes', ['deleted_at' => $now]);
         $this->db->where('uuid', $id);
-        if ($this->db->update('evaluations', ['deleted_at' => date('Y-m-d H:i:s')]))
-            $this->json_success(null, 'Évaluation supprimée');
+        if ($this->db->update('evaluations', ['deleted_at' => $now]))
+            $this->json_success(['notes_supprimees' => $count], $count > 0 ? 'Évaluation supprimée — ' . $count . ' note(s) effacée(s)' : 'Évaluation supprimée');
         else $this->json_error('Erreur');
     }
 }

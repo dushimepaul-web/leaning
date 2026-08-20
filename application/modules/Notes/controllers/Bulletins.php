@@ -141,6 +141,9 @@ class Bulletins extends MY_Controller {
         $b['annee'] = $annee ? $annee['libelle'] : '';
 
         $evals = $this->db->where('id_classe', $b['id_classe'])->where('id_periode', $b['id_periode'])->where('deleted_at', null)->get('evaluations')->result_array();
+        $mc_rows = $this->db->select('id_matiere, note_max_matiere')->from('matieres_classes')->where('id_classe', $b['id_classe'])->where('deleted_at', null)->get()->result_array();
+        $coeff_map = [];
+        foreach ($mc_rows as $mc) { $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1); }
         $evalIds = array_column($evals, 'id_evaluation');
         $notes = empty($evalIds) ? [] : $this->db
             ->where('id_etudiant', $b['id_etudiant'])->where_in('id_evaluation', $evalIds)->where('deleted_at', null)
@@ -156,8 +159,8 @@ class Bulletins extends MY_Controller {
                 'matiere' => $matiere ? $matiere['libelle'] : '-',
                 'evaluation' => $ev['libelle'],
                 'note' => $n ? floatval($n['note']) : null,
-                'coefficient' => floatval($ev['coefficient']),
-                'sur' => floatval($ev['sur']),
+                'coefficient' => $coeff_map[$ev['id_matiere']] ?? 1,
+                'ponderee_sur' => floatval($ev['ponderee_sur']),
             ];
         }
         $this->json_success($b);
@@ -192,6 +195,10 @@ class Bulletins extends MY_Controller {
 
         if (empty($evaluations)) { $this->json_error('Aucune évaluation trouvée pour cette période'); return; }
 
+        $mc_rows = $this->db->select('id_matiere, note_max_matiere')->from('matieres_classes')->where('deleted_at', null)->get()->result_array();
+        $coeff_map = [];
+        foreach ($mc_rows as $mc) { $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1); }
+
         $evalIds = array_column($evaluations, 'id_evaluation');
 
         // Récupérer toutes les notes pour ces évaluations
@@ -221,8 +228,8 @@ class Bulletins extends MY_Controller {
                 foreach ($evaluations as $ev) {
                     if ($ev['id_evaluation'] == $note['id_evaluation']) { $eval = $ev; break; }
                 }
-                $coeff = $eval ? floatval($eval['coefficient']) : 1.0;
-                $sur = $eval && floatval($eval['sur']) > 0 ? floatval($eval['sur']) : 20;
+                $coeff = $eval ? ($coeff_map[$eval['id_matiere']] ?? 1.0) : 1.0;
+                $sur = $eval && floatval($eval['ponderee_sur']) > 0 ? floatval($eval['ponderee_sur']) : 20;
                 $sum += (floatval($note['note']) / $sur) * 20 * $coeff;
                 $count += $coeff;
             }
@@ -358,7 +365,7 @@ class Bulletins extends MY_Controller {
             : 'N/A';
 
         $all_subjects = $this->Model->readQuery("
-            SELECT m.id_matiere AS id, m.libelle AS name, m.code, mc.coefficient, mc.nb_heures_par_semaine, 1 AS is_active
+            SELECT m.id_matiere AS id, m.libelle AS name, m.code, mc.note_max_matiere, mc.nb_heures_par_semaine, 1 AS is_active
             FROM matieres_classes mc
             JOIN matieres m ON m.id_matiere = mc.id_matiere
             WHERE mc.id_classe = ? AND mc.deleted_at IS NULL AND m.deleted_at IS NULL
@@ -403,17 +410,17 @@ class Bulletins extends MY_Controller {
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN n.note ELSE 0 END) AS note_t3_comp,
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN n.note ELSE 0 END) AS note_t3_ress,
 
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.sur ELSE 0 END) AS max_t1_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.sur ELSE 0 END) AS max_t1_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.sur ELSE 0 END) AS max_t1_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.ponderee_sur ELSE 0 END) AS max_t1_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.ponderee_sur ELSE 0 END) AS max_t1_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.ponderee_sur ELSE 0 END) AS max_t1_ress,
 
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.sur ELSE 0 END) AS max_t2_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.sur ELSE 0 END) AS max_t2_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.sur ELSE 0 END) AS max_t2_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.ponderee_sur ELSE 0 END) AS max_t2_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.ponderee_sur ELSE 0 END) AS max_t2_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.ponderee_sur ELSE 0 END) AS max_t2_ress,
 
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.sur ELSE 0 END) AS max_t3_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.sur ELSE 0 END) AS max_t3_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.sur ELSE 0 END) AS max_t3_ress
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.ponderee_sur ELSE 0 END) AS max_t3_tj,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.ponderee_sur ELSE 0 END) AS max_t3_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.ponderee_sur ELSE 0 END) AS max_t3_ress
             
             FROM notes n
             JOIN evaluations ev ON ev.id_evaluation = n.id_evaluation

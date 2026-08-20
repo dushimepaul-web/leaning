@@ -168,11 +168,11 @@
                       <td><?= $i ?></td>
                       <td><?= htmlspecialchars($ens['matiere_libelle']) ?></td>
                       <td><?= htmlspecialchars($ens['classe_libelle']) ?></td>
-                      <td><?= $ens['coefficient'] ?></td>
+                      <td><?= $ens['note_max_matiere'] ?></td>
                       <td><?= $ens['nb_heures_par_jour'] ?></td>
                       <td><?= $ens['nb_heures_par_semaine'] ?></td>
                       <td>
-                        <button class="btn btn-sm btn-primary-600 px-12 py-4 radius-4" data-uuid="<?= htmlspecialchars($ens['uuid']) ?>" data-coefficient="<?= htmlspecialchars($ens['coefficient']) ?>" data-nb-heures-par-jour="<?= htmlspecialchars($ens['nb_heures_par_jour'] ?? '') ?>" data-nb-heures-par-semaine="<?= htmlspecialchars($ens['nb_heures_par_semaine'] ?? '') ?>" onclick="openEditCourse(this)"><i class="ri-edit-2-line"></i></button>
+                        <button class="btn btn-sm btn-primary-600 px-12 py-4 radius-4" data-uuid="<?= htmlspecialchars($ens['uuid']) ?>" data-note-max-matiere="<?= htmlspecialchars($ens['note_max_matiere']) ?>" data-nb-heures-par-jour="<?= htmlspecialchars($ens['nb_heures_par_jour'] ?? '') ?>" data-nb-heures-par-semaine="<?= htmlspecialchars($ens['nb_heures_par_semaine'] ?? '') ?>" onclick="openEditCourse(this)"><i class="ri-edit-2-line"></i></button>
                         <button class="btn btn-sm btn-danger px-12 py-4 radius-4" onclick="confirmDeleteCourse('<?= $ens['uuid'] ?>')"><i class="ri-delete-bin-6-line"></i></button>
                       </td>
                     </tr>
@@ -203,8 +203,8 @@
         <input type="hidden" id="edit_id_matiere_classe">
         <div class="row g-3">
           <div class="col-sm-12">
-            <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Coefficient</label>
-            <input type="number" step="0.1" min="0" class="form-control" id="edit_coefficient">
+            <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Note max matière</label>
+            <input type="number" step="0.1" min="0" class="form-control" id="edit_note_max_matiere">
           </div>
           <div class="col-sm-6">
             <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Hours/Day</label>
@@ -234,7 +234,7 @@ const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: 
 function openEditCourse(btn) {
   const ens = btn.dataset;
   document.getElementById('edit_id_matiere_classe').value = ens.uuid || '';
-  document.getElementById('edit_coefficient').value = ens.coefficient || '';
+  document.getElementById('edit_note_max_matiere').value = ens.noteMaxMatiere || '';
   document.getElementById('edit_nb_heures_par_jour').value = ens.nbHeuresParJour || '';
   document.getElementById('edit_nb_heures_par_semaine').value = ens.nbHeuresParSemaine || '';
   new bootstrap.Modal(document.getElementById('editCourseModal')).show();
@@ -245,7 +245,7 @@ document.getElementById('editCourseForm').addEventListener('submit', async funct
   const id = document.getElementById('edit_id_matiere_classe').value;
   if (!id) return;
   const data = {
-    coefficient: document.getElementById('edit_coefficient').value || null,
+    note_max_matiere: document.getElementById('edit_note_max_matiere').value || null,
     nb_heures_par_jour: document.getElementById('edit_nb_heures_par_jour').value || null,
     nb_heures_par_semaine: document.getElementById('edit_nb_heures_par_semaine').value || null
   };

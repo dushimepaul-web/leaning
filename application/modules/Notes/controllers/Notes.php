@@ -18,7 +18,7 @@ class Notes extends MY_Controller {
     public function api_get($id) {
         $this->db->where('n.uuid', $id);
         $this->db->where('n.deleted_at', null);
-        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, m.libelle as matiere, ev.libelle as evaluation, ev.sur");
+        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, m.libelle as matiere, ev.libelle as evaluation, ev.ponderee_sur");
         $this->db->from('notes n');
         $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
@@ -61,7 +61,7 @@ class Notes extends MY_Controller {
         if (!empty($data['id_evaluation'])) {
             $eval = $this->Model->readOne('evaluations', ['id_evaluation' => $data['id_evaluation'], 'deleted_at' => null]);
             if (!$eval) { $this->json_error('Évaluation introuvable'); return; }
-            $max = floatval($eval['sur'] ?: 20);
+            $max = floatval($eval['ponderee_sur'] ?: 20);
             if (floatval($data['note']) > $max) { $this->json_error('La note ne peut pas dépasser ' . $max); return; }
         }
         $allowed = ['id_etudiant', 'id_evaluation', 'note', 'appreciation'];
@@ -82,7 +82,7 @@ class Notes extends MY_Controller {
             if (empty($note['id_etudiant']) || !isset($note['note']) || empty($note['id_evaluation'])) continue;
             $eval = $this->Model->readOne('evaluations', ['id_evaluation' => $note['id_evaluation'], 'deleted_at' => null]);
             if (!$eval) continue;
-            $max = floatval($eval['sur'] ?: 20);
+            $max = floatval($eval['ponderee_sur'] ?: 20);
             if (floatval($note['note']) > $max) continue;
             $existing = $this->Model->readOne('notes', [
                 'id_etudiant' => $note['id_etudiant'],
@@ -174,7 +174,7 @@ class Notes extends MY_Controller {
         $this->db->where('ev.id_annee', (int)$id_annee);
         $this->db->where('ev.deleted_at', null);
         if ($id_periode) $this->db->where('ev.id_periode', $id_periode);
-        $this->db->select('ev.id_evaluation, ev.libelle, ev.sur, ev.date_eval, ev.type, ev.coefficient');
+        $this->db->select('ev.id_evaluation, ev.id_matiere, ev.libelle, ev.ponderee_sur, ev.date_eval, ev.type');
         $this->db->from('evaluations ev');
         $this->db->order_by('ev.date_eval', 'ASC');
         $q_ev = $this->db->get();

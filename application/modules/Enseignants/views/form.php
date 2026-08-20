@@ -333,7 +333,7 @@ document.getElementById('photoInput')?.addEventListener('change', async function
     if (el) {
       const ens = JSON.parse(el.textContent);
       if (ens && ens.length) {
-        ens.forEach(e => addEnseignement(e.id_matiere, e.id_classe, e.coefficient, e.nb_heures_par_jour, e.nb_heures_par_semaine));
+        ens.forEach(e => addEnseignement(e.id_matiere, e.id_classe, e.note_max_matiere, e.nb_heures_par_jour, e.nb_heures_par_semaine));
         return;
       }
     }

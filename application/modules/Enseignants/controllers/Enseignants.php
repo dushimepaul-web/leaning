@@ -335,7 +335,7 @@ class Enseignants extends MY_Controller {
                     'id_matiere' => $ens['id_matiere'],
                     'id_classe' => $ens['id_classe'],
                     'id_enseignant' => $id_enseignant,
-                    'coefficient' => 1.0,
+                    'note_max_matiere' => 1.0,
                     'nb_heures_par_jour' => 0.0,
                     'nb_heures_par_semaine' => 0.0
                 ]);

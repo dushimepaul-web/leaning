@@ -183,7 +183,7 @@ class Annees extends MY_Controller {
 
             if ($bulletin) {
                 $moyenne = floatval($bulletin['moyenne']);
-                $notes_matieres = $this->db->select('m.id_matiere, m.libelle, mc.coefficient, SUM(n.note) as total_note')
+                $notes_matieres = $this->db->select('m.id_matiere, m.libelle, mc.note_max_matiere, SUM(n.note) as total_note')
                     ->from('notes n')
                     ->join('evaluations ev', 'ev.id_evaluation = n.id_evaluation')
                     ->join('matieres_classes mc', 'mc.id_matiere = ev.id_matiere AND mc.id_classe = ev.id_classe')
@@ -196,7 +196,7 @@ class Annees extends MY_Controller {
 
                 $nb_echecs = 0;
                 foreach ($notes_matieres as $nm) {
-                    $max_matiere = floatval($nm['coefficient']) * 6;
+                    $max_matiere = floatval($nm['note_max_matiere']) * 6;
                     $pct_matiere = $max_matiere > 0 ? (floatval($nm['total_note']) / $max_matiere) * 100 : 0;
                     if ($pct_matiere < $seuil_matiere) {
                         $matieres_echec[] = $nm['libelle'] . ' (' . round($pct_matiere, 1) . '%)';
