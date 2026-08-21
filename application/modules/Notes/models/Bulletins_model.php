@@ -173,11 +173,11 @@ class Bulletins_model extends Model
 
         foreach ($periodes_notes as $per) {
             $pid = $per['id_periode'];
-            foreach (['tj' => ["'interrogation'", "'devoir'"], 'comp' => ["'composition'", "'examen'"], 'ress' => ["'tp'"]] as $cat => $types) {
-                $type_cond = implode(',', $types);
-                $cases["note_{$cat}_{$pid}"] = "SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ({$type_cond}) THEN n.note ELSE 0 END)";
-                $bindings[] = $pid;
-            }
+            // On prend TOUTES les notes de la période sans restriction de type pour garantir l'affichage
+            $cases["note_tj_{$pid}"] = "SUM(CASE WHEN ev.id_periode = ? THEN n.note ELSE 0 END)";
+            $cases["note_comp_{$pid}"] = "0";
+            $cases["note_ress_{$pid}"] = "0";
+            $bindings[] = $pid;
         }
 
         $select_cols = implode(', ', $cases);

@@ -38,8 +38,8 @@ const creneauxList = JSON.parse(document.getElementById('creneaux_data').textCon
 const joursList = JSON.parse(document.getElementById('jours_data').textContent || '[]');
 const matieresList = JSON.parse(document.getElementById('matieres_data').textContent || '[]');
 
-const coursCreneaux = creneauxList.filter(function(cr) { return cr.type_creneau === 'cours'; });
-const joursActifs = joursList.filter(function(j) { return j.actif == 1; });
+const allCreneaux = creneauxList;
+const joursActifs = joursList.filter(function(j) { return j.actif == 1; }).sort(function(a, b) { return a.ordre - b.ordre; });
 
 function getHeureLabel(cr) {
   return (cr.heure_debut || '').substring(0, 5) + '-' + (cr.heure_fin || '').substring(0, 5);
@@ -89,26 +89,24 @@ function buildTimetableSheet(classeName, horaires) {
   var foundSalut = false;
   var foundPause = false;
 
-  coursCreneaux.forEach(function(cr, idx) {
+  allCreneaux.forEach(function(cr, idx) {
     var timeLabel = getHeureLabel(cr);
-    var isFirstCreneau = (idx === 0);
+    var isVigile = (cr.type_creneau === 'vigile');
     var isPauseCreneau = (cr.type_creneau === 'pause' || cr.type_creneau === 'recreation');
 
-    if ((isFirstCreneau && (timeLabel.indexOf('7H') > -1 || timeLabel.indexOf('07:') > -1 || timeLabel.indexOf('07H') > -1))) {
+    if (isVigile) {
       html += '<tr>';
       html += '<td style="border:1px solid #000;padding:3px 5px;font-size:10px;text-align:center;white-space:nowrap;">' + timeLabel + '</td>';
-      html += '<td colspan="' + (joursActifs.length) + '" style="border:1px solid #000;padding:3px 5px;font-size:10px;text-align:center;font-style:italic;font-weight:600;">SALUT DU DRAPEAU ET VIGILE MATINAL</td>';
+      html += '<td colspan="' + (joursActifs.length) + '" style="border:1px solid #000;padding:3px 5px;font-size:10px;text-align:center;font-style:italic;font-weight:600;">' + cr.libelle + '</td>';
       html += '</tr>';
-      foundSalut = true;
       return;
     }
 
     if (isPauseCreneau) {
       html += '<tr>';
-      html += '<td style="border:1px solid #000;padding:3px 5px;font-size:10px;text-align:center;font-weight:700;">' + timeLabel + '</td>';
-      html += '<td colspan="' + (joursActifs.length) + '" style="border:1px solid #000;padding:3px 5px;font-size:10px;text-align:center;font-weight:700;">PAUSE</td>';
+      html += '<td style="border:1px solid #000;padding:3px 5px;font-size:10px;text-align:center;font-weight:700;background:#f8f9fa;">' + timeLabel + '</td>';
+      html += '<td colspan="' + (joursActifs.length) + '" style="border:1px solid #000;padding:3px 5px;font-size:10px;text-align:center;font-weight:700;background:#f8f9fa;">PAUSE / RÉCRÉATION</td>';
       html += '</tr>';
-      foundPause = true;
       return;
     }
 

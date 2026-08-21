@@ -75,12 +75,24 @@ class Horaires_model extends Model
         list($h, $m) = explode(':', $heure_debut);
         $current_minutes = (int)$h * 60 + (int)$m;
 
-        // Vigile / Rassemblement matinal (avant que les cours ne commencent)
+        $creneaux = [];
+
+        // 1. Vigile / Rassemblement matinal (en tout premier)
         if ($duree_vigie > 0) {
+            $vigie_start = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
             $current_minutes += $duree_vigie;
+            $vigie_end = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
+            
+            $creneaux[] = [
+                'id_creneau' => 'vigile',
+                'libelle' => 'SALUT DU DRAPEAU ET VIGILE MATINAL',
+                'heure_debut' => $vigie_start,
+                'heure_fin' => $vigie_end,
+                'type_creneau' => 'vigile',
+                'ordre' => 0
+            ];
         }
 
-        $creneaux = [];
         $milieu = ceil($nb_creneaux / 2); // Point de la grande pause (ex: après 4 cours sur 8)
 
         for ($i = 1; $i <= $nb_creneaux; $i++) {

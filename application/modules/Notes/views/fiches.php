@@ -119,11 +119,20 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   var data=r.data;
   document.getElementById('statsRow').style.display='';document.getElementById('ficheCard').style.display='';
   document.getElementById('statNbEleves').textContent=data.students.length;
-  document.getElementById('statMoyClasse').textContent=(data.stats&&data.stats.moyenne_classe)||'0';
-  document.getElementById('statTaux').textContent=((data.stats&&data.stats.taux_reussite)||0)+'%';
-  document.getElementById('statNbEval').textContent=(data.evaluations||[]).length+' éval.';
   var evals=data.evaluations||[];
   var coursNom=evals.length?evals[0].matiere:'';
+
+  document.getElementById('ficheHeader').innerHTML=
+    '<div class="h-row"><span>SECTION: '+(data.section||data.classe||'')+'</span><span class="h-right">ANNEE SCOLAIRE : '+(data.annee_scolaire||'')+'</span></div>'+
+    '<div class="h-row"><span>Classe : '+(data.classe||'')+'</span><span class="h-right">Nombre d\'Eleves : '+data.students.length+'</span></div>'+
+    '<div class="h-row"><span class="titre-cours">FICHE DE POINTS — '+coursNom+'</span><span class="h-right"></span></div>';
+
+  var groups=[];
+  evals.forEach(function(e){
+    var g=groups[groups.length-1];
+    if(!g||g.id!==e.id_periode){groups.push({id:e.id_periode,libelle:e.periode_libelle||('P'+e.id_periode),items:[e]});}
+    else{g.items.push(e);}
+  });
 
   var dataIdx=groups.length-1;
   var pSel=document.getElementById('id_periode').value;
@@ -136,17 +145,6 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   var nbEvals=0;
   groups.forEach(function(g,gi){if(hasData(gi)){nbEvals+=g.items.length;}});
   document.getElementById('statNbEval').textContent=nbEvals+' éval.';
-  document.getElementById('ficheHeader').innerHTML=
-    '<div class="h-row"><span>SECTION: '+(data.section||data.classe||'')+'</span><span class="h-right">ANNEE SCOLAIRE : '+(data.annee_scolaire||'')+'</span></div>'+
-    '<div class="h-row"><span>Classe : '+(data.classe||'')+'</span><span class="h-right">Nombre d\'Eleves : '+data.students.length+'</span></div>'+
-    '<div class="h-row"><span class="titre-cours">FICHE DE POINTS — '+coursNom+'</span><span class="h-right"></span></div>';
-
-  var groups=[];
-  evals.forEach(function(e){
-    var g=groups[groups.length-1];
-    if(!g||g.id!==e.id_periode){groups.push({id:e.id_periode,libelle:e.periode_libelle||('P'+e.id_periode),items:[e]});}
-    else{g.items.push(e);}
-  });
 
   // En-tête 3 lignes : bloc période avec TJ/EXAMEN(COMP/RESS)/TOT + TOTAUX
   var head='<tr>';
@@ -190,14 +188,6 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
     });
     return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
   }
-
-  var dataIdx=groups.length-1;
-  var pSel=document.getElementById('id_periode').value;
-  if(pSel!=='all'){
-    dataIdx=-1;
-    groups.forEach(function(g,gi){if(String(g.id)===String(pSel)){dataIdx=gi;}});
-  }
-  function hasData(gi){return gi<=dataIdx;}
 
   var maxTa=0;
   groups.forEach(function(g,gi){if(hasData(gi)){maxTa+=maxTotOf(g);}});
@@ -427,4 +417,6 @@ function exportFiche(){
   window.open(url,'_blank');
 }
 
-(function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSet
+(function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;},function(){chargerCours(document.getElementById('id_classe').value);});autoSetup('id_matiere_search','id_matiere','id_matiere_results',matieresList,function(m){return m.libelle;});filterPeriodeFiches();}},50);})();
+</script>
+<?php include VIEWPATH.'includes/Footer.php'; ?>
