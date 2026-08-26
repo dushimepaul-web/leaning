@@ -322,20 +322,6 @@
                     <input type="number" class="form-control radius-8" id="pourcentage_competences_examen" min="0" max="100" step="0.01">
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label fw-semibold text-primary-light text-sm mb-8">Ressources actives</label>
-                    <select class="form-control radius-8" id="ressources_active">
-                      <option value="1">Oui</option>
-                      <option value="0">Non</option>
-                    </select>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label fw-semibold text-primary-light text-sm mb-8">Compétences actives</label>
-                    <select class="form-control radius-8" id="competences_active">
-                      <option value="1">Oui</option>
-                      <option value="0">Non</option>
-                    </select>
-                  </div>
-                  <div class="col-md-4">
                     <label class="form-label fw-semibold text-primary-light text-sm mb-8">Seuil de moyenne (%)</label>
                     <input type="number" class="form-control radius-8" id="seuil_moyenne" min="0" max="100" step="0.01">
                   </div>
@@ -566,7 +552,6 @@ const STATIC_KEYS = new Set([
   'mention_passable','mention_passable_libelle','mention_insuffisant','mention_insuffisant_libelle',
   'echelle_notes','email_protocol','email_smtp_host','email_smtp_user','email_smtp_pass',
   'email_smtp_port','email_smtp_crypto','email_sendmail_path',
-  'ressources_active','competences_active',
   'seuil_moyenne','seuil_matiere','max_repechage',
   'facteur_points_heure','pourcentage_ressources_examen','pourcentage_competences_examen',
   'logo_ecole','favicon_ecole','login_img','annee_active','periode_active'
@@ -585,7 +570,6 @@ const FIELD_LABELS = {
   points_conduite_defaut: 'Points conduite', echelle_notes: 'Échelle des notes',
   email_protocol: 'Protocole email', email_smtp_host: 'Hôte SMTP', email_smtp_user: 'Utilisateur SMTP',
   email_smtp_pass: 'Mot de passe SMTP', email_smtp_port: 'Port SMTP', email_smtp_crypto: 'Cryptage',
-  ressources_active: 'Ressources actives', competences_active: 'Compétences actives',
   seuil_moyenne: 'Seuil de moyenne', seuil_matiere: 'Seuil matière', max_repechage: 'Max de repêchage',
   facteur_points_heure: 'Facteur points/heure',
   pourcentage_ressources_examen: 'Ressources à l\'examen (%)', pourcentage_competences_examen: 'Compétences à l\'examen (%)'
@@ -669,8 +653,6 @@ function collectFormData() {
     facteur_points_heure: document.getElementById('facteur_points_heure').value,
     pourcentage_ressources_examen: document.getElementById('pourcentage_ressources_examen').value,
     pourcentage_competences_examen: document.getElementById('pourcentage_competences_examen').value,
-    ressources_active: document.getElementById('ressources_active').value || '0',
-    competences_active: document.getElementById('competences_active').value || '0',
     seuil_moyenne: document.getElementById('seuil_moyenne').value,
     seuil_matiere: document.getElementById('seuil_matiere').value,
     max_repechage: document.getElementById('max_repechage').value
@@ -747,9 +729,6 @@ async function loadSettings() {
     if (s.favicon_ecole) document.getElementById('faviconImg').src = '<?= base_url() ?>' + s.favicon_ecole;
     if (s.login_img) document.getElementById('loginImg').src = '<?= base_url() ?>' + s.login_img;
     ['facteur_points_heure','pourcentage_ressources_examen','pourcentage_competences_examen','seuil_moyenne','seuil_matiere','max_repechage'].forEach(k => {
-      if (s[k] !== undefined && s[k] !== null && s[k] !== '') document.getElementById(k).value = s[k];
-    });
-    ['ressources_active','competences_active'].forEach(k => {
       if (s[k] !== undefined && s[k] !== null && s[k] !== '') document.getElementById(k).value = s[k];
     });
     renderDynamicParams(s);
@@ -976,30 +955,9 @@ function syncPourcentagesExamen(changed) {
   }
   updateDirty();
 }
-function guardActives(changed) {
-  const r = document.getElementById('ressources_active');
-  const c = document.getElementById('competences_active');
-  if (r.value === '0' && c.value === '0') {
-    changed.value = '1';
-    Toast.fire({ icon: 'warning', title: 'Désactivation impossible', text: 'Au moins une catégorie (Ressources ou Compétences) doit rester active.' });
-  } else {
-    const er = document.getElementById('pourcentage_ressources_examen');
-    const ec = document.getElementById('pourcentage_competences_examen');
-    if (c.value === '0') {
-      ec.value = '0.00';
-      er.value = '100.00';
-    } else if (r.value === '0') {
-      er.value = '0.00';
-      ec.value = '100.00';
-    }
-  }
-  updateDirty();
-}
 
 document.getElementById('pourcentage_ressources_examen').addEventListener('input', function() { syncPourcentagesExamen('ress'); });
 document.getElementById('pourcentage_competences_examen').addEventListener('input', function() { syncPourcentagesExamen('comp'); });
-document.getElementById('ressources_active').addEventListener('change', function() { guardActives(this); });
-document.getElementById('competences_active').addEventListener('change', function() { guardActives(this); });
 
 // Suivi des modifications
 document.getElementById('settingsForm').addEventListener('input', updateDirty);

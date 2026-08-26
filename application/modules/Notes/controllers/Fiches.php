@@ -104,11 +104,19 @@ class Fiches extends MY_Controller {
         $classe = $this->Model->readOne('classes', ['id_classe' => $id_classe]);
         $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $id_annee]);
         $section = $classe ? $this->Model->readOne('sections', ['id_section' => $classe['id_section']]) : null;
+
+        // Détection dynamique des catégories basée sur les données réelles d'évaluations
+        $this->load->model('Bulletins_model', 'BulletinsModel');
+        $categories = $this->BulletinsModel->_detecter_categories($id_classe);
+
         $this->json_success([
             'classe' => $classe ? $classe['libelle'] : '',
             'section' => $section ? $section['libelle'] : '',
             'annee_scolaire' => $annee ? $annee['libelle'] : '',
             'students' => $result, 'evaluations' => $evaluations, 'stats' => $stats,
+            'competences_active' => $categories['competance'] ? 1 : 0,
+            'ressources_active'  => $categories['ressource']  ? 1 : 0,
+            'examen_active'      => $categories['examen']     ? 1 : 0,
         ]);
     }
 
@@ -235,9 +243,23 @@ class Fiches extends MY_Controller {
 
         $classe = $this->Model->readOne('classes', ['id_classe' => $id_classe]);
         $section = $classe ? $this->Model->readOne('sections', ['id_section' => $classe['id_section']]) : null;
+        $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $id_annee]);
+
+        $this->load->model('Bulletins_model', 'BulletinsModel');
+        $categories = $this->BulletinsModel->_detecter_categories($id_classe);
+        $has_comp = $categories['competance'];
+        $has_ress = $categories['ressource'];
+        $has_ex   = $categories['examen'];
+        $mode_b = $has_comp || $has_ress;
+        $mode_a = $has_ex && !$mode_b;
+
         $this->json_success([
             'classe' => $classe ? $classe['libelle'] : '',
             'section' => $section ? $section['libelle'] : '',
+            'annee_scolaire' => $annee ? $annee['libelle'] : '',
+            'competences_active' => ($mode_b && $has_comp) ? 1 : 0,
+            'ressources_active'  => ($mode_b && $has_ress) ? 1 : 0,
+            'examen_active'      => $mode_a ? 1 : 0,
             'eleves' => $result,
             'periodes' => $allCours,
             'type' => ($id_periode && $id_periode !== 'all') ? 'periode' : 'annee',
@@ -412,6 +434,14 @@ class Fiches extends MY_Controller {
 
         $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $id_annee]);
 
+        $this->load->model('Bulletins_model', 'BulletinsModel');
+        $categories = $this->BulletinsModel->_detecter_categories($class_id);
+        $has_comp = $categories['competance'];
+        $has_ress = $categories['ressource'];
+        $has_ex   = $categories['examen'];
+        $mode_b = $has_comp || $has_ress;
+        $mode_a = $has_ex && !$mode_b;
+
         $data['title'] = 'Fiche de points - ' . $matiere_nom;
         $data['groups'] = $groups;
         $data['students'] = $students;
@@ -422,6 +452,9 @@ class Fiches extends MY_Controller {
         $data['matiere_nom'] = $matiere_nom;
         $data['annee_libelle'] = $annee ? $annee['libelle'] : 'N/A';
         $data['nb_eleves'] = count($students);
+        $data['competences_active'] = ($mode_b && $has_comp) ? 1 : 0;
+        $data['ressources_active']  = ($mode_b && $has_ress) ? 1 : 0;
+        $data['examen_active']      = $mode_a ? 1 : 0;
 
         $this->load->view('print_fiche_eleve', $data);
     }

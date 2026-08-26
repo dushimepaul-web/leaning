@@ -7,11 +7,21 @@ class Bulletins extends MY_Controller {
     public function index() {
         $data['title'] = 'Bulletins & Fiches de points';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
-        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null]);
+        $data['periodes'] = $this->Model->read('periodes', ['id_annee' => $this->id_annee_active, 'deleted_at' => null]);
         $data['annees'] = $this->Model->read('annees_scolaires', ['deleted_at' => null]);
         $data['id_annee_active'] = $this->id_annee_active;
         $data['id_periode_active'] = $this->id_periode_active;
         $this->load->view('bulletins', $data);
+    }
+
+    public function api_periodes($id_annee = null)
+    {
+        if (!$id_annee) {
+            $this->json_error('Année requise');
+            return;
+        }
+        $periodes = $this->Model->read('periodes', ['id_annee' => $id_annee, 'deleted_at' => null], 'id_periode');
+        $this->json_success($periodes);
     }
 
     public function api_get($id) {
@@ -174,7 +184,6 @@ class Bulletins extends MY_Controller {
 
         if (!$id_periode) { $this->json_error('Aucune période active définie'); return; }
 
-        // Récupérer les étudiants de la classe
         $this->db->where('i.id_annee', $id_annee);
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
@@ -187,7 +196,6 @@ class Bulletins extends MY_Controller {
 
         if (empty($students)) { $this->json_error('Aucun étudiant trouvé'); return; }
 
-        // Récupérer toutes les évaluations de la période
         $this->db->where('ev.id_periode', $id_periode);
         $this->db->where('ev.deleted_at', null);
         if ($id_classe) $this->db->where('ev.id_classe', $id_classe);
@@ -195,13 +203,14 @@ class Bulletins extends MY_Controller {
 
         if (empty($evaluations)) { $this->json_error('Aucune évaluation trouvée pour cette période'); return; }
 
-        $mc_rows = $this->db->select('id_matiere, note_max_matiere')->from('matieres_classes')->where('deleted_at', null)->get()->result_array();
+        $evalIds = array_column($evaluations, 'id_evaluation');
+
+        $mc_query = $this->db->select('id_matiere, note_max_matiere')->from('matieres_classes')->where('deleted_at', null);
+        if ($id_classe) $this->db->where('id_classe', $id_classe);
+        $mc_rows = $mc_query->get()->result_array();
         $coeff_map = [];
         foreach ($mc_rows as $mc) { $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1); }
 
-        $evalIds = array_column($evaluations, 'id_evaluation');
-
-        // Récupérer toutes les notes pour ces évaluations
         $this->db->where_in('n.id_evaluation', $evalIds);
         $this->db->where('n.deleted_at', null);
         $allNotes = $this->db->get('notes n')->result_array();
@@ -215,12 +224,12 @@ class Bulletins extends MY_Controller {
         $created = 0;
         $updated = 0;
         $moyennes = [];
+        $bulletin_ids_to_update = [];
 
         foreach ($students as $student) {
             $notes = isset($notesByStudent[$student['id_etudiant']]) ? $notesByStudent[$student['id_etudiant']] : [];
             if (empty($notes)) continue;
 
-            // Calculer la moyenne pondérée (notes normalisées sur 20)
             $sum = 0;
             $count = 0;
             foreach ($notes as $note) {
@@ -236,7 +245,6 @@ class Bulletins extends MY_Controller {
             $moyenne = $count > 0 ? round($sum / $count, 2) : 0;
             $moyennes[$student['id_etudiant']] = $moyenne;
 
-            // Décision
             $decision = $this->_getDecision($moyenne);
 
             $existing = $this->Model->readOne('bulletins', [
@@ -257,8 +265,9 @@ class Bulletins extends MY_Controller {
             ];
 
             if ($existing) {
-                $insert['rang'] = null; // sera calculé après
+                $insert['rang'] = null;
                 $this->Model->update('bulletins', ['id_bulletin' => $existing['id_bulletin']], $insert);
+                $bulletin_ids_to_update[] = $existing['id_bulletin'];
                 $updated++;
             } else {
                 $insert['uuid'] = generate_uuid();
@@ -267,7 +276,16 @@ class Bulletins extends MY_Controller {
             }
         }
 
-        // Calculer les rangs par classe
+        $all_bulletins = $this->Model->read('bulletins', [
+            'id_periode' => $id_periode,
+            'id_annee' => $id_annee,
+            'deleted_at' => null
+        ]);
+        $bulletin_map = [];
+        foreach ($all_bulletins as $b) {
+            $bulletin_map[$b['id_etudiant']] = $b['id_bulletin'];
+        }
+
         $classes = array_unique(array_column($students, 'id_classe'));
         foreach ($classes as $classeId) {
             $classStudents = array_filter($students, function($s) use ($classeId) { return $s['id_classe'] == $classeId; });
@@ -279,17 +297,18 @@ class Bulletins extends MY_Controller {
             }
             arsort($classMoyennes);
             $rang = 1;
+            $batch_update = [];
             foreach ($classMoyennes as $idEtudiant => $moy) {
-                $bulletin = $this->Model->readOne('bulletins', [
-                    'id_etudiant' => $idEtudiant,
-                    'id_periode' => $id_periode,
-                    'id_annee' => $id_annee,
-                    'deleted_at' => null
-                ]);
-                if ($bulletin) {
-                    $this->Model->update('bulletins', ['id_bulletin' => $bulletin['id_bulletin']], ['rang' => $rang]);
+                if (isset($bulletin_map[$idEtudiant])) {
+                    $batch_update[] = [
+                        'id_bulletin' => $bulletin_map[$idEtudiant],
+                        'rang' => $rang,
+                    ];
                 }
                 $rang++;
+            }
+            if (!empty($batch_update)) {
+                $this->Model->updateBatch('bulletins', $batch_update, 'id_bulletin');
             }
         }
 
@@ -315,17 +334,58 @@ class Bulletins extends MY_Controller {
             return;
         }
 
-        // Calculer rangs
+        // Calculer rangs et pourcentages selon la période choisie ou l'année complète
         $eleves = $data['eleves'];
-        usort($eleves, function($a, $b) { return $b['moyenne'] <=> $a['moyenne']; });
-        $rang = 1; $prev = -1;
-        foreach ($eleves as $i => &$el) {
-            if ($prev >= 0 && $el['moyenne'] < $prev) $rang = $i + 1;
-            $el['rang'] = ($el['moyenne'] > 0) ? $rang : 0;
-            $prev = $el['moyenne'];
+        $periodes = $data['periodes'];
+        $maxima = $data['maxima'];
+        $matieres = $data['matieres'];
+
+        // Si une période spécifique est filtrée (et pas 'all'), on calcule le pourcentage et le rang de cette période précise
+        $filtered_pid = ($id_periode && $id_periode !== 'all') ? intval($id_periode) : null;
+
+        foreach ($eleves as &$el) {
+            if ($filtered_pid) {
+                // Pourcentage de la période spécifique
+                $p_note = 0;
+                foreach ($matieres as $mat) {
+                    $mid = $mat['id_matiere'];
+                    $me = null;
+                    foreach ($el['matieres'] as $m_item) {
+                        if ($m_item['id_matiere'] == $mid) { $me = $m_item; break; }
+                    }
+                    if ($me && isset($me['periodes'][$filtered_pid])) {
+                        $p = $me['periodes'][$filtered_pid];
+                        $p_note += ($p['tj'] ?? 0) + ($p['comp'] ?? 0) + ($p['ress'] ?? 0) + ($p['ex'] ?? 0);
+                    }
+                }
+                $cd_p = (isset($el['points_conduite'][$filtered_pid]) ? $el['points_conduite'][$filtered_pid]['points'] : 60);
+                $p_note += $cd_p;
+
+                $p_max = 0;
+                foreach ($matieres as $mat) {
+                    $mid = $mat['id_matiere'];
+                    $mx = $maxima[$mid][$filtered_pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0];
+                    $p_max += ($mx['tj'] ?? 0) + ($mx['comp'] ?? 0) + ($mx['ress'] ?? 0) + ($mx['ex'] ?? 0);
+                }
+                $p_max += 60; // conduite max
+
+                $el['sort_pourcentage'] = $p_max > 0 ? ($p_note / $p_max * 100) : 0;
+            } else {
+                // Pourcentage annuel complet
+                $el['sort_pourcentage'] = $el['pourcentage'];
+            }
         }
         unset($el);
-        usort($eleves, function($a, $b) { return strcasecmp($a['fullname'], $b['fullname']); });
+
+        usort($eleves, function($a, $b) { return $b['sort_pourcentage'] <=> $a['sort_pourcentage']; });
+        $rang = 1; $prev = -1;
+        foreach ($eleves as $i => &$el) {
+            if ($prev >= 0 && $el['sort_pourcentage'] < $prev) $rang = $i + 1;
+            $el['rang'] = ($el['sort_pourcentage'] > 0) ? $rang : 0;
+            $prev = $el['sort_pourcentage'];
+        }
+        unset($el);
+
         $data['eleves'] = $eleves;
 
         $this->json_success($data);
@@ -341,13 +401,15 @@ class Bulletins extends MY_Controller {
 
     public function export_bulletins_classe($class_id)
     {
+        $annee_id = $this->id_annee_active;
+
         $eleves_db = $this->Model->readQuery("
             SELECT i.id_etudiant AS inscription_id, e.fullname, e.matricule
             FROM inscriptions i
             LEFT JOIN etudiants e ON e.id_etudiant = i.id_etudiant
-            WHERE i.id_classe = ? AND i.deleted_at IS NULL AND e.deleted_at IS NULL
+            WHERE i.id_classe = ? AND i.id_annee = ? AND i.deleted_at IS NULL AND e.deleted_at IS NULL
             ORDER BY e.fullname ASC
-        ", [$class_id]);
+        ", [$class_id, $annee_id]);
 
         if (empty($eleves_db)) {
             echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucun élève trouvé pour cette classe.</h3>";
@@ -359,16 +421,16 @@ class Bulletins extends MY_Controller {
             $eleves[$e['inscription_id']] = $e;
         }
 
-        $annee_id = $this->id_annee_active;
-        $annee_scolaire = $annee_id  
-            ? ($this->Model->readQuery('SELECT libelle FROM annees_scolaires WHERE id_annee = ?', [$annee_id])[0]['libelle'] ?? 'N/A')  
+        $annee_scolaire = $annee_id
+            ? ($this->Model->readQuery('SELECT libelle FROM annees_scolaires WHERE id_annee = ?', [$annee_id])[0]['libelle'] ?? 'N/A')
             : 'N/A';
 
         $all_subjects = $this->Model->readQuery("
-            SELECT m.id_matiere AS id, m.libelle AS name, m.code, mc.note_max_matiere, mc.nb_heures_par_semaine, 1 AS is_active
+            SELECT m.id_matiere AS id, m.libelle AS name, m.code, m.est_general, mc.note_max_matiere, mc.nb_heures_par_semaine, 1 AS is_active
             FROM matieres_classes mc
             JOIN matieres m ON m.id_matiere = mc.id_matiere
             WHERE mc.id_classe = ? AND mc.deleted_at IS NULL AND m.deleted_at IS NULL
+            ORDER BY m.est_general DESC, m.libelle
         ", [$class_id]);
 
         if (empty($all_subjects)) {
@@ -378,8 +440,6 @@ class Bulletins extends MY_Controller {
 
         $all_subject_ids = array_column($all_subjects, 'id');
         $etudiant_ids = array_column($eleves_db, 'inscription_id');
-        $etudiant_ids_str = implode(',', $etudiant_ids);
-        $all_subject_ids_str = implode(',', $all_subject_ids);
 
         $periodes = $this->Model->read('periodes', ['id_annee' => $annee_id, 'deleted_at' => null], 'id_periode');
         $periode_map = [];
@@ -399,54 +459,59 @@ class Bulletins extends MY_Controller {
                 ev.id_matiere AS subject_id,
                 
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN n.note ELSE 0 END) AS note_t1_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN n.note ELSE 0 END) AS note_t1_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN n.note ELSE 0 END) AS note_t1_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'competance' THEN n.note ELSE 0 END) AS note_t1_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'ressource' THEN n.note ELSE 0 END) AS note_t1_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'examen' THEN n.note ELSE 0 END) AS note_t1_ex,
 
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN n.note ELSE 0 END) AS note_t2_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN n.note ELSE 0 END) AS note_t2_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN n.note ELSE 0 END) AS note_t2_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'competance' THEN n.note ELSE 0 END) AS note_t2_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'ressource' THEN n.note ELSE 0 END) AS note_t2_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'examen' THEN n.note ELSE 0 END) AS note_t2_ex,
 
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN n.note ELSE 0 END) AS note_t3_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN n.note ELSE 0 END) AS note_t3_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN n.note ELSE 0 END) AS note_t3_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'competance' THEN n.note ELSE 0 END) AS note_t3_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'ressource' THEN n.note ELSE 0 END) AS note_t3_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'examen' THEN n.note ELSE 0 END) AS note_t3_ex,
 
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.ponderee_sur ELSE 0 END) AS max_t1_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.ponderee_sur ELSE 0 END) AS max_t1_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.ponderee_sur ELSE 0 END) AS max_t1_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'competance' THEN ev.ponderee_sur ELSE 0 END) AS max_t1_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'ressource' THEN ev.ponderee_sur ELSE 0 END) AS max_t1_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'examen' THEN ev.ponderee_sur ELSE 0 END) AS max_t1_ex,
 
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.ponderee_sur ELSE 0 END) AS max_t2_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.ponderee_sur ELSE 0 END) AS max_t2_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.ponderee_sur ELSE 0 END) AS max_t2_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'competance' THEN ev.ponderee_sur ELSE 0 END) AS max_t2_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'ressource' THEN ev.ponderee_sur ELSE 0 END) AS max_t2_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'examen' THEN ev.ponderee_sur ELSE 0 END) AS max_t2_ex,
 
                 SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN ev.ponderee_sur ELSE 0 END) AS max_t3_tj,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('composition', 'examen') THEN ev.ponderee_sur ELSE 0 END) AS max_t3_comp,
-                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'tp' THEN ev.ponderee_sur ELSE 0 END) AS max_t3_ress
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'competance' THEN ev.ponderee_sur ELSE 0 END) AS max_t3_comp,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'ressource' THEN ev.ponderee_sur ELSE 0 END) AS max_t3_ress,
+                SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'examen' THEN ev.ponderee_sur ELSE 0 END) AS max_t3_ex
             
             FROM notes n
             JOIN evaluations ev ON ev.id_evaluation = n.id_evaluation
-            WHERE n.id_etudiant IN ({$etudiant_ids_str}) 
-            AND ev.id_matiere IN ({$all_subject_ids_str})
+            WHERE n.id_etudiant IN (".str_repeat('?,', count($etudiant_ids) - 1)."?)
+            AND ev.id_matiere IN (".str_repeat('?,', count($all_subject_ids) - 1)."?)
+            AND ev.id_annee = ?
             AND n.deleted_at IS NULL AND ev.deleted_at IS NULL
             GROUP BY n.id_etudiant, ev.id_matiere
         ";
 
-        $aggregated_data = $this->Model->readQuery($query, [
-            $p1, $p1, $p1,
-            $p2, $p2, $p2,
-            $p3, $p3, $p3,
-            $p1, $p1, $p1,
-            $p2, $p2, $p2,
-            $p3, $p3, $p3,
-        ]);
+        $aggregated_data = $this->Model->readQuery($query, array_merge(
+            [$p1, $p1, $p1, $p1, $p2, $p2, $p2, $p2, $p3, $p3, $p3, $p3,
+             $p1, $p1, $p1, $p1, $p2, $p2, $p2, $p2, $p3, $p3, $p3, $p3],
+            $etudiant_ids,
+            $all_subject_ids,
+            [$annee_id]
+        ));
 
-        // Points de conduite par élève et par trimestre
         $conduite_rows = $this->Model->readQuery("
             SELECT pc.id_etudiant, pc.id_periode, pc.points_initial, pc.points_retires
             FROM points_conduite pc
-            WHERE pc.id_etudiant IN ({$etudiant_ids_str})
+            WHERE pc.id_etudiant IN (".str_repeat('?,', count($etudiant_ids) - 1)."?)
             AND pc.id_periode IN (?,?,?)
             AND pc.deleted_at IS NULL
-        ", [$p1, $p2, $p3]);
+        ", array_merge($etudiant_ids, [$p1, $p2, $p3]));
         $conduite_map = [];
         foreach ($conduite_rows as $c) {
             $pos = array_search($c['id_periode'], $periode_map, true);
@@ -458,24 +523,25 @@ class Bulletins extends MY_Controller {
         $classe_info = $this->Model->readOne('classes', ['id_classe' => $class_id]);
         $classe_nom = $classe_info ? $classe_info['libelle'] : 'Classe';
 
-        // Activations Ressources/Compétences : niveau classe si renseigné, sinon global
-        $data['ressources_active'] = ($classe_info && $classe_info['ressources_active'] !== null)
-            ? intval($classe_info['ressources_active'])
-            : intval($this->Model->get_setting('ressources_active', 1));
-        $data['competences_active'] = ($classe_info && $classe_info['competences_active'] !== null)
-            ? intval($classe_info['competences_active'])
-            : intval($this->Model->get_setting('competences_active', 1));
-        $data['ressources_pourcentage'] = ($classe_info && $classe_info['ressources_pourcentage'] !== null)
-            ? floatval($classe_info['ressources_pourcentage'])
-            : floatval($this->Model->get_setting('pourcentage_ressources_examen', 60));
-        $data['competences_pourcentage'] = ($classe_info && $classe_info['competences_pourcentage'] !== null)
-            ? floatval($classe_info['competences_pourcentage'])
-            : floatval($this->Model->get_setting('pourcentage_competences_examen', 40));
+        // Détection dynamique des catégories basée sur les données réelles d'évaluations
+        $categories = $this->BulletinsModel->_detecter_categories($class_id);
+        $has_comp = $categories['competance'];
+        $has_ress = $categories['ressource'];
+        $has_ex   = $categories['examen'];
+        $mode_b = $has_comp || $has_ress;
+        $mode_a = $has_ex && !$mode_b;
+
+        $data['competences_active'] = ($mode_b && $has_comp) ? 1 : 0;
+        $data['ressources_active']  = ($mode_b && $has_ress) ? 1 : 0;
+        $data['examen_active']      = $mode_a ? 1 : 0;
+        $data['ressources_pourcentage'] = floatval($this->Model->get_setting('pourcentage_ressources_examen', 60));
+        $data['competences_pourcentage'] = floatval($this->Model->get_setting('pourcentage_competences_examen', 40));
         $data['facteur_points_heure'] = floatval($this->Model->get_setting('facteur_points_heure', 15));
 
         $data['title'] = 'Bulletins de la classe ' . $classe_nom;
         $data['eleves'] = $eleves;
         $data['subjects'] = $all_subjects;
+        $data['periodes'] = $periodes;
         $data['annee_scolaire'] = $annee_scolaire;
         $data['classe_nom'] = $classe_nom;
         $data['aggregated_data'] = $aggregated_data;

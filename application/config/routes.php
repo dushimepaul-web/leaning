@@ -125,6 +125,7 @@ $route['api/evaluations/(:any)/delete'] = 'Evaluations/Evaluations/api_delete/$1
 $route['api/evaluations/(:any)'] = 'Evaluations/Evaluations/api_get/$1';
 
 // API - Bulletins
+$route['api/bulletins/periodes/(:any)'] = 'Notes/Bulletins/api_periodes/$1';
 $route['api/bulletins'] = 'Notes/Bulletins/api_list';
 $route['api/bulletins/create'] = 'Notes/Bulletins/api_create';
 $route['api/bulletins/generer'] = 'Notes/Bulletins/api_generer';

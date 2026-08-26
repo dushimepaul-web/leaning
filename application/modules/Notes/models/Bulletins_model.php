@@ -27,11 +27,11 @@ class Bulletins_model extends Model
         // Pass 2: Matières
         $matieres = $this->db
             ->query("
-                SELECT DISTINCT m.id_matiere, m.libelle, m.code
+                SELECT DISTINCT m.id_matiere, m.libelle, m.code, m.est_general
                 FROM matieres_classes mc
                 JOIN matieres m ON mc.id_matiere = m.id_matiere
                 WHERE mc.id_classe = ? AND mc.deleted_at IS NULL AND m.deleted_at IS NULL
-                ORDER BY m.libelle
+                ORDER BY m.est_general DESC, m.libelle
             ", [$id_classe])->result_array();
 
         if (empty($matieres)) return null;
@@ -70,40 +70,80 @@ class Bulletins_model extends Model
         // Pass 6: Construire le résultat
         $result = $this->_build_result($eleves, $matieres, $toutes_periodes, $notes_map, $maxima, $conduite_map);
 
-        // Activations Ressources/Compétences : niveau classe si renseigné, sinon global
-        $classe = $this->db->select('ressources_active, competences_active, ressources_pourcentage, competences_pourcentage')
-            ->from('classes')->where('id_classe', $id_classe)->where('deleted_at', null)->get()->row_array();
-        $result['ressources_active'] = ($classe && $classe['ressources_active'] !== null)
-            ? intval($classe['ressources_active'])
-            : intval($this->get_setting('ressources_active', 1));
-        $result['competences_active'] = ($classe && $classe['competences_active'] !== null)
-            ? intval($classe['competences_active'])
-            : intval($this->get_setting('competences_active', 1));
-        $result['ressources_pourcentage'] = ($classe && $classe['ressources_pourcentage'] !== null)
-            ? floatval($classe['ressources_pourcentage'])
-            : floatval($this->get_setting('pourcentage_ressources_examen', 60));
-        $result['competences_pourcentage'] = ($classe && $classe['competences_pourcentage'] !== null)
-            ? floatval($classe['competences_pourcentage'])
-            : floatval($this->get_setting('pourcentage_competences_examen', 40));
+        // Détection dynamique des catégories basée sur les données réelles d'évaluations
+        $categories = $this->_detecter_categories($id_classe);
+        $has_comp = $categories['competance'];
+        $has_ress = $categories['ressource'];
+        $has_ex   = $categories['examen'];
 
-        // Neutraliser la catégorie désactivée : l'EX absorbe tout le TJ (EX = TJ)
-        // Les deux actifs : RESS = TJ×%, COMP = TJ×%  |  Un seul actif : la catégorie active = TJ (100%), l'autre = 0
-        $ress_active = intval($result['ressources_active']) !== 0;
-        $comp_active = intval($result['competences_active']) !== 0;
-        if (!$ress_active || !$comp_active) {
-            $cat_active = $ress_active ? 'ress' : 'comp';
+        // Déterminer le mode d'affichage
+        // Mode B : competance OU ressource présent → TJ / COMP / RESS / TOT
+        // Mode A : examen présent (sans competance/ressource) → TJ / EX / TOT
+        // Défaut : ni competance, ni ressource, ni examen → TJ / TOT
+        $mode_b = $has_comp || $has_ress;
+        $mode_a = $has_ex && !$mode_b;
+
+        $result['competences_active'] = ($mode_b && $has_comp) ? 1 : 0;
+        $result['ressources_active']  = ($mode_b && $has_ress) ? 1 : 0;
+        $result['examen_active']      = $mode_a ? 1 : 0;
+
+        // Pourcentage COMP/RESS
+        $result['ressources_pourcentage'] = floatval($this->get_setting('pourcentage_ressources_examen', 60));
+        $result['competences_pourcentage'] = floatval($this->get_setting('pourcentage_competences_examen', 40));
+
+        // Neutraliser les colonnes selon le mode
+        if ($mode_b) {
+            // Mode B : EX neutralisé (examen compté dans TJ si présent)
             foreach ($result['maxima'] as &$mid) {
                 foreach ($mid as &$pid) {
-                    if ($cat_active === 'ress') { $pid['ress'] = $pid['tj']; $pid['comp'] = 0; }
-                    else { $pid['comp'] = $pid['tj']; $pid['ress'] = 0; }
+                    $pid['ex'] = 0;
                 }
             }
             unset($mid, $pid);
             foreach ($result['eleves'] as &$el) {
                 foreach ($el['matieres'] as &$m) {
                     foreach ($m['periodes'] as &$per) {
-                        if ($cat_active === 'ress') { $per['comp'] = 0; }
-                        else { $per['ress'] = 0; }
+                        $per['ex'] = 0;
+                    }
+                }
+                unset($m, $per);
+            }
+            unset($el);
+        } elseif ($mode_a) {
+            // Mode A : COMP et RESS neutralisés
+            foreach ($result['maxima'] as &$mid) {
+                foreach ($mid as &$pid) {
+                    $pid['comp'] = 0;
+                    $pid['ress'] = 0;
+                }
+            }
+            unset($mid, $pid);
+            foreach ($result['eleves'] as &$el) {
+                foreach ($el['matieres'] as &$m) {
+                    foreach ($m['periodes'] as &$per) {
+                        $per['comp'] = 0;
+                        $per['ress'] = 0;
+                    }
+                }
+                unset($m, $per);
+            }
+            unset($el);
+        } else {
+            // Défaut : COMP, RESS et EX neutralisés
+            foreach ($result['maxima'] as &$mid) {
+                foreach ($mid as &$pid) {
+                    $pid['comp'] = 0;
+                    $pid['ress'] = 0;
+                    $pid['ex'] = 0;
+                }
+            }
+            unset($mid, $pid);
+            foreach ($result['eleves'] as &$el) {
+                foreach ($el['matieres'] as &$m) {
+                    foreach ($m['periodes'] as &$per) {
+                        $per['comp'] = 0;
+                        $per['ress'] = 0;
+                        $per['ex'] = 0;
                     }
                 }
                 unset($m, $per);
@@ -119,14 +159,12 @@ class Bulletins_model extends Model
     {
         if (empty($matiere_ids)) return [];
 
-        $facteur_points = floatval($this->get_setting('facteur_points_heure', 15));
         $pct_comp = floatval($this->get_setting('pourcentage_competences_examen', 40));
         $pct_ress = floatval($this->get_setting('pourcentage_ressources_examen', 60));
 
-        // Coefficient calculé = nb_heures_par_semaine × facteur_points_heure → TJ = ce coefficient calculé
-        // (comp et ress = pourcentages configurés dans Paramètres du TJ)
+        // Utiliser la note max de la matière définie dans matieres_classes (note_max_matiere) directement comme TJ
         $coeffs = $this->db
-            ->select('id_matiere, nb_heures_par_semaine')
+            ->select('id_matiere, note_max_matiere')
             ->from('matieres_classes')
             ->where('id_classe', $id_classe)
             ->where_in('id_matiere', $matiere_ids)
@@ -135,8 +173,7 @@ class Bulletins_model extends Model
 
         $coeff_map = [];
         foreach ($coeffs as $c) {
-            $heures = floatval($c['nb_heures_par_semaine'] ?: 0);
-            $coeff_map[$c['id_matiere']] = $heures * $facteur_points;
+            $coeff_map[$c['id_matiere']] = floatval($c['note_max_matiere'] ?: 0);
         }
 
         $maxima = [];
@@ -149,21 +186,59 @@ class Bulletins_model extends Model
                     'tj' => $tj,
                     'comp' => $comp,
                     'ress' => $ress,
+                    'ex' => $tj,
                 ];
             }
         }
         return $maxima;
     }
 
+    /**
+     * Détecte automatiquement les types d'évaluations réellement présents pour une classe.
+     * Retourne ['competance' => bool, 'ressource' => bool, 'examen' => bool]
+     */
+    public function _detecter_categories($id_classe)
+    {
+        $rows = $this->db->query("
+            SELECT ev.type, COUNT(*) AS cnt
+            FROM evaluations ev
+            WHERE ev.id_classe = ? AND ev.deleted_at IS NULL
+            GROUP BY ev.type
+        ", [$id_classe])->result_array();
+
+        $types = [];
+        foreach ($rows as $r) {
+            $types[$r['type']] = (int)$r['cnt'];
+        }
+
+        return [
+            'competance' => isset($types['competance']) && $types['competance'] > 0,
+            'ressource'  => isset($types['ressource'])  && $types['ressource'] > 0,
+            'examen'     => isset($types['examen'])     && $types['examen'] > 0,
+        ];
+    }
+
+    /**
+     * Mapping unifié des types d'évaluation → catégories TJ / COMP / RESS.
+     * Basé sur l'enum réelle de la table evaluations :
+     *   TJ   = interrogation + devoir
+     *   COMP = competance
+     *   RESS = ressource
+     *   (examen est compté séparément si présent, mais pas dans COMP/RESS)
+     */
+    private static $TYPE_MAP = [
+        'interrogation' => 'tj',
+        'devoir'        => 'tj',
+        'competance'    => 'comp',
+        'ressource'     => 'ress',
+        'examen'        => 'tj',  // examen ≈ travail journalier avancé, groupé avec TJ
+    ];
+
     private function _get_notes_aggregated($etudiant_ids, $matiere_ids, $periodes, $id_periode_filter = null)
     {
-        $etudiant_str = implode(',', $etudiant_ids);
-        $matiere_str = implode(',', $matiere_ids);
-
         $cases = [];
         $bindings = [];
 
-        // Si filtre sur une période spécifique, ne garder que cette période pour les notes
         $periodes_notes = $periodes;
         if ($id_periode_filter && $id_periode_filter !== 'all') {
             $periodes_notes = array_filter($periodes, function($p) use ($id_periode_filter) {
@@ -173,26 +248,36 @@ class Bulletins_model extends Model
 
         foreach ($periodes_notes as $per) {
             $pid = $per['id_periode'];
-            // On prend TOUTES les notes de la période sans restriction de type pour garantir l'affichage
-            $cases["note_tj_{$pid}"] = "SUM(CASE WHEN ev.id_periode = ? THEN n.note ELSE 0 END)";
-            $cases["note_comp_{$pid}"] = "0";
-            $cases["note_ress_{$pid}"] = "0";
+            $cases["note_tj_{$pid}"]   = "SUM(CASE WHEN ev.id_periode = ? AND ev.type IN ('interrogation', 'devoir') THEN n.note ELSE 0 END)";
+            $cases["note_comp_{$pid}"] = "SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'competance' THEN n.note ELSE 0 END)";
+            $cases["note_ress_{$pid}"] = "SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'ressource' THEN n.note ELSE 0 END)";
+            $cases["note_ex_{$pid}"]   = "SUM(CASE WHEN ev.id_periode = ? AND ev.type = 'examen' THEN n.note ELSE 0 END)";
+            $bindings[] = $pid;
+            $bindings[] = $pid;
+            $bindings[] = $pid;
             $bindings[] = $pid;
         }
 
-        $select_cols = implode(', ', $cases);
+        $etudiant_placeholders = str_repeat('?,', count($etudiant_ids) - 1) . '?';
+        $matiere_placeholders = str_repeat('?,', count($matiere_ids) - 1) . '?';
+
+        $select_parts = [];
+        foreach ($cases as $alias => $sql) {
+            $select_parts[] = "{$sql} AS `{$alias}`";
+        }
+        $select_cols = implode(', ', $select_parts);
         $sql = "
             SELECT n.id_etudiant, ev.id_matiere, {$select_cols}
             FROM notes n
             JOIN evaluations ev ON ev.id_evaluation = n.id_evaluation
-            WHERE n.id_etudiant IN ({$etudiant_str})
-            AND ev.id_matiere IN ({$matiere_str})
+            WHERE n.id_etudiant IN ({$etudiant_placeholders})
+            AND ev.id_matiere IN ({$matiere_placeholders})
             AND n.deleted_at IS NULL
             AND ev.deleted_at IS NULL
             GROUP BY n.id_etudiant, ev.id_matiere
         ";
 
-        $rows = $this->db->query($sql, $bindings)->result_array();
+        $rows = $this->db->query($sql, array_merge($bindings, $etudiant_ids, $matiere_ids))->result_array();
 
         // Initialiser toutes les périodes à 0
         $notes_map = [];
@@ -205,10 +290,12 @@ class Bulletins_model extends Model
                 $key_tj = "note_tj_{$pid}";
                 $key_comp = "note_comp_{$pid}";
                 $key_ress = "note_ress_{$pid}";
+                $key_ex = "note_ex_{$pid}";
                 $entry[$pid] = [
                     'tj' => isset($r[$key_tj]) ? floatval($r[$key_tj]) : 0,
                     'comp' => isset($r[$key_comp]) ? floatval($r[$key_comp]) : 0,
                     'ress' => isset($r[$key_ress]) ? floatval($r[$key_ress]) : 0,
+                    'ex' => isset($r[$key_ex]) ? floatval($r[$key_ex]) : 0,
                 ];
             }
             $notes_map[$eid][$mid] = $entry;
@@ -221,16 +308,16 @@ class Bulletins_model extends Model
         if (empty($etudiant_ids) || empty($periodes)) return [];
 
         $periode_ids = array_column($periodes, 'id_periode');
-        $etudiant_str = implode(',', $etudiant_ids);
-        $periode_str = implode(',', $periode_ids);
+        $etudiant_placeholders = str_repeat('?,', count($etudiant_ids) - 1) . '?';
+        $periode_placeholders = str_repeat('?,', count($periode_ids) - 1) . '?';
 
         $rows = $this->db->query("
             SELECT pc.id_etudiant, pc.id_periode, pc.points_initial, pc.points_retires, pc.observation
             FROM points_conduite pc
-            WHERE pc.id_etudiant IN ({$etudiant_str})
-            AND pc.id_periode IN ({$periode_str})
+            WHERE pc.id_etudiant IN ({$etudiant_placeholders})
+            AND pc.id_periode IN ({$periode_placeholders})
             AND pc.deleted_at IS NULL
-        ")->result_array();
+        ", array_merge($etudiant_ids, $periode_ids))->result_array();
 
         $map = [];
         foreach ($rows as $r) {
@@ -279,7 +366,7 @@ class Bulletins_model extends Model
                 'matieres' => [],
                 'points_conduite' => $conduite_map[$eid] ?? [],
                 'totaux_periodes' => [],
-                'total_annuel' => ['tj' => 0, 'comp' => 0, 'ress' => 0, 'tot' => 0],
+                'total_annuel' => ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0, 'tot' => 0],
                 'moyenne' => 0,
                 'pourcentage' => 0,
             ];
@@ -288,7 +375,7 @@ class Bulletins_model extends Model
 
             foreach ($periodes as $per) {
                 $pid = $per['id_periode'];
-                $per_tj = 0; $per_comp = 0; $per_ress = 0;
+                $per_tj = 0; $per_comp = 0; $per_ress = 0; $per_ex = 0;
 
                 foreach ($matieres as $mat) {
                     $mid = $mat['id_matiere'];
@@ -297,12 +384,13 @@ class Bulletins_model extends Model
                         $per_tj += $mn['tj'];
                         $per_comp += $mn['comp'];
                         $per_ress += $mn['ress'];
+                        $per_ex += $mn['ex'];
                     }
                 }
 
-                $per_tot = $per_tj + $per_comp + $per_ress;
+                $per_tot = $per_tj + $per_comp + $per_ress + $per_ex;
                 $eleve_data['totaux_periodes'][$pid] = [
-                    'tj' => $per_tj, 'comp' => $per_comp, 'ress' => $per_ress, 'tot' => $per_tot,
+                    'tj' => $per_tj, 'comp' => $per_comp, 'ress' => $per_ress, 'ex' => $per_ex, 'tot' => $per_tot,
                 ];
                 $annee_note += $per_tot;
             }
@@ -316,8 +404,8 @@ class Bulletins_model extends Model
 
                 foreach ($periodes as $per) {
                     $pid = $per['id_periode'];
-                    $p = $mn[$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0];
-                    $note = $p['tj'] + $p['comp'] + $p['ress'];
+                    $p = $mn[$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0];
+                    $note = $p['tj'] + $p['comp'] + $p['ress'] + ($p['ex'] ?? 0);
                     $mat_data['periodes'][$pid] = $p;
                     $mat_annee_note += $note;
                 }
@@ -325,8 +413,8 @@ class Bulletins_model extends Model
                 $mat_max = 0;
                 foreach ($periodes as $per) {
                     $pid = $per['id_periode'];
-                    $mx = $maxima[$mid][$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0];
-                    $mat_max += ($mx['tj'] ?? 0) + ($mx['comp'] ?? 0) + ($mx['ress'] ?? 0);
+                    $mx = $maxima[$mid][$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0];
+                    $mat_max += ($mx['tj'] ?? 0) + ($mx['comp'] ?? 0) + ($mx['ress'] ?? 0) + ($mx['ex'] ?? 0);
                 }
 
                 $mat_data['annuel'] = [
@@ -343,8 +431,8 @@ class Bulletins_model extends Model
                 $mid = $mat['id_matiere'];
                 foreach ($periodes as $per) {
                     $pid = $per['id_periode'];
-                    $mx = $maxima[$mid][$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0];
-                    $annee_max += ($mx['tj'] ?? 0) + ($mx['comp'] ?? 0) + ($mx['ress'] ?? 0);
+                    $mx = $maxima[$mid][$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0];
+                    $annee_max += ($mx['tj'] ?? 0) + ($mx['comp'] ?? 0) + ($mx['ress'] ?? 0) + ($mx['ex'] ?? 0);
                 }
             }
 
@@ -362,14 +450,15 @@ class Bulletins_model extends Model
         // Maxima période regroupés
         foreach ($periodes as $per) {
             $pid = $per['id_periode'];
-            $mtj = 0; $mcomp = 0; $mress = 0;
+            $mtj = 0; $mcomp = 0; $mress = 0; $mex = 0;
             foreach ($matieres as $mat) {
-                $mx = $maxima[$mat['id_matiere']][$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0];
+                $mx = $maxima[$mat['id_matiere']][$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0];
                 $mtj += $mx['tj'] ?? 0;
                 $mcomp += $mx['comp'] ?? 0;
                 $mress += $mx['ress'] ?? 0;
+                $mex += $mx['ex'] ?? 0;
             }
-            $result['maxima_periode'][$pid] = ['tj' => $mtj, 'comp' => $mcomp, 'ress' => $mress, 'tot' => $mtj + $mcomp + $mress];
+            $result['maxima_periode'][$pid] = ['tj' => $mtj, 'comp' => $mcomp, 'ress' => $mress, 'ex' => $mex, 'tot' => $mtj + $mcomp + $mress + $mex];
         }
 
         return $result;
@@ -377,16 +466,17 @@ class Bulletins_model extends Model
 
     private function _calculer_totaux_classe($eleves, $periodes, $maxima, $matieres)
     {
-        $totaux = ['periodes' => [], 'annuel' => ['tj' => 0, 'comp' => 0, 'ress' => 0, 'tot' => 0]];
+        $totaux = ['periodes' => [], 'annuel' => ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0, 'tot' => 0]];
 
         foreach ($periodes as $per) {
             $pid = $per['id_periode'];
-            $t = ['tj' => 0, 'comp' => 0, 'ress' => 0, 'tot' => 0];
+            $t = ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0, 'tot' => 0];
             foreach ($eleves as $el) {
                 $pt = $el['totaux_periodes'][$pid] ?? [];
                 $t['tj'] += $pt['tj'] ?? 0;
                 $t['comp'] += $pt['comp'] ?? 0;
                 $t['ress'] += $pt['ress'] ?? 0;
+                $t['ex'] += $pt['ex'] ?? 0;
                 $t['tot'] += $pt['tot'] ?? 0;
             }
             $totaux['periodes'][$pid] = $t;
@@ -396,6 +486,7 @@ class Bulletins_model extends Model
             'tj' => array_sum(array_column($totaux['periodes'], 'tj')),
             'comp' => array_sum(array_column($totaux['periodes'], 'comp')),
             'ress' => array_sum(array_column($totaux['periodes'], 'ress')),
+            'ex' => array_sum(array_column($totaux['periodes'], 'ex')),
             'tot' => array_sum(array_column($totaux['periodes'], 'tot')),
         ];
 

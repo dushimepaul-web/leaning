@@ -35,6 +35,11 @@
 $groups = $groups ?? [];
 $students = $students ?? [];
 $notes = $notes ?? [];
+$ressActive = (isset($ressources_active) ? intval($ressources_active) : 1) !== 0;
+$compActive = (isset($competences_active) ? intval($competences_active) : 1) !== 0;
+$mode_b = $ressActive || $compActive;
+$colSpan = $mode_b ? 4 : 3;
+
 $nf = function($v){ return ($v !== null && $v > 0) ? number_format($v, 1) : '-'; };
 $sumType = function($st, $g, $types) use ($notes) {
     $s = 0;
@@ -46,21 +51,31 @@ $sumType = function($st, $g, $types) use ($notes) {
     }
     return $s;
 };
-$cellsOf = function($st, $g) use ($sumType) {
+$cellsOf = function($st, $g) use ($sumType, $mode_b) {
     $tj = $sumType($st, $g, ['interrogation','devoir']);
-    $comp = $sumType($st, $g, ['competance']);
-    $ress = $sumType($st, $g, ['ressource']);
-    return [$tj, $comp, $ress, $tj + $comp + $ress];
+    if ($mode_b) {
+        $comp = $sumType($st, $g, ['competance']);
+        $ress = $sumType($st, $g, ['ressource']);
+        return [$tj, $comp, $ress, $tj + $comp + $ress];
+    } else {
+        $ex = $sumType($st, $g, ['examen','competance','ressource']);
+        return [$tj, $ex, $tj + $ex];
+    }
 };
-$maxCells = function($g) {
-    $tj = 0; $comp = 0; $ress = 0;
+$maxCells = function($g) use ($mode_b) {
+    $tj = 0; $comp = 0; $ress = 0; $ex = 0;
     foreach ($g['items'] as $e) {
         $v = floatval($e['ponderee_sur'] ?: 0);
         if (in_array($e['type'], ['interrogation','devoir'])) $tj += $v;
         elseif ($e['type'] === 'competance') $comp += $v;
         elseif ($e['type'] === 'ressource') $ress += $v;
+        elseif ($e['type'] === 'examen') $ex += $v;
     }
-    return [$tj, $comp, $ress, $tj + $comp + $ress];
+    if ($mode_b) {
+        return [$tj, $comp, $ress, $tj + $comp + $ress];
+    } else {
+        return [$tj, $comp + $ress + $ex, $tj + $comp + $ress + $ex];
+    }
 };
 $maxTa = 0;
 $dataIdx = count($groups) - 1;
@@ -69,7 +84,7 @@ if ($periodeId !== 'all') {
     $dataIdx = -1;
     foreach ($groups as $gi => $g) { if ((string)$g['id'] === (string)$periodeId) { $dataIdx = $gi; break; } }
 }
-foreach ($groups as $gi => $g) { if ($gi <= $dataIdx) { $m = $maxCells($g); $maxTa += $m[3]; } }
+foreach ($groups as $gi => $g) { if ($gi <= $dataIdx) { $m = $maxCells($g); $maxTa += $m[$colSpan - 1]; } }
 $hasData = function($gi) use ($dataIdx) { return $gi <= $dataIdx; };
 ?>
 
@@ -88,6 +103,7 @@ $hasData = function($gi) use ($dataIdx) { return $gi <= $dataIdx; };
 
   <table class="f-table">
     <thead>
+      <?php if ($mode_b): ?>
       <tr>
         <th class="branche" rowspan="3" style="width: 26px;">N°</th>
         <th class="branche" rowspan="3" style="width: 200px;">ÉLÈVES</th>
@@ -107,28 +123,56 @@ $hasData = function($gi) use ($dataIdx) { return $gi <= $dataIdx; };
         <?php endforeach; ?>
         <th>T.A</th><th>%</th>
       </tr>
+      <?php else: ?>
+      <tr>
+        <th class="branche" rowspan="2" style="width: 26px;">N°</th>
+        <th class="branche" rowspan="2" style="width: 200px;">ÉLÈVES</th>
+        <?php foreach ($groups as $g): ?>
+        <th colspan="3"><?= htmlspecialchars($g['libelle']) ?></th>
+        <?php endforeach; ?>
+        <th colspan="2">TOTAUX</th>
+      </tr>
+      <tr>
+        <?php foreach ($groups as $g): ?>
+        <th>TJ</th><th>EX</th><th>TOT</th>
+        <?php endforeach; ?>
+        <th>T.A</th><th>%</th>
+      </tr>
+      <?php endif; ?>
     </thead>
     <tbody>
       <tr>
         <td class="bareme" colspan="2"></td>
-        <?php foreach ($groups as $gi => $g): if (!$hasData($gi)) { echo '<td class="bareme"></td><td class="bareme"></td><td class="bareme"></td><td class="bareme"></td>'; continue; } $m = $maxCells($g); ?>
+        <?php foreach ($groups as $gi => $g): if (!$hasData($gi)) { echo str_repeat('<td class="bareme"></td>', $colSpan); continue; } $m = $maxCells($g); ?>
+        <?php if ($mode_b): ?>
         <td class="bareme"><?= $nf($m[0]) ?></td>
         <td class="bareme"><?= $nf($m[1]) ?></td>
         <td class="bareme"><?= $nf($m[2]) ?></td>
         <td class="bareme gris"><?= $nf($m[3]) ?></td>
+        <?php else: ?>
+        <td class="bareme"><?= $nf($m[0]) ?></td>
+        <td class="bareme"><?= $nf($m[1]) ?></td>
+        <td class="bareme gris"><?= $nf($m[2]) ?></td>
+        <?php endif; ?>
         <?php endforeach; ?>
         <td class="bareme"><?= $nf($maxTa) ?></td>
         <td class="bareme" style="white-space:nowrap">100%</td>
       </tr>
-      <?php $i = 1; foreach ($students as $st): $ta = 0; foreach ($groups as $gi => $g) { if ($hasData($gi)) { $c = $cellsOf($st, $g); $ta += $c[3]; } } ?>
+      <?php $i = 1; foreach ($students as $st): $ta = 0; foreach ($groups as $gi => $g) { if ($hasData($gi)) { $c = $cellsOf($st, $g); $ta += $c[$colSpan - 1]; } } ?>
       <tr>
         <td><?= $i++ ?></td>
         <td class="mat"><?= htmlspecialchars($st['nom']) ?></td>
-        <?php foreach ($groups as $gi => $g): if (!$hasData($gi)) { echo '<td></td><td></td><td></td><td></td>'; continue; } $c = $cellsOf($st, $g); ?>
+        <?php foreach ($groups as $gi => $g): if (!$hasData($gi)) { echo str_repeat('<td></td>', $colSpan); continue; } $c = $cellsOf($st, $g); ?>
+        <?php if ($mode_b): ?>
         <td><?= $nf($c[0]) ?></td>
         <td><?= $nf($c[1]) ?></td>
         <td><?= $nf($c[2]) ?></td>
         <td class="gris"><?= $nf($c[3]) ?></td>
+        <?php else: ?>
+        <td><?= $nf($c[0]) ?></td>
+        <td><?= $nf($c[1]) ?></td>
+        <td class="gris"><?= $nf($c[2]) ?></td>
+        <?php endif; ?>
         <?php endforeach; ?>
         <td><?= $nf($ta) ?></td>
         <td style="white-space:nowrap"><?= $maxTa > 0 ? number_format($ta / $maxTa * 100, 2).'%' : '-' ?></td>

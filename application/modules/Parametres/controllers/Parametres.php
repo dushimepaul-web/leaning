@@ -35,7 +35,6 @@ class Parametres extends MY_Controller {
             'nom_ecole', 'periode_active', 'points_conduite_defaut',
             'telephone_ecole', 'login_img',
             // Paramètres de notation dynamique
-            'ressources_active', 'competences_active',
             'seuil_moyenne', 'seuil_matiere', 'max_repechage',
             'facteur_points_heure', 'pourcentage_ressources_examen', 'pourcentage_competences_examen'
         ];

@@ -55,6 +55,7 @@
               <th>#</th>
               <th>Code</th>
               <th>Libellé</th>
+              <th>Type</th>
               <th>Statut</th>
               <th>Actions</th>
             </tr>
@@ -83,6 +84,14 @@
       <div class="col-sm-12">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label>
         <input type="text" class="form-control" id="libelle" placeholder="Ex: Mathématiques, Français">
+      </div>
+      <div class="col-sm-12">
+        <div class="form-check d-flex align-items-center gap-2">
+          <input class="form-check-input" type="checkbox" id="est_general" value="1" style="width: 20px; height: 20px;">
+          <label class="form-check-label text-sm fw-semibold text-primary-light" for="est_general">
+            Cours Général / Langue (Coché = Général, Non coché = Technique)
+          </label>
+        </div>
       </div>
       <div class="col-12">
         <div class="d-flex align-items-center justify-content-center gap-3 mt-8">
@@ -120,11 +129,12 @@ let deleteId = null;
 
 function openAddSidebar() {
   editingId = null;
-  document.getElementById('sidebarTitle').textContent = 'Ajouter une matière';
-  document.getElementById('recordId').value = '';
-  document.getElementById('code').value = '';
-  document.getElementById('libelle').value = '';
-  document.getElementById('addSidebar').classList.add('active');
+    document.getElementById('sidebarTitle').textContent = 'Ajouter une matière';
+    document.getElementById('recordId').value = '';
+    document.getElementById('code').value = '';
+    document.getElementById('libelle').value = '';
+    document.getElementById('est_general').checked = false;
+    document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
 
@@ -134,6 +144,7 @@ function openEditSidebar(data) {
   document.getElementById('recordId').value = data.uuid;
   document.getElementById('code').value = data.code || '';
   document.getElementById('libelle').value = data.libelle || '';
+  document.getElementById('est_general').checked = (parseInt(data.est_general) === 1);
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -151,10 +162,13 @@ async function loadData() {
     const isDeleted = s.deleted_at !== null;
     const statusBadge = isDeleted ? 'bg-danger-100 text-danger-600' : 'bg-success-100 text-success-600';
     const statusText = isDeleted ? 'Inactif' : 'Actif';
+    const isGeneral = parseInt(s.est_general) === 1;
+    const typeBadge = isGeneral ? '<span class="bg-primary-100 text-primary-600 px-16 py-4 radius-4 fw-medium text-sm">Général & Langue</span>' : '<span class="bg-warning-150 text-warning-700 px-16 py-4 radius-4 fw-medium text-sm">Technique</span>';
     rows += `<tr>
       <td>${i + 1}</td>
       <td><span class="fw-semibold">${s.code || '-'}</span></td>
       <td>${s.libelle}</td>
+      <td>${typeBadge}</td>
       <td><span class="${statusBadge} px-24 py-4 radius-4 fw-medium text-sm">${statusText}</span></td>
       <td>
         <div class="btn-group">
@@ -187,6 +201,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   const data = {
     code: document.getElementById('code').value,
     libelle: document.getElementById('libelle').value,
+    est_general: document.getElementById('est_general').checked ? 1 : 0
   };
   if (!data.code || !data.libelle) {
     Swal.fire({ icon: 'warning', title: 'Validation', text: 'Code et libellé sont obligatoires' });

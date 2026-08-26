@@ -146,18 +146,33 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   groups.forEach(function(g,gi){if(hasData(gi)){nbEvals+=g.items.length;}});
   document.getElementById('statNbEval').textContent=nbEvals+' éval.';
 
-  // En-tête 3 lignes : bloc période avec TJ/EXAMEN(COMP/RESS)/TOT + TOTAUX
+  var ressActive = (data.ressources_active===undefined ? 1 : parseInt(data.ressources_active)) !== 0;
+  var compActive = (data.competences_active===undefined ? 1 : parseInt(data.competences_active)) !== 0;
+  var modeB = ressActive || compActive;
+  var colSpan = modeB ? 4 : 3;
+
+  // En-tête dynamique selon Mode B ou Mode A/Défaut
   var head='<tr>';
-  head+='<th class="branches-header" rowspan="3" style="width:26px;min-width:26px">N°</th>';
-  head+='<th class="branches-header" rowspan="3" style="width:200px;min-width:200px">ÉLÈVES</th>';
-  groups.forEach(function(g){head+='<th colspan="4">'+g.libelle+'</th>';});
-  head+='<th colspan="2" rowspan="2">TOTAUX</th></tr>';
-  head+='<tr>';
-  groups.forEach(function(){head+='<th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>';});
-  head+='</tr>';
-  head+='<tr>';
-  groups.forEach(function(){head+='<th>COMP</th><th>RESS</th>';});
-  head+='<th>T.A</th><th>%</th></tr>';
+  if(modeB){
+    head+='<th class="branches-header" rowspan="3" style="width:26px;min-width:26px">N°</th>';
+    head+='<th class="branches-header" rowspan="3" style="width:200px;min-width:200px">ÉLÈVES</th>';
+    groups.forEach(function(g){head+='<th colspan="4">'+g.libelle+'</th>';});
+    head+='<th colspan="2" rowspan="2">TOTAUX</th></tr>';
+    head+='<tr>';
+    groups.forEach(function(){head+='<th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>';});
+    head+='</tr>';
+    head+='<tr>';
+    groups.forEach(function(){head+='<th>COMP</th><th>RESS</th>';});
+    head+='<th>T.A</th><th>%</th></tr>';
+  } else {
+    head+='<th class="branches-header" rowspan="2" style="width:26px;min-width:26px">N°</th>';
+    head+='<th class="branches-header" rowspan="2" style="width:200px;min-width:200px">ÉLÈVES</th>';
+    groups.forEach(function(g){head+='<th colspan="3">'+g.libelle+'</th>';});
+    head+='<th colspan="2">TOTAUX</th></tr>';
+    head+='<tr>';
+    groups.forEach(function(){head+='<th>TJ</th><th>EX</th><th>TOT</th>';});
+    head+='<th>T.A</th><th>%</th></tr>';
+  }
   document.getElementById('ficheHead').innerHTML=head;
 
   function sumType(student,group,types){
@@ -172,21 +187,39 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   }
   function cellsOf(student,group){
     var tj=sumType(student,group,['interrogation','devoir']);
-    var comp=sumType(student,group,['competance']);
-    var ress=sumType(student,group,['ressource']);
-    return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
+    if(modeB){
+      var comp=sumType(student,group,['competance']);
+      var ress=sumType(student,group,['ressource']);
+      return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
+    } else {
+      var ex=sumType(student,group,['examen','competance','ressource']);
+      return {tj:tj,ex:ex,tot:tj+ex};
+    }
   }
 
   function maxTotOf(group){var m=0;group.items.forEach(function(e){m+=parseFloat(e.ponderee_sur)||0;});return m;}
   function maxCells(group){
-    var tj=0,comp=0,ress=0;
+    var tj=0,comp=0,ress=0,ex=0;
     group.items.forEach(function(e){
       var v=parseFloat(e.ponderee_sur)||0;
       if(e.type==='interrogation'||e.type==='devoir'){tj+=v;}
       else if(e.type==='competance'){comp+=v;}
       else if(e.type==='ressource'){ress+=v;}
+      else if(e.type==='examen'){ex+=v;}
     });
-    return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
+    if(modeB){
+      return {tj:tj,comp:comp,ress:ress,tot:tj+comp+ress};
+    } else {
+      return {tj:tj,ex:comp+ress+ex,tot:tj+comp+ress+ex};
+    }
+  }
+
+  function renderCells(m){
+    if(modeB){
+      return '<td class="num">'+nf(m.tj)+'</td><td class="num">'+nf(m.comp)+'</td><td class="num">'+nf(m.ress)+'</td><td class="num gris"><strong>'+nf(m.tot)+'</strong></td>';
+    } else {
+      return '<td class="num">'+nf(m.tj)+'</td><td class="num">'+nf(m.ex)+'</td><td class="num gris"><strong>'+nf(m.tot)+'</strong></td>';
+    }
   }
 
   var maxTa=0;
@@ -196,9 +229,9 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
   body+='<tr class="fiche-row-g" style="font-weight:700">';
   body+='<td class="matiere" colspan="2"></td>';
   groups.forEach(function(g,gi){
-    if(!hasData(gi)){body+='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>';return;}
+    if(!hasData(gi)){body+=('<td class="num"></td>').repeat(colSpan);return;}
     var m=maxCells(g);
-    body+='<td class="num">'+nf(m.tj)+'</td><td class="num">'+nf(m.comp)+'</td><td class="num">'+nf(m.ress)+'</td><td class="num gris"><strong>'+nf(m.tot)+'</strong></td>';
+    body+=renderCells(m);
   });
   body+='<td class="num"><strong>'+nf(maxTa)+'</strong></td>';
   body+='<td class="num">100%</td></tr>';
@@ -214,9 +247,9 @@ async function loadFicheCours(idClasse,idMatiere,p,a){
     body+='<td class="num" style="min-width:22px">'+(i+1)+'</td>';
     body+='<td class="matiere">'+s.etudiant.nom+' '+(s.etudiant.prenom||'')+'</td>';
     groups.forEach(function(g,gi){
-      if(!hasData(gi)){body+='<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>';return;}
+      if(!hasData(gi)){body+=('<td class="num"></td>').repeat(colSpan);return;}
       var c=cellsOf(s,g);
-      body+='<td class="num">'+nf(c.tj)+'</td><td class="num">'+nf(c.comp)+'</td><td class="num">'+nf(c.ress)+'</td><td class="num gris"><strong>'+nf(c.tot)+'</strong></td>';
+      body+=renderCells(c);
     });
     body+='<td class="num"><strong>'+nf(ta)+'</strong></td>';
     body+='<td class="num">'+(maxTa>0?(ta/maxTa*100).toFixed(2)+'%':'-')+'</td></tr>';

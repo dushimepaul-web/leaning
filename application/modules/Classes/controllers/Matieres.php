@@ -10,6 +10,7 @@ class Matieres extends MY_Controller {
     }
 
     public function api_list() {
+        $this->db->select('matieres.*');
         $this->db->where('deleted_at', null);
         $this->db->order_by('libelle');
         $this->json_success($this->db->get('matieres')->result_array());
@@ -26,8 +27,9 @@ class Matieres extends MY_Controller {
         if (empty($data['code']) || empty($data['libelle'])) {
             $this->json_error('Code et libellé obligatoires'); return;
         }
-        $allowed = ['code', 'libelle'];
+        $allowed = ['code', 'libelle', 'est_general'];
         $insert = array_intersect_key($data, array_flip($allowed));
+        $insert['est_general'] = isset($data['est_general']) ? (int)$data['est_general'] : 0;
         $id = $this->Model->createLastId('matieres', $insert);
         if ($id) $this->json_success(null, 'Matière créée');
         else $this->json_error('Erreur');
@@ -38,8 +40,11 @@ class Matieres extends MY_Controller {
         if (!$this->Model->readOne('matieres', ['uuid' => $id])) {
             $this->json_error('Matière non trouvée', 404); return;
         }
-        $allowed = ['code', 'libelle'];
+        $allowed = ['code', 'libelle', 'est_general'];
         $update = array_intersect_key($data, array_flip($allowed));
+        if (isset($data['est_general'])) {
+            $update['est_general'] = (int)$data['est_general'];
+        }
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
         if ($this->Model->update('matieres', ['uuid' => $id], $update))
             $this->json_success(null, 'Matière mise à jour');

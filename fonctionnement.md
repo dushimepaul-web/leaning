@@ -11,16 +11,33 @@ Ce document décrit la logique métier implémentée dans l'application. Il est 
 
 > Règle confirmée par l'utilisateur : **TJ = coefficient calculé (heures × facteur)** — la colonne stockée `matieres_classes.note_max_matiere` (ex-`coefficient`) n'est pas utilisée dans le calcul du TJ.
 
-## 2. Les deux catégories de notes
+## 2. Types d'évaluation et catégories
 
-Chaque matière est notée selon **deux catégories** :
+L'enum réelle dans la table `evaluations` est : `('interrogation','devoir','ressource','competance','examen')`.
 
-| Catégorie | Rôle | Libellé à l'écran |
+### 2.1. Mapping unifié (TJ / COMP / RESS / EX)
+
+| Type d'évaluation | Catégorie | Colonne bulletin |
 |---|---|---|
-| **Ressources** | Évaluations ressources / TP | RESS |
-| **Compétences** | Évaluations compétences / examen | COMP |
+| `interrogation` | **TJ** | TJ |
+| `devoir` | **TJ** | TJ |
+| `competance` | **COMP** | COMP |
+| `ressource` | **RESS** | RESS |
+| `examen` | **EX** | EX (colonnes spécifiques) |
 
-### 2.1. Pourcentages de répartition
+### 2.2. Détection dynamique des catégories
+
+`_detecter_categories($id_classe)` interroge la table `evaluations` pour déterminer les types **réellement présents** pour une classe donnée. Trois modes d'affichage en résultent :
+
+| Mode | Condition | Colonnes par bloc | TJ comprend |
+|---|---|---|---|
+| **Mode B** | `competance` OU `ressource` présent | TJ / COMP / RESS / TOT (4 colonnes) | interrogation + devoir |
+| **Mode A** | `examen` présent, PAS de competance/ressource | TJ / EX / TOT (3 colonnes) | interrogation + devoir |
+| **Défaut** | Aucun des trois | TJ / TOT (2 colonnes) | interrogation + devoir |
+
+> La colonne EX est **neutralisée** (remise à 0) en Mode B. Les colonnes COMP/RESS sont neutralisées en Mode A.
+
+### 2.3. Pourcentages de répartition
 
 - **Ressources à l'examen (%)** = `pourcentage_ressources_examen` (défaut **60**)
 - **Compétences à l'examen (%)** = `pourcentage_competences_examen` (défaut **40**)
@@ -29,18 +46,26 @@ La répartition des maxima :
 ```
 MAX RESS = TJ × pourcentage_ressources_examen / 100
 MAX COMP = TJ × pourcentage_competences_examen / 100
-MAX TOT  = TJ + MAX RESS + MAX COMP = 2 × TJ
+MAX EX   = TJ (règle conservée par l'utilisateur)
+MAX TOT  = TJ + MAX COMP + MAX RESS
 ```
 
-- **Somme toujours = 100 %** : la page Paramètres auto-complète automatiquement l'autre champ (`100 − valeur saisie`).
-- Exemple : TJ = 180, RESS 60 % → MAX RESS = 108 ; COMP 40 % → MAX COMP = 72 ; TOT = 360.
+- **Somme toujours = 100 %** pour COMP/RESS : la page Paramètres auto-complète automatiquement l'autre champ (`100 − valeur saisie`).
+- Exemple : TJ = 180, RESS 60 % → MAX RESS = 108 ; COMP 40 % → MAX COMP = 72.
 
-## 3. Activation / désactivation des catégories
+### 2.4. Neutralisation en cascade
 
-- Paramètres globaux : `ressources_active` (1=Oui) et `competences_active` (1=Oui).
-- **Garde-fou : au moins une catégorie doit rester active** — impossible de désactiver les deux à la fois.
+Dans `get_bulletin_complet()` et `_build_result()` :
+- **Mode B** : `ex = 0` pour chaque matière, chaque période, et les maxima.
+- **Mode A** : `comp = 0` et `ress = 0` pour chaque matière, chaque période, et les maxima.
+- **Défaut** : `comp = 0`, `ress = 0` et `ex = 0`.
 
-### 3.1. Comportement à la désactivation
+### 2.5. Activation / désactivation
+
+- Les activations sont gérées **par classe** via les champs de la table `classes` : `ressources_active`, `competences_active`.
+- **Garde-fou** : au moins une catégorie doit rester active — impossible de désactiver les deux à la fois.
+
+### 2.6. Comportement à la désactivation
 
 Quand on désactive une catégorie dans Paramètres :
 
@@ -49,7 +74,7 @@ Quand on désactive une catégorie dans Paramètres :
 - La catégorie active **absorbe tout le TJ** : `MAX EX = TJ` (100 %), l'autre catégorie = 0.
 - **Total max toujours = 2 × TJ** (TJ + EX = 2 × TJ), que les deux catégories soient actives ou non.
 
-### 3.2. Priorité classe → global
+### 2.7. Priorité classe → global
 
 Les activations et pourcentages peuvent être **surchargés par classe** (page Classes, champs de la table `classes` : `ressources_active`, `competences_active`, `ressources_pourcentage`, `competences_pourcentage`).
 
@@ -78,7 +103,7 @@ Colonnes par bloc : **TJ | EX | TOT** (3 colonnes, colspan = 3)
 ### 4.4. Lignes adaptatives
 
 Toutes les lignes s'adaptent au nombre de colonnes :
-- Matières, Sous-Tot, Conduite, Totaux, Pourcentage, Mention, Place, Religion, Signatures (PARENTS / TITULAIRE).
+- Matières, Conduite, Totaux, Pourcentage, Mention, Place, Religion, Signatures (PARENTS / TITULAIRE).
 
 Exemple de la ligne Signatures : `PARENTS` occupe la 1re cellule du bloc MAXIMA → seules `colSpan-1` cellules vides sont ajoutées après (pas `colSpan`), pour éviter une colonne excédentaire.
 
@@ -89,14 +114,28 @@ Page Paramètres (settings) ──> table parametres (globaux)
 Page Classes (override)    ──> table classes (par classe)
 
 Bulletins_model::get_bulletin_complet
-  ├─ lit flags + pourcentages (classe → global)
-  ├─ calcule les maxima (TJ, MAX RESS, MAX COMP) via _get_maxima
-  └─ neutralise la catégorie inactive (EX = TJ, l'autre = 0)
+  ├─ _detecter_categories($id_classe)      ← interroge evaluations.type
+  │    → mode_b (competance|ressource) / mode_a (examen) / défaut
+  ├─ _get_notes_aggregated()               ← CASE WHEN par type + AS alias
+  │    → map[id_etudiant][id_matiere][periode] = {tj, comp, ress, ex}
+  ├─ _get_conduite_map()                   ← lit points_conduite par étudiant/période
+  │    → map[id_etudiant][periode] = {points_initial, points_retires, points}
+  ├─ _build_result()                       ← assemble eleves + notes + conduite
+  ├─ _get_maxima()                         ← TJ, COMP%, RESS%, EX = TJ
+  └─ Neutralisation selon le mode :
+       Mode B → ex = 0  |  Mode A → comp=0, ress=0  |  Défaut → comp=0, ress=0, ex=0
 
-Vues
-  ├─ bulletins.php / fiches.php   (interactives, chargées en AJAX depuis api/bulletins/complet)
-  ├─ print_bulletins.php          (impression bulletin)
-  └─ print_fiches_v2.php          (impression fiche de points)
+API (api_bulletin_complet)
+  ├─ Renvoie JSON: classe, periodes, matieres, eleves, maxima, mode flags
+  └─ Rangs calculés côté PHP par moyenne décroissante
+
+Vues (frontend JS)
+  ├─ bulletins.php           ← interactif, chargé en AJAX depuis api/bulletins/complet
+  │    ├─ cumulMode = trimestre choisi (cumul depuis T1) ou all
+  │    ├─ cdVal() = points_conduite[periode].points (défaut 60)
+  │    └─ Lignes: Matières → Conduite → Totaux → Pourcentage → Mention → Place → Religion → Signatures
+  ├─ print_bulletins.php     ← impression bulletin (HTML statique)
+  └─ print_fiches_v2.php     ← impression fiche de points
 ```
 
 ## 6. Report d'année & décision de passage (Clôture)
@@ -148,7 +187,7 @@ Ces paramètres ont été **supprimés de la base et du code** car obsolètes / 
 | `prochain_num_recu` | Inutilisé : le numéro de reçu est saisi manuellement (`recus.numero_recu`, contrôle de doublon dans `Recu.php`). |
 | `tva` | Inutilisé : aucun calcul de TVA n'existe dans l'application. |
 
-La table `parametres` contient désormais **43 paramètres** (audit : tous utilisés, sauf `annee_active` qui est sauvegardé par la page mais dont l'année active réelle vient de `annees_scolaires.est_en_cours`).
+La table `parametres` contient désormais **41 paramètres** (audit : tous utilisés, sauf `annee_active` qui est sauvegardé par la page mais dont l'année active réelle vient de `annees_scolaires.est_en_cours`).
 
 ## 8. Répertoire des paramètres (43)
 
@@ -196,8 +235,8 @@ La table `parametres` contient désormais **43 paramètres** (audit : tous utili
 | `facteur_points_heure` | 15 | **TJ = heures hebdomadaires × facteur** (coefficient calculé) | `Bulletins_model.php:122` ; `Bulletins.php:467` ; `Fiches.php:113` ; `print_bulletins.php:43` |
 | `pourcentage_ressources_examen` | 60.00 | % du TJ alloué aux Ressources (MAX RESS = TJ × %/100) | `Bulletins_model.php:84,124` ; `Bulletins.php:463` ; `Fiches.php:115` |
 | `pourcentage_competences_examen` | 40 | % du TJ alloué aux Compétences (MAX COMP = TJ × %/100) | `Bulletins_model.php:87,123` ; `Bulletins.php:466` ; `Fiches.php:114` |
-| `ressources_active` | 1 | Catégorie Ressources active (0/1), surchargeable par classe | `Bulletins_model.php:76-78,91` ; `Bulletins.php:455-457` ; `Classes.php:35,50` ; `print_fiches_v2.php:37` |
-| `competences_active` | 1 | Catégorie Compétences active (0/1), surchargeable par classe | `Bulletins_model.php:79-81,92` ; `Bulletins.php:458-460` ; `Classes.php:35,50` ; `print_fiches_v2.php:38` |
+
+> **Note** : `ressources_active` et `competences_active` ne sont **plus des paramètres globaux** — ils sont gérés par classe dans la table `classes`.
 
 ### 8.5. Mentions (seuils dynamiques)
 
@@ -233,16 +272,17 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 
 - `application/modules/Parametres/views/index.php` — page Paramètres (saisie, synchronisation 100 %, garde-fous).
 - `application/modules/Parametres/controllers/Parametres.php` — sauvegarde (whitelist des clés autorisées).
-- `application/modules/Notes/models/Bulletins_model.php` — `_get_maxima` (calcul TJ / RESS / COMP) et `get_bulletin_complet` (flags + neutralisation).
-- `application/modules/Notes/controllers/Bulletins.php` — `api_bulletin_complet`, `export_bulletins_classe` (print).
+- `application/modules/Notes/models/Bulletins_model.php` — `_detecter_categories` (détection dynamique), `_get_maxima` (calcul TJ / COMP / RESS), `_get_notes_aggregated` (CASE WHEN avec aliases SQL), `_get_conduite_map` (points_conduite), `_build_result` (assemblage), `get_bulletin_complet` (flags + neutralisation 3 modes).
+- `application/modules/Notes/controllers/Bulletins.php` — `api_bulletin_complet` (JSON), `api_periodes` (AJAX par année), `export_bulletins_classe` (print).
 - `application/modules/Notes/controllers/Fiches.php` — `api_fiche_par_cours`, `export_fiche_classe` (print fiche).
-- `application/modules/Classes/controllers/Annees.php` — `_calculer_report` (décision de passage), `api_apercu_cloture`, `api_cloturer` (report avec override manuel).
-- `application/modules/Classes/views/annees.php` — page Années + modal Clôture & Report (aperçu + ajustement manuel par élève).
-- `application/modules/Notes/views/bulletins.php` — bulletin interactif.
+- `application/modules/Notes/views/bulletins.php` — bulletin interactif (JS, cumulMode, conduite, 3 modes d'affichage).
+- `application/modules/Notes/views/print_bulletins.php` — impression bulletin (thead 3 lignes Mode B, Religion avec relComp/relRess).
 - `application/modules/Notes/views/fiches.php` — fiche de points interactive.
-- `application/modules/Notes/views/print_bulletins.php` — impression bulletin.
 - `application/modules/Notes/views/print_fiches_v2.php` — impression fiche de points (vue active).
 - `application/modules/Notes/views/print_fiches.php` — **code mort** (non chargé, non modifié).
+- `application/modules/Classes/controllers/Annees.php` — `_calculer_report` (décision de passage), `api_apercu_cloture`, `api_cloturer` (report avec override manuel).
+- `application/modules/Classes/views/annees.php` — page Années + modal Clôture & Report (aperçu + ajustement manuel par élève).
+- `application/config/routes.php` — routes API (`api/bulletins/periodes/{id_annee}`, `api/bulletins/complet/{id}`).
 
 ## 10. Journal des modifications
 
@@ -258,6 +298,7 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 - **Sans bulletin** : l'élève sans bulletin **redouble toujours** (paramètre « Comportement sans bulletin » supprimé).
 - **nombre_trimestres supprimé** (inutilisé — le nombre de périodes vient de la table `periodes`) : page Paramètres, whitelist, base ; parametres = 45.
 - **prochain_num_recu et tva supprimés** (orphelins — jamais lus par le code) : n° de reçu saisi manuellement, aucun calcul de TVA. **annee_active conservé** (sélection de la page, l'activation réelle passe par `est_en_cours`). parametres = 43.
+- **`ressources_active` et `competences_active` supprimés** (valeurs gérées par classe dans `classes`, pas de paramètre global). parametres = 41.
 - **Audit complet des paramètres** : chaque clé vérifiée — répertoire complet ajouté en **section 8** (rôle + lieu d'utilisation fichier:ligne pour chacun).
 - **Corruption `?` corrigée en base** : les mots contenant des accents étaient stockés avec des `?` littéraux (0x3F) — `classes.libelle` (1ère PEDAGOGIQUE), `menus.libelle` (Scolarité, Reçus, Échéanciers, Paramètres, Disponibilités, Générer), `produits.unite` (pièce). Vérifié par scan binaire (`LIKE '%?%' COLLATE utf8mb4_bin`) sur les 154 colonnes texte.
 - **`evaluations.sur` → `evaluations.ponderee_sur`** (renommée) : barème de chaque évaluation (défaut 20). Grille de notes, fiches et bulletins utilisent `note / ponderee_sur` pour normaliser.
@@ -275,5 +316,23 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 - **Bulletins — correction mapping types** : `Bulletins_model::_get_notes_aggregated` utilisait des types inexistants (`'composition'`, `'tp'`) → les notes compétence/ressource n'étaient jamais comptées (RESS = 0). Corrigé : **TJ = interrogation + devoir, COMP = competance, RESS = ressource** (même mapping que la fiche élève). Les notes de type `examen` ne sont pas affichées (ni fiche ni bulletin).
 - **Bulletins — robustesse agrégation notes** : `Bulletins_model::_get_notes_aggregated` a été simplifié pour sommer **toutes les notes** de la table `notes` par période pour chaque matière (sans filtre strict sur le type d'évaluation), garantissant que toute note enregistrée s'affiche bien sur le bulletin.
 - **Emploi du temps (Horaires)** : les jours de la semaine s'affichent de gauche à droite dans l'ordre chronologique (**Lundi, Mardi, Mercredi...**). La pause s'insère automatiquement au milieu.
-- Dump `DB/vip_school.sql` régénéré après chaque changement de base.
+
+### Session bulletins — correction critique et dynamisme
+
+- **Bug critique corrigé : notes à 0 dans le frontend** — `_get_notes_aggregated()` utilisait `implode(', ', $cases)` qui **supprimait les aliases SQL** (`AS note_tj_X`), les colonnes retourées par MySQL avaient des noms d'expression SQL au lieu de `note_tj_X` → tous les `isset($r['note_tj_X'])` retournaient `false` → fallback à 0. Corrigé en ajoutant `AS \`{$alias}\`` à chaque expression CASE WHEN. Le print (`export_bulletins_classe`) n'était pas affecté car il utilise des aliases hardcodés (`AS note_t1_tj`).
+- **Détection dynamique des catégories d'évaluation** — `_detecter_categories($id_classe)` interroge la table `evaluations` pour déterminer les types réellement présents (`competance`, `ressource`, `examen`). Trois modes d'affichage :
+  - **Mode B** (competance OU ressource présent) : TJ / COMP / RESS / TOT — TJ = interrogation + devoir uniquement, EX neutralisé (remis à 0).
+  - **Mode A** (examen présent, sans competance/ressource) : TJ / EX / TOT — COMP et RESS neutralisés.
+  - **Défaut** (ni competance, ni ressource, ni examen) : TJ / TOT — COMP, RESS et EX neutralisés.
+- **EX max = TJ max** : la règle `'ex' => $tj` dans `_get_maxima()` est conservée (l'utilisateur a confirmé).
+- **Neutralisation en cascade** : `get_bulletin_complet()` et `_build_result()` neutralisent les colonnes non utilisées selon le mode détecté (pour chaque matière, chaque période, et les maxima).
+- **Ordre de binding SQL corrigé** — dans `_get_notes_aggregated` et `export_bulletins_classe`, les placeholders de période viennent **AVANT** les IDs étudiants/matieres (pour éviter les erreurs de binding CI3 avec 35+ paramètres).
+- **Plafond validation corrigée** (4 contrôleurs : `Notes/Bulletins`, `Notes/Evaluations`, `Evaluations/Evaluations`) — vérification `note_max_matiere !== null && floatval(...) > 0` au lieu de simple `> 0`, pour éviter les erreurs sur les matières sans plafond défini.
+- **`examen_active` ajouté** aux réponses `api_fiche()` (Fiches.php) et `export_bulletins_classe()` (Bulletins.php) — renvoyé au frontend pour le mode d'affichage.
+- **Print view thead corrigé** — en-tête 3 lignes pour Mode B avec `rowspan=2` sur TJ/TOT, cellules COMP/RESS dans la bonne colonne sous EXAMEN, colonnes TOTAUX ANNUELS sur 2 lignes. Ligne Religion avec `$relComp`/`$relRess` pour Mode B.
+- **`$data['periodes']` ajouté** au contrôleur `export_bulletins_classe()` — correction de l'erreur `Undefined variable $periodes` dans `print_bulletins.php:56`.
+- **Ligne Sous-Tot supprimée** de `bulletins.php` — le bulletin passe directement de Matières à Conduite à Totaux.
+- **Select trimestre filtré par année active** — le contrôleur `Bulletins::index()` ne charge que les périodes de l'année active. Nouvel endpoint `api/bulletins/periodes/{id_annee}` permet de recharger les périodes dynamiquement au changement d'année (AJAX).
+- **Logging diagnostique ajouté** à `bulletins.php` (`openBulletinPeriode` et `renderBulletins`) — console.log détaillés avec try/catch, status HTTP, structure des données, pour faciliter le debug.
+- **Paramètres `ressources_active` et `competences_active` supprimés** de la table `parametres` et de la page Paramètres — les valeurs sont désormais gérées **uniquement par classe** dans la table `classes` (pas de paramètre global). Whitelist, UI et JS nettoyés. parametres = 41.
 - Dump `DB/vip_school.sql` régénéré après chaque changement de base.

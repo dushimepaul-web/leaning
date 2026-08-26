@@ -75,7 +75,7 @@
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Trimestre</label>
           <select class="form-control form-select" id="id_periode">
             <option value="all">Année complète</option>
-            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" data-annee="<?=$p['id_annee']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
+            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
           </select>
         </div>
         <div class="col" style="min-width:160px;">
@@ -147,17 +147,24 @@ document.addEventListener('click', function(e) {
   }
 });
 
-document.getElementById('id_annee').addEventListener('change', function() {
+document.getElementById('id_annee').addEventListener('change', async function() {
   const aid = this.value;
   const sel = document.getElementById('id_periode');
-  let ok = false;
-  Array.from(sel.options).forEach(function(opt) {
-    if (!opt.value) return;
-    const visible = opt.dataset.annee === aid;
-    opt.style.display = visible ? '' : 'none';
-    if (visible && opt.selected) ok = true;
-  });
-  if (!ok) sel.value = 'all';
+  try {
+    const resp = await fetch(API.base_url + 'api/bulletins/periodes/' + aid);
+    const r = await resp.json();
+    if (r.success && r.data) {
+      sel.innerHTML = '<option value="all">Année complète</option>';
+      r.data.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id_periode;
+        opt.textContent = p.libelle;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) {
+    console.error('[Periodes] Erreur chargement:', e);
+  }
 });
 
 function periodeSelectionnee() {
@@ -178,9 +185,46 @@ async function openBulletinPeriode(id,periodeId,periodeNom){
   document.getElementById('bulletinsList').innerHTML='<div class="text-center py-32"><div class="spinner-border text-primary-600"></div><p class="mt-8 text-secondary-light">Chargement des bulletins...</p></div>';
 
   const url=API.base_url+'api/bulletins/complet/'+id+'?periode='+periodeId+'&annee='+document.getElementById('id_annee').value+'&cumul=1';
-  const r=await fetch(url).then(r=>r.json());
-  if(!r.success){Swal.fire({icon:'error',text:r.message});return}
-  renderBulletins(r.data,periodeNom,periodeId);
+  console.log('[Bulletins] URL appelée:', url);
+  try {
+    const resp = await fetch(url);
+    console.log('[Bulletins] HTTP status:', resp.status, resp.statusText);
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('[Bulletins] Réponse HTTP error:', errText.substring(0, 500));
+      document.getElementById('bulletinsList').innerHTML='<div class="text-center py-32 text-danger">Erreur HTTP '+resp.status+' — '+resp.statusText+'</div>';
+      return;
+    }
+    const r = await resp.json();
+    console.log('[Bulletins] JSON reçu, success:', r.success, 'keys:', Object.keys(r));
+    if (r.data) {
+      console.log('[Bulletins] data keys:', Object.keys(r.data));
+      console.log('[Bulletins] eleves:', r.data.eleves ? r.data.eleves.length : 'MISSING');
+      console.log('[Bulletins] matieres:', r.data.matieres ? r.data.matieres.length : 'MISSING');
+      console.log('[Bulletins] periodes:', r.data.periodes ? r.data.periodes.length : 'MISSING');
+      console.log('[Bulletins] maxima:', r.data.maxima ? Object.keys(r.data.maxima).length + ' keys' : 'MISSING');
+      console.log('[Bulletins] competences_active:', r.data.competences_active);
+      console.log('[Bulletins] ressources_active:', r.data.ressources_active);
+      if (r.data.eleves && r.data.eleves[0]) {
+        const el0 = r.data.eleves[0];
+        console.log('[Bulletins] premier élève:', el0.fullname, 'matieres:', el0.matieres ? el0.matieres.length : 'MISSING');
+        if (el0.matieres && el0.matieres[0]) {
+          const m0 = el0.matieres[0];
+          console.log('[Bulletins] première matière:', m0.libelle, 'id_matiere:', m0.id_matiere, 'periodes keys:', m0.periodes ? Object.keys(m0.periodes) : 'MISSING');
+          if (m0.periodes) {
+            const k = Object.keys(m0.periodes)[0];
+            console.log('[Bulletins] periodes['+k+']:', JSON.stringify(m0.periodes[k]));
+          }
+        }
+      }
+    }
+    if(!r.success){Swal.fire({icon:'error',text:r.message});return}
+    renderBulletins(r.data,periodeNom,periodeId);
+    console.log('[Bulletins] renderBulletins terminé OK');
+  } catch(e) {
+    console.error('[Bulletins] EXCEPTION:', e.message, e.stack);
+    document.getElementById('bulletinsList').innerHTML='<div class="text-center py-32 text-danger">Erreur JS: '+e.message+'</div>';
+  }
 }
 
 function backToClasses(){gClasseId=null;document.getElementById('bulletinsCard').style.display='none'}
@@ -194,6 +238,7 @@ async function genererBulletinsClasse(){
 }
 
 function renderBulletins(data,periodeNom,periodeId){
+  console.log('[Render] Début renderBulletins, periodeNom:', periodeNom, 'periodeId:', periodeId);
   const periodes=data.periodes||[];
   const matieres=data.matieres||[];
   const maxima=data.maxima||{};
@@ -202,10 +247,10 @@ function renderBulletins(data,periodeNom,periodeId){
   const classeNom=data.classe||'';
   const ressActive = (data.ressources_active===undefined ? 1 : parseInt(data.ressources_active)) !== 0;
   const compActive = (data.competences_active===undefined ? 1 : parseInt(data.competences_active)) !== 0;
-  const bothActive = ressActive && compActive;
-  const col2 = bothActive ? 'RESS' : 'EX';
-  const col3 = bothActive ? 'COMP' : 'EX';
-  const CONDUITE_DEFAUT=60, relTj=10, relEx=10, relTot=20;
+  const examenActive = (data.examen_active===undefined ? 0 : parseInt(data.examen_active)) !== 0;
+  const modeB = ressActive || compActive;
+  const modeA = examenActive && !modeB;
+  const CONDUITE_DEFAUT=60, relTj=15, relEx=15, relComp=0, relRess=15, relTot=30;
   const pids=periodes.map(p=>p.id_periode);
 
   // Cumul : trimestre choisi = cumul depuis le 1er trimestre ; 'all' = bulletin complet
@@ -219,29 +264,29 @@ function renderBulletins(data,periodeNom,periodeId){
   function fmtPct(num,den){return den>0?(num/den*100).toFixed(2)+'%':'-'}
   function matEl(el,mid){return el.matieres.find(m=>m.id_matiere==mid)||{periodes:{},annuel:{note:0,max:0,pct:0}};}
   function cumMax(mid,i){
-    const t={tj:0,comp:0,ress:0,tot:0};
+    const t={tj:0,comp:0,ress:0,ex:0,tot:0};
     for(let k=0;k<=i;k++){
       const mm=maxima[mid]&&maxima[mid][pids[k]];
-      if(mm){t.tj+=mm.tj||0;t.comp+=mm.comp||0;t.ress+=mm.ress||0;}
+      if(mm){t.tj+=mm.tj||0;t.comp+=mm.comp||0;t.ress+=mm.ress||0;t.ex+=mm.ex||0;}
     }
-    t.tot=t.tj+t.comp+t.ress;
+    t.tot=t.tj+t.comp+t.ress+t.ex;
     return t;
   }
   function midMax(mid,i){
     const mm=maxima[mid]&&maxima[mid][pids[i]];
-    return mm?{tj:mm.tj||0,comp:mm.comp||0,ress:mm.ress||0,tot:(mm.tj||0)+(mm.comp||0)+(mm.ress||0)}:{tj:0,comp:0,ress:0,tot:0};
+    return mm?{tj:mm.tj||0,comp:mm.comp||0,ress:mm.ress||0,ex:mm.ex||0,tot:(mm.tj||0)+(mm.comp||0)+(mm.ress||0)+(mm.ex||0)}:{tj:0,comp:0,ress:0,ex:0,tot:0};
   }
   function maxBlock(mid){return cumulMode?cumMax(mid,selIdx):midMax(mid,0);}
   function noteCol(el,mid,i){
     const me=matEl(el,mid);
-    const t={tj:0,comp:0,ress:0,tot:0};
+    const t={tj:0,comp:0,ress:0,ex:0,tot:0};
     if(cumulMode){
-      for(let k=0;k<=i;k++){const per=me.periodes[pids[k]]||{tj:0,comp:0,ress:0};t.tj+=per.tj||0;t.comp+=per.comp||0;t.ress+=per.ress||0;}
+      for(let k=0;k<=i;k++){const per=me.periodes[pids[k]]||{tj:0,comp:0,ress:0,ex:0};t.tj+=per.tj||0;t.comp+=per.comp||0;t.ress+=per.ress||0;t.ex+=per.ex||0;}
     }else{
-      const per=me.periodes[pids[i]]||{tj:0,comp:0,ress:0};
-      t.tj=per.tj||0;t.comp=per.comp||0;t.ress=per.ress||0;
+      const per=me.periodes[pids[i]]||{tj:0,comp:0,ress:0,ex:0};
+      t.tj=per.tj||0;t.comp=per.comp||0;t.ress=per.ress||0;t.ex=per.ex||0;
     }
-    t.tot=t.tj+t.comp+t.ress;
+    t.tot=t.tj+t.comp+t.ress+t.ex;
     return t;
   }
   function matAnn(el,mid){
@@ -268,11 +313,12 @@ function renderBulletins(data,periodeNom,periodeId){
   }
   function colBlank(i){return cumulMode&&i>selIdx;}
 
-  const colSpan = bothActive ? 4 : 3;
-  const subHead = bothActive ? '<th>TJ</th><th>COMP</th><th>RESS</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
-  function cells(t){ return bothActive
+  const colSpan = modeB ? 4 : 3;
+  const subHead = modeB ? '<th>TJ</th><th>COMP</th><th>RESS</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+  const col_span = colSpan;
+  function cells(t){ return modeB
     ? [nf(t.tj), nf(t.comp), nf(t.ress), `<strong>${nf(t.tot)}</strong>`]
-    : [nf(t.tj), nf(t.comp + t.ress), `<strong>${nf(t.tot)}</strong>`]; }
+    : [nf(t.tj), nf(t.ex), `<strong>${nf(t.tot)}</strong>`]; }
 
   let html='';
   data.eleves.forEach((el,idx)=>{
@@ -305,7 +351,7 @@ function renderBulletins(data,periodeNom,periodeId){
       <div class="bul-body">
         <table>
           <thead>
-            ${bothActive ? `
+            ${modeB ? `
             <tr>
               <th class="branches-header" rowspan="3"></th>
               <th colspan="4">MAXIMA</th>
@@ -313,9 +359,11 @@ function renderBulletins(data,periodeNom,periodeId){
               <th colspan="3" rowspan="2">TOTAUX ANNUELS</th>
             </tr>
             <tr>
+              <th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
               ${periodes.map(()=>`<th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>`).join('')}
             </tr>
             <tr>
+              <th>COMP</th><th>RESS</th>
               ${periodes.map(()=>`<th>COMP</th><th>RESS</th>`).join('')}
               <th>MAX</th><th>TOT</th><th>%</th>
             </tr>` : `
@@ -333,39 +381,107 @@ function renderBulletins(data,periodeNom,periodeId){
           </thead>
           <tbody>`;
 
-    // ---- A: Matières ----
-    matieres.forEach((mat,mi)=>{
-      const mid=mat.id_matiere;
-      const mb=maxBlock(mid);
-      const aa=matAnn(el,mid);
+    // Séparer les matières en Cours Généraux & Langues (est_general == 1) et Cours Techniques (est_general == 0)
+    const generaux = matieres.filter(m => parseInt(m.est_general) === 1);
+    const techniques = matieres.filter(m => parseInt(m.est_general) !== 1);
 
-      html+=`<tr>
-        <td class="branches matiere">${mat.libelle}</td>
-        ${cells(mb).map(c=>`<td class="num">${c}</td>`).join('')}`;
+    function renderMatiereGroup(list) {
+      let groupHtml = '';
+      list.forEach((mat) => {
+        const mid=mat.id_matiere;
+        const mb=maxBlock(mid);
+        const aa=matAnn(el,mid);
 
-      periodes.forEach((p,i)=>{
-        if(colBlank(i)){html+=`<td class="num">-</td>`.repeat(colSpan);return;}
-        const nt=noteCol(el,mid,i);
-        html+=cells(nt).map(c=>`<td class="num">${c}</td>`).join('');
+        groupHtml+=`<tr>
+          <td class="branches matiere">${mat.libelle}</td>
+          ${cells(mb).map(c=>`<td class="num">${c}</td>`).join('')}`;
+
+        periodes.forEach((p,i)=>{
+          if(colBlank(i)){groupHtml+=`<td class="num">-</td>`.repeat(colSpan);return;}
+          const nt=noteCol(el,mid,i);
+          groupHtml+=cells(nt).map(c=>`<td class="num">${c}</td>`).join('');
+        });
+
+        groupHtml+=`<td class="num"><strong>${nf(aa.max)}</strong></td>
+          <td class="num"><strong>${nf(aa.note)}</strong></td>
+          <td class="num"><strong>${fmtPct(aa.note,aa.max)}</strong></td>
+        </tr>`;
       });
+      return groupHtml;
+    }
 
-      html+=`<td class="num"><strong>${nf(aa.max)}</strong></td>
-        <td class="num"><strong>${nf(aa.note)}</strong></td>
-        <td class="num"><strong>${fmtPct(aa.note,aa.max)}</strong></td>
-      </tr>`;
-    });
+    // Calculs groupes pour sous-totaux
+    function groupTotals(list, i) {
+      let tMax = {tj:0, comp:0, ress:0, ex:0, tot:0};
+      let tNote = {tj:0, comp:0, ress:0, ex:0, tot:0};
+      list.forEach(mat => {
+        const mb = maxBlock(mat.id_matiere);
+        tMax.tj += mb.tj; tMax.comp += mb.comp; tMax.ress += mb.ress; tMax.ex += mb.ex; tMax.tot += mb.tot;
+        const nt = noteCol(el, mat.id_matiere, i);
+        tNote.tj += nt.tj; tNote.comp += nt.comp; tNote.ress += nt.ress; tNote.ex += nt.ex; tNote.tot += nt.tot;
+      });
+      return {max: tMax, note: tNote};
+    }
 
-    // ---- B: Sous-Tot ----
-    html+=`<tr>
-      <td class="branches">Sous-Tot</td>
-      ${'<td></td>'.repeat(colSpan)}`;
+    function groupAnn(list) {
+      let aMax = 0, aNote = 0;
+      list.forEach(mat => {
+        const aa = matAnn(el, mat.id_matiere);
+        aMax += aa.max; aNote += aa.note;
+      });
+      return {max: aMax, note: aNote};
+    }
+
+    // 1. COURS GENERAUX ET LANGUES
+    html += `<tr><td class="branches" style="background:#e8e8e8; font-weight:bold;" colspan="${colSpan + periodes.length * colSpan + 3}">COURS GENERAUX ET LANGUES</td></tr>`;
+    html += renderMatiereGroup(generaux);
+
+    // SOUS-TOT1
+    const genAnn = groupAnn(generaux);
+    html += `<tr><td class="branches" style="font-weight:bold;">SOUS-TOT1</td>`;
+    const genMb0 = groupTotals(generaux, 0);
+    if(modeB) {
+      html += `<td class="num"><strong>${nf(genMb0.max.tj)}</strong></td><td class="num"><strong>${nf(genMb0.max.comp)}</strong></td><td class="num"><strong>${nf(genMb0.max.ress)}</strong></td><td class="num"><strong>${nf(genMb0.max.tot)}</strong></td>`;
+    } else {
+      html += `<td class="num"><strong>${nf(genMb0.max.tj)}</strong></td><td class="num"><strong>${nf(genMb0.max.ex)}</strong></td><td class="num"><strong>${nf(genMb0.max.tot)}</strong></td>`;
+    }
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">-</td>`;return;}
-      html+=`<td></td>`.repeat(colSpan-1)+`<td class="num"><strong>${nf(stCol(el,i))}</strong></td>`;
+      if(colBlank(i)){
+        html += `<td class="num">-</td>`.repeat(colSpan);
+        return;
+      }
+      const gt = groupTotals(generaux, i);
+      html += cells(gt.note).map(c=>`<td class="num">${c}</td>`).join('');
     });
-    html+=`<td class="num"><strong>${nf(aAnnMax)}</strong></td>
-      <td class="num"><strong>${nf(aAnnNote)}</strong></td>
-      <td class="num"><strong>${fmtPct(aAnnNote,aAnnMax)}</strong></td>
+    html += `<td class="num"><strong>${nf(genAnn.max)}</strong></td>
+      <td class="num"><strong>${nf(genAnn.note)}</strong></td>
+      <td class="num"><strong>${fmtPct(genAnn.note,genAnn.max)}</strong></td>
+    </tr>`;
+
+    // 2. COURS TECHNIQUE
+    html += `<tr><td class="branches" style="background:#e8e8e8; font-weight:bold;" colspan="${colSpan + periodes.length * colSpan + 3}">COURS TECHNIQUE</td></tr>`;
+    html += renderMatiereGroup(techniques);
+
+    // SOUS-TOT2
+    const techAnn = groupAnn(techniques);
+    html += `<tr><td class="branches" style="font-weight:bold;">SOUS-TOT2</td>`;
+    const techMb0 = groupTotals(techniques, 0);
+    if(modeB) {
+      html += `<td class="num"><strong>${nf(techMb0.max.tj)}</strong></td><td class="num"><strong>${nf(techMb0.max.comp)}</strong></td><td class="num"><strong>${nf(techMb0.max.ress)}</strong></td><td class="num"><strong>${nf(techMb0.max.tot)}</strong></td>`;
+    } else {
+      html += `<td class="num"><strong>${nf(techMb0.max.tj)}</strong></td><td class="num"><strong>${nf(techMb0.max.ex)}</strong></td><td class="num"><strong>${nf(techMb0.max.tot)}</strong></td>`;
+    }
+    periodes.forEach((p,i)=>{
+      if(colBlank(i)){
+        html += `<td class="num">-</td>`.repeat(colSpan);
+        return;
+      }
+      const gt = groupTotals(techniques, i);
+      html += cells(gt.note).map(c=>`<td class="num">${c}</td>`).join('');
+    });
+    html += `<td class="num"><strong>${nf(techAnn.max)}</strong></td>
+      <td class="num"><strong>${nf(techAnn.note)}</strong></td>
+      <td class="num"><strong>${fmtPct(techAnn.note,techAnn.max)}</strong></td>
     </tr>`;
 
     // ---- C: Conduite ----
@@ -382,13 +498,31 @@ function renderBulletins(data,periodeNom,periodeId){
       <td>${fmtPct(cdTot,cdMax)}</td>
     </tr>`;
 
-    // ---- D: Totaux ----
+    // ---- Total ----
+    const totalMax0 = {
+      tj: genMb0.max.tj + techMb0.max.tj,
+      comp: genMb0.max.comp + techMb0.max.comp,
+      ress: genMb0.max.ress + techMb0.max.ress,
+      ex: genMb0.max.ex + techMb0.max.ex,
+      tot: genMb0.max.tot + techMb0.max.tot
+    };
     html+=`<tr>
-      <td class="branches">Totaux</td>
-      ${'<td></td>'.repeat(colSpan)}`;
+      <td class="branches" style="font-weight:bold;">Total</td>`;
+    if(modeB) {
+      html += `<td class="num"><strong>${nf(totalMax0.tj)}</strong></td><td class="num"><strong>${nf(totalMax0.comp)}</strong></td><td class="num"><strong>${nf(totalMax0.ress)}</strong></td><td class="num"><strong>${nf(totalMax0.tot)}</strong></td>`;
+    } else {
+      html += `<td class="num"><strong>${nf(totalMax0.tj)}</strong></td><td class="num"><strong>${nf(totalMax0.ex)}</strong></td><td class="num"><strong>${nf(totalMax0.tot)}</strong></td>`;
+    }
     periodes.forEach((p,i)=>{
       if(colBlank(i)){html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">-</td>`;return;}
-      html+=`<td></td>`.repeat(colSpan-1)+`<td class="num"><strong>${nf(stCol(el,i)+cdCol(el,i))}</strong></td>`;
+      const ggt = {
+        tj: groupTotals(generaux, i).note.tj + groupTotals(techniques, i).note.tj,
+        comp: groupTotals(generaux, i).note.comp + groupTotals(techniques, i).note.comp,
+        ress: groupTotals(generaux, i).note.ress + groupTotals(techniques, i).note.ress,
+        ex: groupTotals(generaux, i).note.ex + groupTotals(techniques, i).note.ex,
+        tot: groupTotals(generaux, i).note.tot + groupTotals(techniques, i).note.tot + cdCol(el, i)
+      };
+      html+=cells(ggt).map(c=>`<td class="num">${c}</td>`).join('');
     });
     html+=`<td class="num"><strong>${nf(aAnnMax+cdMax)}</strong></td>
       <td class="num"><strong>${nf(aAnnNote+cdTot)}</strong></td>
@@ -397,55 +531,127 @@ function renderBulletins(data,periodeNom,periodeId){
 
     // ---- E: Pourcentage ----
     html+=`<tr>
-      <td class="branches">Pourcentage</td>
-      ${'<td></td>'.repeat(colSpan)}`;
-    periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan);return;}
-      html+=`<td></td>`.repeat(colSpan);
-    });
-    html+=`<td></td><td></td><td></td>
-    </tr>`;
+      <td class="branches">Pourcentage</td>`;
+    
+    // Maxima colonnes initiales (période 1 ou cumul)
+    if(modeB) {
+      html += `<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>`;
+    } else {
+      html += `<td class="num"></td><td class="num"></td><td class="num"></td>`;
+    }
 
-    // ---- E2: Mention (dynamique depuis Paramètres) ----
-    const mentionLabel = el.mention || '—';
-    html+=`<tr>
-      <td class="branches">Mention</td>
-      ${'<td></td>'.repeat(colSpan)}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan);return;}
-      html+=`<td></td>`.repeat(colSpan);
+      if(colBlank(i)){
+        html+=`<td class="num">-</td>`.repeat(colSpan);
+        return;
+      }
+      const pTotNote = stCol(el, i) + cdCol(el, i);
+      let pTotMax = 0;
+      matieres.forEach(mat => {
+        const singleMm = midMax(mat.id_matiere, i);
+        pTotMax += singleMm.tot;
+      });
+      pTotMax += CONDUITE_DEFAUT;
+      
+      const pPct = pTotMax > 0 ? (pTotNote / pTotMax * 100).toFixed(2) + '%' : '-';
+      
+      if(modeB) {
+        html += `<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"><strong>${pPct}</strong></td>`;
+      } else {
+        html += `<td class="num"></td><td class="num"></td><td class="num"><strong>${pPct}</strong></td>`;
+      }
     });
-    html+=`<td></td><td></td><td class="num"><strong>${mentionLabel}</strong></td>
+
+    const totalAnnuelsMax = aAnnMax + (CONDUITE_DEFAUT * periodes.length);
+    const totalAnnuelsNote = aAnnNote + cdTot;
+    const annPct = totalAnnuelsMax > 0 ? (totalAnnuelsNote / totalAnnuelsMax * 100).toFixed(2) + '%' : '-';
+
+    html+=`<td class="num"></td>
+      <td class="num"></td>
+      <td class="num"><strong>${annPct}</strong></td>
     </tr>`;
 
     // ---- F: Place ----
     const placeVal = el.rang > 0 ? el.rang + 'e' : '—';
     html+=`<tr>
       <td class="branches">Place</td>
-      ${'<td></td>'.repeat(colSpan)}`;
+      <td class="num gris"></td><td class="num gris"></td><td class="num gris"></td>`;
+    
+    if(modeB) {
+      html += `<td class="num gris"></td>`;
+    }
+
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=`<td></td>`.repeat(colSpan);return;}
-      html+=`<td></td>`.repeat(colSpan);
+      if(colBlank(i)){
+        html+=`<td class="num gris">-</td>`.repeat(colSpan);
+        return;
+      }
+      // Calculer le rang de l'élève pour la période i spécifique
+      const pId = p.id_periode;
+      let scoresP = [];
+      data.eleves.forEach(otherEl => {
+        let oNote = 0;
+        matieres.forEach(mat => {
+          const mid = mat.id_matiere;
+          let me = null;
+          otherEl.matieres.forEach(m_item => { if(m_item.id_matiere == mid) me = m_item; });
+          if(me && me.periodes[pId]) {
+            const per = me.periodes[pId];
+            oNote += (per.tj||0) + (per.comp||0) + (per.ress||0) + (per.ex||0);
+          }
+        });
+        const oCd = (otherEl.points_conduite && otherEl.points_conduite[pId]) ? otherEl.points_conduite[pId].points : 60;
+        oNote += oCd;
+        
+        let oMax = 0;
+        matieres.forEach(mat => {
+          const mx = maxima[mat.id_matiere] && maxima[mat.id_matiere][pId] ? maxima[mat.id_matiere][pId] : {tj:0,comp:0,ress:0,ex:0};
+          oMax += (mx.tj||0) + (mx.comp||0) + (mx.ress||0) + (mx.ex||0);
+        });
+        oMax += 60;
+        const oPct = oMax > 0 ? (oNote / oMax * 100) : 0;
+        scoresP.push({id: otherEl.id_etudiant, pct: oPct});
+      });
+
+      scoresP.sort((a,b)=>b.pct - a.pct);
+      let r = 1, prevPct = -1, myRank = '-';
+      scoresP.forEach((s, idx) => {
+        if(prevPct >= 0 && s.pct < prevPct) r = idx + 1;
+        if(s.id == el.id_etudiant) { myRank = (s.pct > 0) ? r + 'e' : '—'; }
+        prevPct = s.pct;
+      });
+
+      if(modeB) {
+        html += `<td class="num gris"></td><td class="num gris"></td><td class="num gris"></td><td class="num gris"><strong>${myRank}</strong></td>`;
+      } else {
+        html += `<td class="num gris"></td><td class="num gris"></td><td class="num gris"><strong>${myRank}</strong></td>`;
+      }
     });
-    html+=`<td></td><td></td><td class="num"><strong>${placeVal}</strong></td>
+
+    html+=`<td class="num gris"></td>
+      <td class="num gris"></td>
+      <td class="num gris"><strong>${el.rang > 0 ? el.rang + 'e' : '—'}</strong></td>
     </tr>`;
 
     // ---- G: Religion ----
-    const relCells = (valTj,valEx,valTot)=>bothActive
-      ? `<td class="num">${valTj}</td><td class="num">${valEx}</td><td></td><td class="num">${valTot}</td>`
-      : `<td class="num">${valTj}</td><td class="num">${valEx}</td><td class="num">${valTot}</td>`;
-    const relBlank = ()=>bothActive
-      ? `<td class="num">-</td><td class="num">-</td><td></td><td class="num">-</td>`
+    const relMaxTotal = relMax;
+    const relPeriodCells = ()=>modeB
+      ? `<td class="num">${relTj}</td><td class="num">-</td><td class="num">${relRess}</td><td class="num">${relTot}</td>`
+      : `<td class="num">${relTj}</td><td class="num">-</td><td class="num">${relTot}</td>`;
+    const relBlankPeriod = ()=>modeB
+      ? `<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>`
       : `<td class="num">-</td><td class="num">-</td><td class="num">-</td>`;
+
     html+=`<tr>
       <td class="branches">Religion</td>
-      ${relCells(relTj,relEx,relTot)}`;
+      ${relPeriodCells()}`;
     periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=relBlank();return;}
-      html+=relCells(relTj,relEx,relTot);
+      if(colBlank(i)){html+=relBlankPeriod();return;}
+      html+=relPeriodCells();
     });
-    html+=`<td class="num"><strong>${relMax}</strong></td>
-      <td></td><td></td>
+    html+=`<td class="num"><strong>${relMaxTotal}</strong></td>
+      <td class="num"><strong>-</strong></td>
+      <td></td>
     </tr>`;
 
     // ---- H: Signatures (2 rows) ----
@@ -472,6 +678,6 @@ function renderBulletins(data,periodeNom,periodeId){
   });
 
   document.getElementById('bulletinsList').innerHTML=html||'<div class="text-center py-32 text-secondary-light">Aucun élève trouvé</div>';
+  console.log('[Render] HTML généré, longueur:', html.length, 'chars');
 }
 </script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
