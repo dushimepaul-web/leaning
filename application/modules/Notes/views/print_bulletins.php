@@ -8,24 +8,29 @@ function nf2($v){return $v>0?number_format($v,2):'-';}
 <meta charset="utf-8">
 <title>Bulletins - <?= htmlspecialchars($classe_nom) ?></title>
 <style>
-  body { font-family: Arial, Calibri, sans-serif; font-size: 11pt; color: #000; margin: 0; padding: 20px; background: #e5e5e5; }
-  .bulletin-page { background: #fff; width: 297mm; min-height: 210mm; margin: 0 auto 30px auto; padding: 10mm 8mm; box-shadow: 0 4px 12px rgba(0,0,0,0.15); page-break-after: always; box-sizing: border-box; }
-  .h-row { display: flex; justify-content: space-between; font-size: 12pt; font-weight: 700; line-height: 1.7; padding: 0 2px; }
+  body { font-family: Arial, Calibri, sans-serif; font-size: 11pt; color: #000; margin: 0; padding: 10px; background: #e5e5e5; }
+  table.bul-table td, table.bul-table th { font-family: 'Bahnschrift', sans-serif; font-size: 8.5pt; font-weight: 600; }
+  .bulletin-page { background: #fff; width: 297mm; min-height: 210mm; max-height: 210mm; overflow: hidden; margin: 0 auto 20px auto; padding: 5mm 6mm; box-shadow: 0 4px 12px rgba(0,0,0,0.15); page-break-after: always; box-sizing: border-box; }
+  .h-row { display: flex; justify-content: space-between; font-size: 11pt; font-weight: 700; line-height: 1.5; padding: 0 2px; }
   .h-row .h-right { text-align: right; }
-  table.bul-table { border-collapse: collapse; width: 100%; font-size: 8.5pt; margin-top: 8px; table-layout: fixed; }
-  table.bul-table th, table.bul-table td { border: 1px solid #000; padding: 3px 4px; text-align: center; font-weight: 400; }
+  table.bul-table { border-collapse: collapse; width: 100%; font-size: 8pt; margin-top: 4px; table-layout: fixed; }
+  table.bul-table th, table.bul-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; font-weight: 400; }
   table.bul-table th.sep-left, table.bul-table td.sep-left { border-left: 2.5px solid #000; }
-  table.bul-table td.fail { color: #dc2626; text-decoration: underline; }
-  table.bul-table thead th { background: #D9D9D9; font-weight: 700; font-size: 8pt; }
-  table.bul-table thead th.branches-header { background: #fff; width: 200px; min-width: 200px; }
-  .text-left { text-align: left !important; padding-left: 6px !important; }
-  .branches { text-align: left; font-weight: 700; padding-left: 6px; }
-  .matiere { color: #000; font-weight: 400; }
+  table.bul-table td.fail { color: #dc2626 !important; text-decoration: underline !important; font-weight: 700 !important; background: #fef2f2 !important; }
+  table.bul-table thead th { background: #D9D9D9; font-weight: 700; font-size: 7pt; }
+  table.bul-table thead th.branches-header { background: #fff; width: 170px; min-width: 170px; font-size: 10pt; font-weight: 700; letter-spacing: 1px; }
+  .text-left { text-align: left !important; padding-left: 4px !important; }
+  .branches { text-align: left; font-weight: 700; padding-left: 4px; font-size: 7.5pt; }
+  table.bul-table td.maxi, table.bul-table td.maxi strong { font-weight: 700; }
+  .matiere { color: #000; font-weight: 400; font-size: 7.5pt; }
   .gris { background: #D9D9D9; }
   .no-print { display: none; }
+  .bulletin-page:last-child { page-break-after: auto; }
+  @page { size: A4 landscape; margin: 3mm; }
   @media print {
     body { background: #fff; padding: 0; }
-    .bulletin-page { box-shadow: none; margin: 0; width: 100%; page-break-after: always; }
+    .bulletin-page { box-shadow: none; margin: 0; width: 100%; page-break-after: always; page-break-inside: avoid; }
+    .bulletin-page:last-child { page-break-after: auto; }
   }
 </style>
 </head>
@@ -84,7 +89,7 @@ foreach ($eleves as $eleve_id => $eleve):
     <thead>
       <?php if ($mode_b): ?>
       <tr>
-        <th class="branches-header" rowspan="3"></th>
+        <th class="branches-header" rowspan="3">BLANCHES</th>
         <th colspan="4">MAXIMA</th>
         <th class="sep-left" colspan="4">1er TRIMESTRE</th>
         <th class="sep-left" colspan="4">2e TRIMESTRE</th>
@@ -106,7 +111,7 @@ foreach ($eleves as $eleve_id => $eleve):
       </tr>
       <?php else: ?>
       <tr>
-        <th class="branches-header" rowspan="2"></th>
+        <th class="branches-header" rowspan="2">BLANCHES</th>
         <th colspan="<?= $col_span ?>">MAXIMA</th>
         <th class="sep-left" colspan="<?= $col_span ?>">1er TRIMESTRE</th>
         <th class="sep-left" colspan="<?= $col_span ?>">2e TRIMESTRE</th>
@@ -141,7 +146,10 @@ $tech_per_max = [1 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 2 => ['tj'
 $gen_per_tot = [1 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 2 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 3 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0]];
 $tech_per_tot = [1 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 2 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 3 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0]];
 
-$fc = function($note, $max) { return ($max > 0 && $note > 0 && $note < $max / 2) ? ' fail' : ''; };
+$fc = function($classes, $note, $max) {
+    $extra = ($max > 0 && $note > 0 && $note < $max / 2) ? ' fail' : '';
+    return ' class="' . trim($classes . $extra) . '"';
+};
 
 $render_matiere_rows = function($matiere_list, $stud_notes, $mode_b, $pct_comp, $pct_ress, $facteur_points, &$group_per_tot, &$group_per_max, &$group_ann_max, &$group_ann_note) use ($col_span, $mode_a, $fc) {
     foreach ($matiere_list as $subj):
@@ -212,51 +220,51 @@ $render_matiere_rows = function($matiere_list, $stud_notes, $mode_b, $pct_comp, 
       <tr>
         <td class="text-left matiere"><?= htmlspecialchars($subj['name']) ?></td>
         <?php if ($mode_b): ?>
-        <td><?= nf($max_tj) ?></td>
-        <td><?= nf($max_comp) ?></td>
-        <td><?= nf($max_ress) ?></td>
-        <td><strong><?= nf($max_tot) ?></strong></td>
+        <td class="maxi"><?= nf($max_tj) ?></td>
+        <td class="maxi"><?= nf($max_comp) ?></td>
+        <td class="maxi"><?= nf($max_ress) ?></td>
+        <td class="maxi"><strong><?= nf($max_tot) ?></strong></td>
         <?php else: ?>
-        <td><?= nf($max_tj) ?></td>
-        <td><?= nf($max_ex) ?></td>
-        <td><strong><?= nf($max_tot) ?></strong></td>
+        <td class="maxi"><?= nf($max_tj) ?></td>
+        <td class="maxi"><?= nf($max_ex) ?></td>
+        <td class="maxi"><strong><?= nf($max_tot) ?></strong></td>
         <?php endif; ?>
 
         <?php if ($mode_b): ?>
-        <td class="sep-left"<?= $fc($t1_tj, $max_tj) ?>><?= nf($t1_tj) ?></td>
-        <td<?= $fc($t1_comp, $max_comp) ?>><?= nf($t1_comp) ?></td>
-        <td<?= $fc($t1_ress, $max_ress) ?>><?= nf($t1_ress) ?></td>
-        <td<?= $fc($t1_tot, $max_tot) ?>><strong><?= nf($t1_tot) ?></strong></td>
+        <td class="sep-left"><?= nf($t1_tj) ?></td>
+        <td><?= nf($t1_comp) ?></td>
+        <td><?= nf($t1_ress) ?></td>
+        <td<?= $fc('', $t1_tot, $max_tot) ?>><strong><?= nf($t1_tot) ?></strong></td>
         <?php else: ?>
-        <td class="sep-left"<?= $fc($t1_tj, $max_tj) ?>><?= nf($t1_tj) ?></td>
-        <td<?= $fc($t1_ex, $max_ex) ?>><?= nf($t1_ex) ?></td>
-        <td<?= $fc($t1_tot, $max_tot) ?>><strong><?= nf($t1_tot) ?></strong></td>
+        <td class="sep-left"><?= nf($t1_tj) ?></td>
+        <td><?= nf($t1_ex) ?></td>
+        <td<?= $fc('', $t1_tot, $max_tot) ?>><strong><?= nf($t1_tot) ?></strong></td>
         <?php endif; ?>
 
         <?php if ($mode_b): ?>
-        <td class="sep-left"<?= $fc($t2_tj, $max_tj) ?>><?= nf($t2_tj) ?></td>
-        <td<?= $fc($t2_comp, $max_comp) ?>><?= nf($t2_comp) ?></td>
-        <td<?= $fc($t2_ress, $max_ress) ?>><?= nf($t2_ress) ?></td>
-        <td<?= $fc($t2_tot, $max_tot) ?>><strong><?= nf($t2_tot) ?></strong></td>
+        <td class="sep-left"><?= nf($t2_tj) ?></td>
+        <td><?= nf($t2_comp) ?></td>
+        <td><?= nf($t2_ress) ?></td>
+        <td<?= $fc('', $t2_tot, $max_tot) ?>><strong><?= nf($t2_tot) ?></strong></td>
         <?php else: ?>
-        <td class="sep-left"<?= $fc($t2_tj, $max_tj) ?>><?= nf($t2_tj) ?></td>
-        <td<?= $fc($t2_ex, $max_ex) ?>><?= nf($t2_ex) ?></td>
-        <td<?= $fc($t2_tot, $max_tot) ?>><strong><?= nf($t2_tot) ?></strong></td>
+        <td class="sep-left"><?= nf($t2_tj) ?></td>
+        <td><?= nf($t2_ex) ?></td>
+        <td<?= $fc('', $t2_tot, $max_tot) ?>><strong><?= nf($t2_tot) ?></strong></td>
         <?php endif; ?>
 
         <?php if ($mode_b): ?>
-        <td class="sep-left"<?= $fc($t3_tj, $max_tj) ?>><?= nf($t3_tj) ?></td>
-        <td<?= $fc($t3_comp, $max_comp) ?>><?= nf($t3_comp) ?></td>
-        <td<?= $fc($t3_ress, $max_ress) ?>><?= nf($t3_ress) ?></td>
-        <td<?= $fc($t3_tot, $max_tot) ?>><strong><?= nf($t3_tot) ?></strong></td>
+        <td class="sep-left"><?= nf($t3_tj) ?></td>
+        <td><?= nf($t3_comp) ?></td>
+        <td><?= nf($t3_ress) ?></td>
+        <td<?= $fc('', $t3_tot, $max_tot) ?>><strong><?= nf($t3_tot) ?></strong></td>
         <?php else: ?>
-        <td class="sep-left"<?= $fc($t3_tj, $max_tj) ?>><?= nf($t3_tj) ?></td>
-        <td<?= $fc($t3_ex, $max_ex) ?>><?= nf($t3_ex) ?></td>
-        <td<?= $fc($t3_tot, $max_tot) ?>><strong><?= nf($t3_tot) ?></strong></td>
+        <td class="sep-left"><?= nf($t3_tj) ?></td>
+        <td><?= nf($t3_ex) ?></td>
+        <td<?= $fc('', $t3_tot, $max_tot) ?>><strong><?= nf($t3_tot) ?></strong></td>
         <?php endif; ?>
 
-        <td class="sep-left"<?= $fc($max_sub_annuel, $max_sub_annuel) ?>><strong><?= nf($max_sub_annuel) ?></strong></td>
-        <td<?= $fc($tot_sub_annuel, $max_sub_annuel) ?>><strong><?= nf($tot_sub_annuel) ?></strong></td>
+        <td class="sep-left maxi"><?= nf($max_sub_annuel) ?></td>
+        <td<?= $fc('', $tot_sub_annuel, $max_sub_annuel) ?>><strong><?= nf($tot_sub_annuel) ?></strong></td>
         <td><strong><?= $pct_sub ?>%</strong></td>
       </tr>
 <?php
@@ -283,9 +291,9 @@ if (!empty($generaux)) {
   $gen_ann_max_ex = $gen_per_max[1]['ex'];
   ?>
   <?php if ($mode_b): ?>
-  <td><?= nf($gen_ann_max_tj) ?></td><td><?= nf($gen_ann_max_comp) ?></td><td><?= nf($gen_ann_max_ress) ?></td><td><strong><?= nf($gen_ann_max) ?></strong></td>
+  <td class="maxi"><?= nf($gen_ann_max_tj) ?></td><td class="maxi"><?= nf($gen_ann_max_comp) ?></td><td class="maxi"><?= nf($gen_ann_max_ress) ?></td><td class="maxi"><strong><?= nf($gen_per_max[1]['tot']) ?></strong></td>
   <?php else: ?>
-  <td><?= nf($gen_ann_max_tj) ?></td><td><?= nf($gen_ann_max_ex) ?></td><td><strong><?= nf($gen_ann_max) ?></strong></td>
+  <td class="maxi"><?= nf($gen_ann_max_tj) ?></td><td class="maxi"><?= nf($gen_ann_max_ex) ?></td><td class="maxi"><strong><?= nf($gen_per_max[1]['tot']) ?></strong></td>
   <?php endif; ?>
   <?php foreach ([1, 2, 3] as $pn): ?>
   <?php if ($mode_b): ?>
@@ -294,7 +302,7 @@ if (!empty($generaux)) {
   <td><?= nf($gen_per_tot[$pn]['tj']) ?></td><td><?= nf($gen_per_tot[$pn]['ex']) ?></td><td><strong><?= nf($gen_per_tot[$pn]['tot']) ?></strong></td>
   <?php endif; ?>
   <?php endforeach; ?>
-  <td><strong><?= nf($gen_ann_max) ?></strong></td>
+  <td class="maxi"><strong><?= nf($gen_ann_max) ?></strong></td>
   <td><strong><?= nf($gen_ann_note) ?></strong></td>
   <td><strong><?= $gen_ann_max > 0 ? number_format($gen_ann_note / $gen_ann_max * 100, 2) : '-' ?>%</strong></td>
 </tr>
@@ -319,9 +327,9 @@ if (!empty($techniques)) {
   $tech_ann_max_ex = $tech_per_max[1]['ex'];
   ?>
   <?php if ($mode_b): ?>
-  <td><?= nf($tech_ann_max_tj) ?></td><td><?= nf($tech_ann_max_comp) ?></td><td><?= nf($tech_ann_max_ress) ?></td><td><strong><?= nf($tech_ann_max) ?></strong></td>
+  <td class="maxi"><?= nf($tech_ann_max_tj) ?></td><td class="maxi"><?= nf($tech_ann_max_comp) ?></td><td class="maxi"><?= nf($tech_ann_max_ress) ?></td><td class="maxi"><strong><?= nf($tech_per_max[1]['tot']) ?></strong></td>
   <?php else: ?>
-  <td><?= nf($tech_ann_max_tj) ?></td><td><?= nf($tech_ann_max_ex) ?></td><td><strong><?= nf($tech_ann_max) ?></strong></td>
+  <td class="maxi"><?= nf($tech_ann_max_tj) ?></td><td class="maxi"><?= nf($tech_ann_max_ex) ?></td><td class="maxi"><strong><?= nf($tech_per_max[1]['tot']) ?></strong></td>
   <?php endif; ?>
   <?php foreach ([1, 2, 3] as $pn): ?>
   <?php if ($mode_b): ?>
@@ -330,7 +338,7 @@ if (!empty($techniques)) {
   <td><?= nf($tech_per_tot[$pn]['tj']) ?></td><td><?= nf($tech_per_tot[$pn]['ex']) ?></td><td><strong><?= nf($tech_per_tot[$pn]['tot']) ?></strong></td>
   <?php endif; ?>
   <?php endforeach; ?>
-  <td><strong><?= nf($tech_ann_max) ?></strong></td>
+  <td class="maxi"><strong><?= nf($tech_ann_max) ?></strong></td>
   <td><strong><?= nf($tech_ann_note) ?></strong></td>
   <td><strong><?= $tech_ann_max > 0 ? number_format($tech_ann_note / $tech_ann_max * 100, 2) : '-' ?>%</strong></td>
 </tr>
@@ -350,12 +358,12 @@ $t3_max_cours = $gen_per_max[3]['tot'] + $tech_per_max[3]['tot'];
       <!-- C: Conduite -->
       <tr>
         <td class="text-left branches">Conduite</td>
-        <td class="gris"><?= $conduiteVal ?></td><?= str_repeat('<td></td>', $col_span-2) ?><td<?= $fc($conduiteVal, $conduiteVal) ?>><?= $conduiteVal ?></td>
-        <?= str_repeat('<td></td>', $col_span-1) ?><td<?= $fc($cd1, $conduiteVal) ?>><?= $cd1 ?></td>
-        <?= str_repeat('<td></td>', $col_span-1) ?><td<?= $fc($cd2, $conduiteVal) ?>><?= $cd2 ?></td>
-        <?= str_repeat('<td></td>', $col_span-1) ?><td<?= $fc($cd3, $conduiteVal) ?>><?= $cd3 ?></td>
+        <td class="gris maxi"><?= $conduiteVal ?></td><?= str_repeat('<td></td>', $col_span-2) ?><td><?= $conduiteVal ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd1 ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd2 ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd3 ?></td>
         <td><strong><?= $conduiteVal * $nbPeriodes ?></strong></td>
-        <td<?= $fc($cdAnn, $conduiteVal * $nbPeriodes) ?>><strong><?= $cdAnn ?></strong></td>
+        <td<?= $fc('', $cdAnn, $conduiteVal * $nbPeriodes) ?>><strong><?= $cdAnn ?></strong></td>
         <td><strong><?= $conduiteVal > 0 ? number_format($cdAnn / ($conduiteVal * $nbPeriodes) * 100, 2) : '-' ?>%</strong></td>
       </tr>
 
@@ -374,9 +382,9 @@ $t3_max_cours = $gen_per_max[3]['tot'] + $tech_per_max[3]['tot'];
       <tr>
         <td class="text-left branches" style="font-weight:bold;">Total</td>
         <?php if ($mode_b): ?>
-        <td><?= nf($t_ann_tj) ?></td><td><?= nf($t_ann_comp) ?></td><td><?= nf($t_ann_ress) ?></td><td><strong><?= nf($aAnnMax) ?></strong></td>
+        <td class="maxi"><?= nf($t_ann_tj) ?></td><td class="maxi"><?= nf($t_ann_comp) ?></td><td class="maxi"><?= nf($t_ann_ress) ?></td><td class="maxi"><strong><?= nf($t_ann_tj + $t_ann_comp + $t_ann_ress + $t_ann_ex + $conduiteVal) ?></strong></td>
         <?php else: ?>
-        <td><?= nf($t_ann_tj) ?></td><td><?= nf($t_ann_ex) ?></td><td><strong><?= nf($aAnnMax) ?></strong></td>
+        <td class="maxi"><?= nf($t_ann_tj) ?></td><td class="maxi"><?= nf($t_ann_ex) ?></td><td class="maxi"><strong><?= nf($t_ann_tj + $t_ann_ex + $conduiteVal) ?></strong></td>
         <?php endif; ?>
         <?php foreach ([1,2,3] as $pnum):
             $ptj = ($gen_per_tot[$pnum]['tj'] ?? 0) + ($tech_per_tot[$pnum]['tj'] ?? 0);
@@ -391,7 +399,7 @@ $t3_max_cours = $gen_per_max[3]['tot'] + $tech_per_max[3]['tot'];
         <td><?= nf($ptj) ?></td><td><?= nf($pex) ?></td><td><strong><?= nf($ptot) ?></strong></td>
         <?php endif; ?>
         <?php endforeach; ?>
-        <td><strong><?= nf($t_ann_tot) ?></strong></td>
+        <td class="maxi"><strong><?= nf($t_ann_tot) ?></strong></td>
         <td><strong><?= nf($aAnnNote+$cdAnn) ?></strong></td>
         <td><strong><?= $t_ann_tot>0?number_format(($aAnnNote+$cdAnn)/$t_ann_tot*100,2):'-' ?>%</strong></td>
       </tr>
@@ -440,7 +448,7 @@ $t3_max_cours = $gen_per_max[3]['tot'] + $tech_per_max[3]['tot'];
         <td></td><td></td><td><strong><?= $rangP > 0 ? $rangP . 'e' : '—' ?></strong></td>
         <?php endif; ?>
         <?php endforeach; ?>
-        <td></td><td></td><td><strong><?= isset($eleve['rang']) && $eleve['rang'] > 0 ? $eleve['rang'] . 'e' : '—' ?></strong></td>
+        <td></td><td><strong><?= isset($eleve['rang']) && $eleve['rang'] > 0 ? $eleve['rang'] . 'e' : '—' ?></strong></td><td><strong><?= ($aAnnMax+$conduiteVal*$nbPeriodes)>0 ? number_format(($aAnnNote+$cdAnn)/($aAnnMax+$conduiteVal*$nbPeriodes)*100, 2) . '%' : '—' ?></strong></td>
       </tr>
 
       <!-- Cours Inactifs -->
@@ -463,9 +471,9 @@ $t3_max_cours = $gen_per_max[3]['tot'] + $tech_per_max[3]['tot'];
       <tr>
         <td class="text-left matiere"><?= htmlspecialchars($mat_inactif['name']) ?></td>
         <?php if ($mode_b): ?>
-        <td><?= nf($max_tj_inactif) ?></td><td><?= nf($max_comp_inactif) ?></td><td><?= nf($max_ress_inactif) ?></td><td><strong><?= nf($max_tot_inactif) ?></strong></td>
+        <td class="maxi"><?= nf($max_tj_inactif) ?></td><td class="maxi"><?= nf($max_comp_inactif) ?></td><td class="maxi"><?= nf($max_ress_inactif) ?></td><td class="maxi"><strong><?= nf($max_tot_inactif) ?></strong></td>
         <?php else: ?>
-        <td><?= nf($max_tj_inactif) ?></td><td><?= nf($max_ex_inactif) ?></td><td><strong><?= nf($max_tot_inactif) ?></strong></td>
+        <td class="maxi"><?= nf($max_tj_inactif) ?></td><td class="maxi"><?= nf($max_ex_inactif) ?></td><td class="maxi"><strong><?= nf($max_tot_inactif) ?></strong></td>
         <?php endif; ?>
         <?php foreach ([1, 2, 3] as $pnum):
             $p = $s_data_inactif["note_t{$pnum}_tj"] ?? 0;
@@ -484,9 +492,9 @@ $t3_max_cours = $gen_per_max[3]['tot'] + $tech_per_max[3]['tot'];
         <td><?= nf($p) ?></td><td><?= nf($pe) ?></td><td><strong><?= nf($t_tot) ?></strong></td>
         <?php endif; ?>
         <?php endforeach; ?>
-        <td><strong>-</strong></td>
+        <td class="sep-left"><strong><?= nf($max_tot_inactif * 3) ?></strong></td>
         <td><strong><?= nf($ann_note_inactif) ?></strong></td>
-        <td><strong>-</strong></td>
+        <td><strong><?= $max_tot_inactif > 0 ? number_format($ann_note_inactif / ($max_tot_inactif * 3) * 100, 2) : '-' ?>%</strong></td>
       </tr>
       <?php endforeach; ?>
 

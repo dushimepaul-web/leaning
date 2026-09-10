@@ -1,116 +1,4 @@
-<?php include VIEWPATH.'includes/Header.php'; ?>
-<?php include VIEWPATH.'includes/Sidebar.php'; ?>
-<style>
-:root {
-  --clr-excellent: #059669; --clr-bon: #2563eb; --clr-moyen: #d97706; --clr-faible: #dc2626;
-  --bg-excellent: #ecfdf5; --bg-bon: #eff6ff; --bg-moyen: #fffbeb; --bg-faible: #fef2f2;
-  --radius: 8px; --shadow-sm: 0 1px 2px rgba(0,0,0,.04); --shadow-md: 0 4px 12px rgba(0,0,0,.06);
-}
-.bull-app *{box-sizing:border-box}
-.classe-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--base);border:1px solid var(--neutral-50);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;z-index:1050;padding:4px;}
-.classe-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;font-size:.875rem;color:#1F2937;border-radius:6px;transition:background .15s;}
-.classe-item:hover,.classe-item.active{background:var(--primary-100,#e6f5f4);color:var(--primary-600);}
-.classe-item i{font-size:1rem;color:var(--primary-600);flex-shrink:0;}
-.classe-empty{padding:12px;text-align:center;color:var(--neutral-500,#6B7280);font-size:.85rem;}
-.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--neutral-500,#6B7280);font-size:1rem;pointer-events:none;}
-#id_classe{padding-left:38px;}
-.bull-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:12px 16px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm)}
-.bull-toolbar .btn-group{display:flex;gap:8px}
-.bull-toolbar button{height:36px;padding:0 14px;font-size:13px;font-weight:500;border-radius:var(--radius);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;border:1px solid #e5e7eb;background:#fff;color:#374151}
-.bull-toolbar button:hover{background:#f9fafb;border-color:#d1d5db}
-.bull-toolbar button.primary{background:#6366f1;color:#fff;border-color:#6366f1}
-.bull-toolbar button.primary:hover{background:#4f46e5}
-.bulletin-card{font-family:Arial,Calibri,sans-serif;background:#fff;border:1px solid #000;margin-bottom:20px;page-break-after:always;width:100%}
-.bulletin-card .bul-header{padding:8px 12px 4px}
-.bulletin-card .bul-header .h-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;line-height:1.6}
-.bulletin-card .bul-header .h-row .h-right{text-align:right}
-.bulletin-card .bul-body{overflow-x:auto}
-.bulletin-card .bul-body table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
-.bulletin-card .bul-body table th,.bulletin-card .bul-body table td{border:1px solid #000;padding:3px 4px;text-align:center;font-weight:600;font-family:'Bahnschrift',sans-serif;font-size:12px}
-.bulletin-card .bul-body table th.sep-left,.bulletin-card .bul-body table td.sep-left{border-left:2.5px solid #000}
-.bulletin-card .bul-body table td.fail{color:#dc2626;text-decoration:underline;font-weight:700;background:#fef2f2}
-.bulletin-card .bul-body table thead th{background:#D9D9D9;font-weight:700;font-size:10px}
-.bulletin-card .bul-body table thead th.branches-header{background:#fff;width:200px;min-width:200px;text-align:center}
-.bulletin-card .bul-body table td.branches{text-align:left;font-weight:700;padding-left:6px}
-.bulletin-card .bul-body table td.matiere{color:#000;font-weight:400}
-.bulletin-card .bul-body table td.num{text-align:center}
-.bulletin-card .bul-body table td.gris{background:#D9D9D9}
-@media print {
-  body *{visibility:hidden}
-  #bulletinsCard,#bulletinsCard *{visibility:visible}
-  #bulletinsCard{position:absolute;left:0;top:0;width:100%}
-  .bull-toolbar{display:none!important}
-  .bulletin-card{border:1px solid #000;margin-bottom:10px;page-break-after:always}
-  .sidebar,.dashboard-main-body .breadcrumb{display:none!important}
-}
-@media(max-width:768px){.bull-toolbar{flex-direction:column;align-items:stretch}.bull-toolbar .btn-group{flex-wrap:wrap}}
-</style>
-<div class="dashboard-main-body bull-app">
-  <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
-    <div>
-      <h1 class="fw-semibold mb-4 h6 text-primary-light">Bulletins</h1>
-      <div><a href="<?=base_url('Dashboard')?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a><span class="text-secondary-light"> / Bulletins</span></div>
-    </div>
-    <a href="<?=base_url('Notes')?>" class="btn btn-outline-primary-600 d-flex align-items-center gap-6"><i class="ri-pencil-line"></i>Saisie des notes</a>
-  </div>
 
-  <div class="card mb-24" id="filtresCard">
-    <div class="card-body p-16">
-      <div class="row g-2 align-items-end flex-nowrap">
-        <div class="col" style="min-width:200px; position:relative;">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Classe *</label>
-          <div style="position:relative;">
-            <i class="ri-search-line search-icon"></i>
-            <input type="text" class="form-control" id="id_classe" placeholder="Tapez pour chercher..." autocomplete="off">
-          </div>
-          <div id="classeDropdown" class="classe-dropdown d-none">
-            <?php foreach($classes as $c): ?>
-              <div class="classe-item" data-id="<?=$c['id_classe']?>" data-nom="<?=htmlspecialchars($c['libelle'])?>">
-                <i class="ri-graduation-cap-line"></i>
-                <span><?=htmlspecialchars($c['libelle'])?></span>
-              </div>
-            <?php endforeach; ?>
-            <div class="classe-empty d-none">Aucune classe trouvée</div>
-          </div>
-        </div>
-        <div class="col" style="min-width:160px;">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Trimestre</label>
-          <select class="form-control form-select" id="id_periode">
-            <option value="all">Année complète</option>
-            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col" style="min-width:160px;">
-          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Année</label>
-          <select class="form-control form-select" id="id_annee">
-            <?php foreach($annees as $a): ?><option value="<?=$a['id_annee']?>" <?=($a['est_en_cours']||$a['id_annee']==$id_annee_active)?'selected':''?>><?=htmlspecialchars($a['libelle'])?></option><?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col-auto d-flex gap-2 align-items-end">
-          <button type="button" class="btn btn-primary-600" onclick="showBulletins()"><i class="ri-file-list-3-line me-1"></i>Générer les bulletins</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="bulletinsCard" style="display:none;">
-    <div class="bull-toolbar">
-      <div class="btn-group">
-        <button onclick="backToClasses()"><i class="ri-arrow-left-line"></i> Classes</button>
-        <span style="font-weight:600;color:#1e293b;font-size:14px;padding:0 8px" id="bulTitle">—</span>
-      </div>
-      <div class="btn-group">
-        <button onclick="if(gClasseId) window.open(API.base_url + 'Notes/Bulletins/export/' + gClasseId, '_blank'); else Swal.fire({icon:'warning',title:'Attention',text:'Veuillez sélectionner une classe'});"><i class="ri-printer-line"></i> Imprimer tous</button>
-        <button class="primary" onclick="genererBulletinsClasse()"><i class="ri-magic-line"></i> Générer bulletins</button>
-      </div>
-    </div>
-    <div id="bulletinsList"></div>
-  </div>
-</div>
-
-<script src="<?=base_url()?>assets/js/api.js"></script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
-<script>
 const Toast=Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:2500,timerProgressBar:true});
 let gClasseId=null,gClasseNom='',gPeriodeId='all';
 
@@ -257,7 +145,6 @@ function renderBulletins(data,periodeNom,periodeId){
     const t={tj:0,comp:0,ress:0,ex:0,tot:0};
     const per=me.periodes[pids[i]]||{tj:0,comp:0,ress:0,ex:0};
     t.tj=per.tj||0;t.comp=per.comp||0;t.ress=per.ress||0;t.ex=per.ex||0;
-    if(modeB){t.ex=0;}else if(modeA){t.comp=0;t.ress=0;}
     t.tot=t.tj+t.comp+t.ress+t.ex;
     return t;
   }
@@ -266,9 +153,7 @@ function renderBulletins(data,periodeNom,periodeId){
     let totNote = 0, totMax = 0;
     periodes.forEach(p => {
       const per = me.periodes[p.id_periode] || {tj:0, comp:0, ress:0, ex:0};
-      let ntTj=per.tj||0,ntComp=per.comp||0,ntRess=per.ress||0,ntEx=per.ex||0;
-      if(modeB){ntEx=0;}else if(modeA){ntComp=0;ntRess=0;}
-      totNote += ntTj+ntComp+ntRess+ntEx;
+      totNote += (per.tj||0) + (per.comp||0) + (per.ress||0) + (per.ex||0);
       const mm = maxima[mid] && maxima[mid][p.id_periode] ? maxima[mid][p.id_periode] : {tj:0,comp:0,ress:0,ex:0};
       totMax += (mm.tj||0) + (mm.comp||0) + (mm.ress||0) + (mm.ex||0);
     });
@@ -295,12 +180,11 @@ function renderBulletins(data,periodeNom,periodeId){
   const subHead = modeB ? '<th>TJ</th><th>COMP</th><th>RESS</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
   const col_span = colSpan;
   function fc(note,max){return (max>0&&note>0&&note<max/2)?' fail':'';}
-  function cells(t,max,firstClass){
-    const fc1=firstClass||'';
+  function cells(t,max){
     if(modeB){
-      return [`<td class="num${fc1}">${nf(t.tj)}</td>`,`<td class="num">${nf(t.comp)}</td>`,`<td class="num">${nf(t.ress)}</td>`,`<td class="num${fc(t.tot,max.tot)}"><strong>${nf(t.tot)}</strong></td>`];
+      return [`<td class="num${fc(t.tj,max.tj)}">${nf(t.tj)}</td>`,`<td class="num${fc(t.comp,max.comp)}">${nf(t.comp)}</td>`,`<td class="num${fc(t.ress,max.ress)}">${nf(t.ress)}</td>`,`<td class="num${fc(t.tot,max.tot)}"><strong>${nf(t.tot)}</strong></td>`];
     }else{
-      return [`<td class="num${fc1}">${nf(t.tj)}</td>`,`<td class="num">${nf(t.ex)}</td>`,`<td class="num${fc(t.tot,max.tot)}"><strong>${nf(t.tot)}</strong></td>`];
+      return [`<td class="num${fc(t.tj,max.tj)}">${nf(t.tj)}</td>`,`<td class="num${fc(t.ex,max.ex)}">${nf(t.ex)}</td>`,`<td class="num${fc(t.tot,max.tot)}"><strong>${nf(t.tot)}</strong></td>`];
     }
   }
 
@@ -386,7 +270,7 @@ function renderBulletins(data,periodeNom,periodeId){
           const nt=noteCol(el,mid,i);
           const mm=midMax(mid,i);
           const cls=i===0?' sep-left':'';
-          groupHtml+=cells(nt,mm,cls).join('');
+          groupHtml+=cells(nt,mm).map((c,j)=>j===0?c.replace('<td class="num','<td class="num'+cls'):c).join('');
         });
 
         groupHtml+=`<td class="num sep-left"><strong>${nf(aa.max)}</strong></td>
@@ -439,7 +323,7 @@ function renderBulletins(data,periodeNom,periodeId){
       }
       const gt = groupTotals(generaux, i);
       const cls=i===0?' sep-left':'';
-      html += cells(gt.note,gt.max,cls).join('');
+      html += cells(gt.note,gt.max).map((c,j)=>j===0?c.replace('<td class="num','<td class="num'+cls'):c).join('');
     });
     html += `<td class="num sep-left"><strong>${nf(genAnn.max)}</strong></td>
       <td class="num"><strong>${nf(genAnn.note)}</strong></td>
@@ -466,7 +350,7 @@ function renderBulletins(data,periodeNom,periodeId){
       }
       const gt = groupTotals(techniques, i);
       const cls=i===0?' sep-left':'';
-      html += cells(gt.note,gt.max,cls).join('');
+      html += cells(gt.note,gt.max).map((c,j)=>j===0?c.replace('<td class="num','<td class="num'+cls'):c).join('');
     });
     html += `<td class="num sep-left"><strong>${nf(techAnn.max)}</strong></td>
       <td class="num"><strong>${nf(techAnn.note)}</strong></td>
@@ -477,11 +361,11 @@ function renderBulletins(data,periodeNom,periodeId){
     const conduiteMax=CONDUITE_DEFAUT;
     html+=`<tr>
       <td class="branches">Conduite</td>
-      <td class="num gris">${conduiteMax}</td>${'<td></td>'.repeat(colSpan-2)}<td class="num">${conduiteMax}</td>`;
+      <td class="num gris">${conduiteMax}</td>${'<td></td>'.repeat(colSpan-2)}<td class="num${fc(conduiteMax,conduiteMax)}">${conduiteMax}</td>`;
     periodes.forEach((p,i)=>{
       if(colBlank(i)){html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">-</td>`;return;}
       const cls=i===0?' sep-left':'';
-      html+=`<td></td>`.repeat(colSpan-1)+`<td class="num${cls}">${cdCol(el,i)}</td>`;
+      html+=`<td></td>`.repeat(colSpan-1)+`<td class="num${cls}${fc(cdCol(el,i),conduiteMax)}">${cdCol(el,i)}</td>`;
     });
     html+=`<td class="num sep-left"><strong>${CONDUITE_DEFAUT * periodes.length}</strong></td>
       <td class="num${fc(cdTot,CONDUITE_DEFAUT * periodes.length)}"><strong>${cdTot.toFixed(1)}</strong></td>
@@ -494,7 +378,7 @@ function renderBulletins(data,periodeNom,periodeId){
       comp: genMb0.max.comp + techMb0.max.comp,
       ress: genMb0.max.ress + techMb0.max.ress,
       ex: genMb0.max.ex + techMb0.max.ex,
-      tot: genMb0.max.tot + techMb0.max.tot + CONDUITE_DEFAUT
+      tot: genMb0.max.tot + techMb0.max.tot
     };
     html+=`<tr>
       <td class="branches" style="font-weight:bold;">Total</td>`;
@@ -520,7 +404,7 @@ function renderBulletins(data,periodeNom,periodeId){
         tot: groupTotals(generaux, i).max.tot + groupTotals(techniques, i).max.tot + CONDUITE_DEFAUT
       };
       const cls=i===0?' sep-left':'';
-      html+=cells(ggt,ggm,cls).join('');
+      html+=cells(ggt,ggm).map((c,j)=>j===0?c.replace('<td class="num','<td class="num'+cls'):c).join('');
     });
     const totalAnnMax = aAnnMax+cdMax;
     const totalAnnNote = aAnnNote+cdTot;
@@ -671,15 +555,15 @@ function renderBulletins(data,periodeNom,periodeId){
           const ntTot = ntTj+ntComp+ntRess+ntEx;
           annNote += ntTot;
           if(modeB) {
-            matHtml += `<td class="num">${nf(ntTj)}</td><td class="num">${nf(ntComp)}</td><td class="num">${nf(ntRess)}</td><td class="num${fc(ntTot,maxTotInactif)}"><strong>${nf(ntTot)}</strong></td>`;
+            matHtml += `<td class="num">${nf(ntTj)}</td><td class="num">${nf(ntComp)}</td><td class="num">${nf(ntRess)}</td><td class="num"><strong>${nf(ntTot)}</strong></td>`;
           } else {
-            matHtml += `<td class="num">${nf(ntTj)}</td><td class="num">${nf(ntEx)}</td><td class="num${fc(ntTot,maxTotInactif)}"><strong>${nf(ntTot)}</strong></td>`;
+            matHtml += `<td class="num">${nf(ntTj)}</td><td class="num">${nf(ntEx)}</td><td class="num"><strong>${nf(ntTot)}</strong></td>`;
           }
         });
 
         const annMaxCalc = maxTotInactif * periodes.length;
         matHtml += `<td class="num sep-left"><strong>${nf(annMaxCalc)}</strong></td>
-          <td class="num${fc(annNote,annMaxCalc)}"><strong>${nf(annNote)}</strong></td>
+          <td class="num"><strong>${nf(annNote)}</strong></td>
           <td class="num"><strong>${annMaxCalc>0?fmtPct(annNote,annMaxCalc):'-'}</strong></td>
         </tr>`;
         html += matHtml;
@@ -710,4 +594,3 @@ function renderBulletins(data,periodeNom,periodeId){
 
   document.getElementById('bulletinsList').innerHTML=html||'<div class="text-center py-32 text-secondary-light">Aucun élève trouvé</div>';
 }
-</script>

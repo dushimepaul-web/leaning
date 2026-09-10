@@ -557,7 +557,6 @@ class Bulletins extends MY_Controller {
         $data['facteur_points_heure'] = floatval($this->Model->get_setting('facteur_points_heure', 15));
 
         $data['title'] = 'Bulletins de la classe ' . $classe_nom;
-        $data['eleves'] = $eleves;
         $data['subjects'] = $subjects;
         $data['subjects_inactifs'] = $subjects_inactifs;
         $data['periodes'] = $periodes;
@@ -663,6 +662,51 @@ class Bulletins extends MY_Controller {
                 $prev = $pct;
             }
         }
+
+        // Rang annuel
+        $ann_scores = [];
+        $max_tot_annuel_all = 0;
+        foreach ($subjects as $subj) {
+            $mx = $data['maxima_map'][$subj['id']][1] ?? ['tot'=>0];
+            $max_tot_annuel_all += $mx['tot'] * 3;
+        }
+        $max_tot_annuel_all += 60 * 3;
+        foreach ($eleves as $eid => $el) {
+            $stud_notes = $notes_map[$eid] ?? [];
+            $cd = isset($conduite_map[$eid]) ? $conduite_map[$eid] : [];
+            $note_ann = 0;
+            foreach ([1,2,3] as $pnum) {
+                $pid = $periode_map[$pnum] ?? 0;
+                if ($pid) {
+                    foreach ($subjects as $subj) {
+                        $sd = $stud_notes[$subj['id']] ?? null;
+                        if ($sd) {
+                            $tj = (float)$sd["note_t{$pnum}_tj"];
+                            $comp = (float)$sd["note_t{$pnum}_comp"];
+                            $ress = (float)$sd["note_t{$pnum}_ress"];
+                            $ex = (float)$sd["note_t{$pnum}_ex"];
+                            if ($mode_b) $ex = 0;
+                            elseif ($mode_a) { $comp = 0; $ress = 0; }
+                            else { $comp = 0; $ress = 0; $ex = 0; }
+                            $note_ann += $tj + $comp + $ress + $ex;
+                        }
+                    }
+                    $cd_val = isset($cd[$pid]) ? $cd[$pid] : 60;
+                    $note_ann += $cd_val;
+                }
+            }
+            $ann_scores[$eid] = $max_tot_annuel_all > 0 ? ($note_ann / $max_tot_annuel_all * 100) : 0;
+        }
+        arsort($ann_scores);
+        $rang = 1; $prev = -1;
+        foreach ($ann_scores as $eid => $pct) {
+            if ($prev >= 0 && $pct < $prev) $rang++;
+            $eleves[$eid]['rang'] = ($pct > 0) ? $rang : 0;
+            $eleves[$eid]['pourcentage'] = round($pct, 2);
+            $prev = $pct;
+        }
+
+        $data['eleves'] = $eleves;
 
         $this->load->view('print_bulletins', $data);
     }
