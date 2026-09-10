@@ -77,7 +77,6 @@ $query_builder = TRUE;
 
 // Lecture du fichier .env (ignoré par git) si présent
 $_env_file = FCPATH !== '' ? FCPATH . '.env' : (dirname(__DIR__) . '/../.env');
-$_env = [];
 if (is_file($_env_file)) {
     foreach (file($_env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $_line) {
         $_line = trim($_line);
@@ -86,29 +85,22 @@ if (is_file($_env_file)) {
         if ($pos !== false) {
             $_k = trim(substr($_line, 0, $pos));
             $_v = trim(substr($_line, $pos + 1));
-            $_env[$_k] = $_v;
             if (!getenv($_k)) putenv($_k . '=' . $_v);
         }
     }
 }
-function _env($key, $default = '') {
-    global $_env;
-    $v = $_env[$key] ?? getenv($key);
-    return ($v !== false && $v !== '') ? $v : $default;
-}
 
 // Détection automatique de l'environnement
 $server_name = strtolower($_SERVER['SERVER_NAME'] ?? '');
-$is_local = in_array($server_name, ['localhost', '127.0.0.1', '']);
-if ($is_local) {
+if (in_array($server_name, ['localhost', '127.0.0.1', ''])) {
     // Configuration pour le serveur local
     $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => _env('DB_HOSTNAME', 'localhost'),
-	'port' => _env('DB_PORT', 3306),
-	'username' => _env('DB_USERNAME', 'root'),
-	'password' => _env('DB_PASSWORD', ''),
-	'database' => _env('DB_DATABASE', 'vip_school'),
+	'hostname' => getenv('DB_HOSTNAME') ?: 'localhost',
+	'port' => getenv('DB_PORT') ?: 3306,
+	'username' => getenv('DB_USERNAME') ?: 'root',
+	'password' => getenv('DB_PASSWORD') ?: '',
+	'database' => getenv('DB_DATABASE') ?: 'vip_school',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
@@ -129,11 +121,11 @@ if ($is_local) {
     // Configuration pour le serveur distant
     $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => _env('DB_REMOTE_HOSTNAME', 'localhost'),
-	'port' => _env('DB_REMOTE_PORT', 3306),
-	'username' => _env('DB_REMOTE_USERNAME', 'abemarket_vipschool'),
-	'password' => _env('DB_REMOTE_PASSWORD', 'Abe@@2028'),
-	'database' => _env('DB_REMOTE_DATABASE', 'abemarket_vipschool'),
+	'hostname' => getenv('DB_REMOTE_HOSTNAME') ?: 'localhost',
+	'port' => getenv('DB_REMOTE_PORT') ?: 3306,
+	'username' => getenv('DB_REMOTE_USERNAME') ?: 'abemarket_vipschool',
+	'password' => getenv('DB_REMOTE_PASSWORD') ?: 'Abe@@2028',
+	'database' => getenv('DB_REMOTE_DATABASE') ?: 'abemarket_vipschool',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
