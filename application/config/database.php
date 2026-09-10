@@ -124,7 +124,7 @@ if ($server_name === 'localhost' || $server_name === '127.0.0.1') {
 	'hostname' => getenv('DB_REMOTE_HOSTNAME') ?: 'localhost',
 	'port' => getenv('DB_REMOTE_PORT') ?: 3306,
 	'username' => getenv('DB_REMOTE_USERNAME') ?: 'abemarket_vipschool',
-	'password' => getenv('DB_REMOTE_PASSWORD') ?: 'Abe@@2028',
+	'password' => getenv('DB_REMOTE_PASSWORD') ?: '',
 	'database' => getenv('DB_REMOTE_DATABASE') ?: 'abemarket_vipschool',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
