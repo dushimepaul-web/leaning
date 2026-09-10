@@ -90,17 +90,15 @@ if (is_file($_env_file)) {
     }
 }
 
-// Détection automatique de l'environnement
-$server_name = strtolower($_SERVER['SERVER_NAME'] ?? '');
-if (in_array($server_name, ['localhost', '127.0.0.1', ''])) {
-    // Configuration pour le serveur local
+// Détection automatique de l'environnement ou du serveur
+if (ENVIRONMENT === 'production' || (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'vipschool.abe.bi') !== false)) {
+    // Configuration pour le serveur distant (production)
     $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => getenv('DB_HOSTNAME') ?: 'localhost',
-	'port' => getenv('DB_PORT') ?: 3306,
-	'username' => getenv('DB_USERNAME') ?: 'root',
-	'password' => getenv('DB_PASSWORD') ?: '',
-	'database' => getenv('DB_DATABASE') ?: 'vip_school',
+	'hostname' => 'localhost',
+	'username' => getenv('DB_REMOTE_USERNAME') ?: 'abemarket_vipschool',
+	'password' => getenv('DB_REMOTE_PASSWORD') ?: 'Abe@@2028',
+	'database' => getenv('DB_REMOTE_DATABASE') ?: 'abemarket_vipschool',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
@@ -118,14 +116,13 @@ if (in_array($server_name, ['localhost', '127.0.0.1', ''])) {
 );
 
 } else {
-    // Configuration pour le serveur distant
+    // Configuration pour le serveur local
     $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => getenv('DB_REMOTE_HOSTNAME') ?: 'localhost',
-	'port' => getenv('DB_REMOTE_PORT') ?: 3306,
-	'username' => getenv('DB_REMOTE_USERNAME') ?: 'abemarket__g6z1UKJsDzK9OP4UX3biwlCZKWUKN2GF',
-	'password' => getenv('DB_REMOTE_PASSWORD') ?: 'Abe@@2028',
-	'database' => getenv('DB_REMOTE_DATABASE') ?: 'abemarket_vipschool',
+	'hostname' => 'localhost',
+	'username' => 'root',
+	'password' => '',
+	'database' => 'vip_school',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
