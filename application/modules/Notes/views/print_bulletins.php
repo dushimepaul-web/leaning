@@ -14,8 +14,10 @@ function nf2($v){return $v>0?number_format($v,2):'-';}
   .h-row .h-right { text-align: right; }
   table.bul-table { border-collapse: collapse; width: 100%; font-size: 8.5pt; margin-top: 8px; table-layout: fixed; }
   table.bul-table th, table.bul-table td { border: 1px solid #000; padding: 3px 4px; text-align: center; font-weight: 400; }
+  table.bul-table th.sep-left, table.bul-table td.sep-left { border-left: 2.5px solid #000; }
+  table.bul-table td.fail { color: #dc2626; text-decoration: underline; }
   table.bul-table thead th { background: #D9D9D9; font-weight: 700; font-size: 8pt; }
-  table.bul-table thead th.branches-header { background: #fff; width: 130px; min-width: 130px; }
+  table.bul-table thead th.branches-header { background: #fff; width: 200px; min-width: 200px; }
   .text-left { text-align: left !important; padding-left: 6px !important; }
   .branches { text-align: left; font-weight: 700; padding-left: 6px; }
   .matiere { color: #000; font-weight: 400; }
@@ -64,7 +66,7 @@ foreach ($eleves as $eleve_id => $eleve):
 
 <div class="bulletin-page">
   <div class="h-row">
-    <span>SECTION: <?= htmlspecialchars($classe_nom) ?></span>
+    <span>SECTION: <?= htmlspecialchars($section_nom ?? $classe_nom) ?></span>
     <span class="h-right">ANNEE SCOLAIRE : <?= htmlspecialchars($annee_scolaire) ?></span>
   </div>
   <div class="h-row">
@@ -84,32 +86,32 @@ foreach ($eleves as $eleve_id => $eleve):
       <tr>
         <th class="branches-header" rowspan="3"></th>
         <th colspan="4">MAXIMA</th>
-        <th colspan="4">1er TRIMESTRE</th>
-        <th colspan="4">2e TRIMESTRE</th>
-        <th colspan="4">3e TRIMESTRE</th>
-        <th colspan="3" rowspan="2">TOTAUX ANNUELS</th>
+        <th class="sep-left" colspan="4">1er TRIMESTRE</th>
+        <th class="sep-left" colspan="4">2e TRIMESTRE</th>
+        <th class="sep-left" colspan="4">3e TRIMESTRE</th>
+        <th class="sep-left" colspan="3" rowspan="2">TOTAUX ANNUELS</th>
       </tr>
       <tr>
         <th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
-        <th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
-        <th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
-        <th rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
+        <th class="sep-left" rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
+        <th class="sep-left" rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
+        <th class="sep-left" rowspan="2">TJ</th><th colspan="2">EXAMEN</th><th rowspan="2">TOT</th>
       </tr>
       <tr>
         <th>COMP</th><th>RESS</th>
-        <th>COMP</th><th>RESS</th>
-        <th>COMP</th><th>RESS</th>
-        <th>COMP</th><th>RESS</th>
+        <th class="sep-left">COMP</th><th>RESS</th>
+        <th class="sep-left">COMP</th><th>RESS</th>
+        <th class="sep-left">COMP</th><th>RESS</th>
         <th>MAX</th><th>TOT</th><th>%</th>
       </tr>
       <?php else: ?>
       <tr>
         <th class="branches-header" rowspan="2"></th>
         <th colspan="<?= $col_span ?>">MAXIMA</th>
-        <th colspan="<?= $col_span ?>">1er TRIMESTRE</th>
-        <th colspan="<?= $col_span ?>">2e TRIMESTRE</th>
-        <th colspan="<?= $col_span ?>">3e TRIMESTRE</th>
-        <th colspan="3">TOTAUX ANNUELS</th>
+        <th class="sep-left" colspan="<?= $col_span ?>">1er TRIMESTRE</th>
+        <th class="sep-left" colspan="<?= $col_span ?>">2e TRIMESTRE</th>
+        <th class="sep-left" colspan="<?= $col_span ?>">3e TRIMESTRE</th>
+        <th class="sep-left" colspan="3">TOTAUX ANNUELS</th>
       </tr>
       <tr>
         <?= $sub_head ?>
@@ -139,7 +141,9 @@ $tech_per_max = [1 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 2 => ['tj'
 $gen_per_tot = [1 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 2 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 3 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0]];
 $tech_per_tot = [1 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 2 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0], 3 => ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0]];
 
-$render_matiere_rows = function($matiere_list, $stud_notes, $mode_b, $pct_comp, $pct_ress, $facteur_points, &$group_per_tot, &$group_per_max, &$group_ann_max, &$group_ann_note) use ($col_span, $mode_a) {
+$fc = function($note, $max) { return ($max > 0 && $note > 0 && $note < $max / 2) ? ' fail' : ''; };
+
+$render_matiere_rows = function($matiere_list, $stud_notes, $mode_b, $pct_comp, $pct_ress, $facteur_points, &$group_per_tot, &$group_per_max, &$group_ann_max, &$group_ann_note) use ($col_span, $mode_a, $fc) {
     foreach ($matiere_list as $subj):
         $s_data = $stud_notes[$subj['id']] ?? null;
         $max_tj = isset($subj['note_max_matiere']) ? (float)$subj['note_max_matiere'] : 15;
@@ -219,40 +223,40 @@ $render_matiere_rows = function($matiere_list, $stud_notes, $mode_b, $pct_comp, 
         <?php endif; ?>
 
         <?php if ($mode_b): ?>
-        <td><?= nf($t1_tj) ?></td>
-        <td><?= nf($t1_comp) ?></td>
-        <td><?= nf($t1_ress) ?></td>
-        <td><strong><?= nf($t1_tot) ?></strong></td>
+        <td class="sep-left"<?= $fc($t1_tj, $max_tj) ?>><?= nf($t1_tj) ?></td>
+        <td<?= $fc($t1_comp, $max_comp) ?>><?= nf($t1_comp) ?></td>
+        <td<?= $fc($t1_ress, $max_ress) ?>><?= nf($t1_ress) ?></td>
+        <td<?= $fc($t1_tot, $max_tot) ?>><strong><?= nf($t1_tot) ?></strong></td>
         <?php else: ?>
-        <td><?= nf($t1_tj) ?></td>
-        <td><?= nf($t1_ex) ?></td>
-        <td><strong><?= nf($t1_tot) ?></strong></td>
+        <td class="sep-left"<?= $fc($t1_tj, $max_tj) ?>><?= nf($t1_tj) ?></td>
+        <td<?= $fc($t1_ex, $max_ex) ?>><?= nf($t1_ex) ?></td>
+        <td<?= $fc($t1_tot, $max_tot) ?>><strong><?= nf($t1_tot) ?></strong></td>
         <?php endif; ?>
 
         <?php if ($mode_b): ?>
-        <td><?= nf($t2_tj) ?></td>
-        <td><?= nf($t2_comp) ?></td>
-        <td><?= nf($t2_ress) ?></td>
-        <td><strong><?= nf($t2_tot) ?></strong></td>
+        <td class="sep-left"<?= $fc($t2_tj, $max_tj) ?>><?= nf($t2_tj) ?></td>
+        <td<?= $fc($t2_comp, $max_comp) ?>><?= nf($t2_comp) ?></td>
+        <td<?= $fc($t2_ress, $max_ress) ?>><?= nf($t2_ress) ?></td>
+        <td<?= $fc($t2_tot, $max_tot) ?>><strong><?= nf($t2_tot) ?></strong></td>
         <?php else: ?>
-        <td><?= nf($t2_tj) ?></td>
-        <td><?= nf($t2_ex) ?></td>
-        <td><strong><?= nf($t2_tot) ?></strong></td>
+        <td class="sep-left"<?= $fc($t2_tj, $max_tj) ?>><?= nf($t2_tj) ?></td>
+        <td<?= $fc($t2_ex, $max_ex) ?>><?= nf($t2_ex) ?></td>
+        <td<?= $fc($t2_tot, $max_tot) ?>><strong><?= nf($t2_tot) ?></strong></td>
         <?php endif; ?>
 
         <?php if ($mode_b): ?>
-        <td><?= nf($t3_tj) ?></td>
-        <td><?= nf($t3_comp) ?></td>
-        <td><?= nf($t3_ress) ?></td>
-        <td><strong><?= nf($t3_tot) ?></strong></td>
+        <td class="sep-left"<?= $fc($t3_tj, $max_tj) ?>><?= nf($t3_tj) ?></td>
+        <td<?= $fc($t3_comp, $max_comp) ?>><?= nf($t3_comp) ?></td>
+        <td<?= $fc($t3_ress, $max_ress) ?>><?= nf($t3_ress) ?></td>
+        <td<?= $fc($t3_tot, $max_tot) ?>><strong><?= nf($t3_tot) ?></strong></td>
         <?php else: ?>
-        <td><?= nf($t3_tj) ?></td>
-        <td><?= nf($t3_ex) ?></td>
-        <td><strong><?= nf($t3_tot) ?></strong></td>
+        <td class="sep-left"<?= $fc($t3_tj, $max_tj) ?>><?= nf($t3_tj) ?></td>
+        <td<?= $fc($t3_ex, $max_ex) ?>><?= nf($t3_ex) ?></td>
+        <td<?= $fc($t3_tot, $max_tot) ?>><strong><?= nf($t3_tot) ?></strong></td>
         <?php endif; ?>
 
-        <td><strong><?= nf($max_sub_annuel) ?></strong></td>
-        <td><strong><?= nf($tot_sub_annuel) ?></strong></td>
+        <td class="sep-left"<?= $fc($max_sub_annuel, $max_sub_annuel) ?>><strong><?= nf($max_sub_annuel) ?></strong></td>
+        <td<?= $fc($tot_sub_annuel, $max_sub_annuel) ?>><strong><?= nf($tot_sub_annuel) ?></strong></td>
         <td><strong><?= $pct_sub ?>%</strong></td>
       </tr>
 <?php
@@ -262,7 +266,7 @@ $render_matiere_rows = function($matiere_list, $stud_notes, $mode_b, $pct_comp, 
 
 <!-- 1. COURS GENERAUX -->
 <tr>
-  <td class="text-left branches" style="background:#e8e8e8; font-weight:bold;" colspan="<?= $col_span + 16 ?>">COURS GENERAUX ET LANGUES</td>
+  <td class="text-left branches" style="background:#e8e8e8; font-weight:bold;" colspan="<?= $col_span * 4 + 4 ?>">COURS GENERAUX ET LANGUES</td>
 </tr>
 <?php
 $gen_ann_max = 0; $gen_ann_note = 0;
@@ -298,7 +302,7 @@ if (!empty($generaux)) {
 
 <!-- 2. COURS TECHNIQUE -->
 <tr>
-  <td class="text-left branches" style="background:#e8e8e8; font-weight:bold;" colspan="<?= $col_span + 16 ?>">COURS TECHNIQUE</td>
+  <td class="text-left branches" style="background:#e8e8e8; font-weight:bold;" colspan="<?= $col_span * 4 + 4 ?>">COURS TECHNIQUE</td>
 </tr>
 <?php
 $tech_ann_max = 0; $tech_ann_note = 0;
@@ -346,12 +350,12 @@ $t3_max_cours = $gen_per_max[3]['tot'] + $tech_per_max[3]['tot'];
       <!-- C: Conduite -->
       <tr>
         <td class="text-left branches">Conduite</td>
-        <td class="gris"><?= $conduiteVal ?></td><?= str_repeat('<td></td>', $col_span-2) ?><td><?= $conduiteVal ?></td>
-        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd1 ?></td>
-        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd2 ?></td>
-        <?= str_repeat('<td></td>', $col_span-1) ?><td><?= $cd3 ?></td>
+        <td class="gris"><?= $conduiteVal ?></td><?= str_repeat('<td></td>', $col_span-2) ?><td<?= $fc($conduiteVal, $conduiteVal) ?>><?= $conduiteVal ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td<?= $fc($cd1, $conduiteVal) ?>><?= $cd1 ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td<?= $fc($cd2, $conduiteVal) ?>><?= $cd2 ?></td>
+        <?= str_repeat('<td></td>', $col_span-1) ?><td<?= $fc($cd3, $conduiteVal) ?>><?= $cd3 ?></td>
         <td><strong><?= $conduiteVal * $nbPeriodes ?></strong></td>
-        <td><strong><?= $cdAnn ?></strong></td>
+        <td<?= $fc($cdAnn, $conduiteVal * $nbPeriodes) ?>><strong><?= $cdAnn ?></strong></td>
         <td><strong><?= $conduiteVal > 0 ? number_format($cdAnn / ($conduiteVal * $nbPeriodes) * 100, 2) : '-' ?>%</strong></td>
       </tr>
 

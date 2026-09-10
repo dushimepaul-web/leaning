@@ -538,6 +538,8 @@ class Bulletins extends MY_Controller {
 
         $classe_info = $this->Model->readOne('classes', ['id_classe' => $class_id]);
         $classe_nom = $classe_info ? $classe_info['libelle'] : 'Classe';
+        $section_info = $classe_info ? $this->Model->readOne('sections', ['id_section' => $classe_info['id_section']]) : null;
+        $section_nom = $section_info ? $section_info['libelle'] : $classe_nom;
 
         // Détection dynamique des catégories basée sur les données réelles d'évaluations
         $categories = $this->BulletinsModel->_detecter_categories($class_id);
@@ -561,6 +563,7 @@ class Bulletins extends MY_Controller {
         $data['periodes'] = $periodes;
         $data['annee_scolaire'] = $annee_scolaire;
         $data['classe_nom'] = $classe_nom;
+        $data['section_nom'] = $section_nom;
         $data['aggregated_data'] = $aggregated_data;
         $data['conduite_map'] = $conduite_map;
         $data['conduite_val'] = 60;
