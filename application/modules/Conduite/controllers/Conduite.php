@@ -10,7 +10,7 @@ class Conduite extends MY_Controller {
     public function index() {
         $data['title'] = 'Points de conduite';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null], 'libelle', 'ASC');
-        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null], 'id_periode', 'ASC');
+        $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null, 'id_annee' => $this->id_annee_active], 'id_periode', 'ASC');
         $data['annees'] = $this->Model->read('annees_scolaires', ['deleted_at' => null], 'id_annee', 'DESC');
         $data['id_annee_active'] = $this->id_annee_active;
         $data['id_periode_active'] = $this->id_periode_active;

@@ -42,7 +42,7 @@
         <div class="col" style="min-width:140px;">
           <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Trimestre</label>
           <select class="form-control form-select" id="id_periode">
-            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" data-annee="<?=$p['id_annee']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
+            <?php foreach($periodes as $p): ?><option value="<?=$p['id_periode']?>" <?=$p['id_periode']==$id_periode_active?'selected':''?>><?=htmlspecialchars($p['libelle'])?></option><?php endforeach; ?>
           </select>
         </div>
         <div class="col" style="min-width:140px;">
@@ -135,35 +135,30 @@
 </div>
 
 <script src="<?= base_url() ?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let currentList = [];
 let currentPointView = null;
 let currentClasseId = null;
 const pointsDefautEcole = <?= (float)($points_defaut_ecole ?? 60) ?>;
-const idAnneeActive = '<?= $id_annee_active ?>';
 const idPeriodeActive = '<?= $id_periode_active ?>';
 
-function filterPeriodes() {
-  const aid = document.getElementById('id_annee').value;
+document.getElementById('id_annee').addEventListener('change', async function() {
+  const aid = this.value;
   const sel = document.getElementById('id_periode');
-  let firstVisible = null;
-  Array.from(sel.options).forEach(function(opt) {
-    if (!opt.value) return;
-    const visible = opt.dataset.annee === aid;
-    opt.style.display = visible ? '' : 'none';
-    if (visible && !firstVisible) firstVisible = opt;
-  });
-  if (firstVisible && !Array.from(sel.options).some(o => o.dataset.annee === aid && o.selected)) {
-    sel.value = firstVisible.value;
+  const res = await API.periodes.list({ id_annee: aid });
+  sel.innerHTML = '<option value="">-- Toutes --</option>';
+  if (res.success && res.data) {
+    res.data.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id_periode;
+      opt.textContent = p.libelle;
+      opt.dataset.annee = p.id_annee;
+      sel.appendChild(opt);
+    });
+    const active = res.data.find(p => p.id_periode == idPeriodeActive && p.id_annee == aid);
+    if (active) sel.value = active.id_periode;
   }
-}
-
-filterPeriodes();
-
-document.getElementById('id_annee').addEventListener('change', function() {
-  filterPeriodes();
   if (currentClasseId) loadData();
 });
 

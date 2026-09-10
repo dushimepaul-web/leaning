@@ -17,6 +17,10 @@ class Periodes extends MY_Controller {
         if ($this->input->get('deleted') != '1') {
             $this->db->where('p.deleted_at', null);
         }
+        $id_annee = $this->input->get('id_annee');
+        if ($id_annee) {
+            $this->db->where('p.id_annee', $id_annee);
+        }
         $this->db->order_by('p.date_debut', 'DESC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());

@@ -622,3 +622,55 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 | 6 | Basse | `Notes_model.php` | Code mort supprimé (~150 lignes : `get_all`, `get_by_id`, `create_record`, `create_batch`, `update_record`, `delete_record`, `get_bulletins`, `get_grille_notes`) |
 | 7 | Basse | `print_fiches.php` | Fichier obsolète supprimé |
 | 8 | Doc | `fonctionnement.md` | TJ = `note_max_matiere` (pas heures × facteur) ; `facteur_points_heure` marqué obsolète |
+
+### Session UI/UX — bulletins, dropdowns, conduite (sept. 2026)
+
+#### Bulletins — colonne "BLANCHES"
+
+- **En-tête colonne première** : le `<th>` vide du tableau bulletin (rowspan 2 ou 3) reçoit le libellé **"BLANCHES"** (au lieu de rester vide). Mode A et mode B.
+- **Largeur colonne** : `branches-header` passée de `140px` à `200px` pour accueillir les noms de matières plus longs.
+
+#### Remplacement global des dropdowns 3-points par icônes directes
+
+**Problème** : les menus déroulants Bootstrap (3-points `tabler:dots-vertical`) étaient **coupés/invisibles** dans les tableaux utilisant `scrollX: true` de DataTables. Le conteneur de scroll crée un `overflow: hidden` qui clipse les dropdowns positionnés en `absolute`. Même avec `data-bs-container="body"`, les boutons eux-mêmes restaient hors de vue quand la colonne Actions était scrollée.
+
+**Solution** : remplacement de TOUS les dropdowns 3-points par des **icônes directes** (Modifier/Supprimer/etc.) sur la même ligne dans un `<div class="d-flex align-items-center gap-8">`.
+
+**23 fichiers modifiés** dans tous les modules :
+
+| Module | Fichier | Actions affichées |
+|---|---|---|
+| Classes | `matieres.php` | Modifier + Supprimer |
+| Classes | `sections.php` | Modifier + Supprimer |
+| Classes | `index.php` | Modifier + Supprimer |
+| Classes | `enseignements.php` | Modifier + Supprimer |
+| Classes | `periodes.php` | Modifier + Activer/Desactiver + Rendre en cours + Supprimer |
+| Classes | `annees.php` | Modifier + Activer/Rendre en cours + Supprimer |
+| Enseignants | `list.php` | Voir + Modifier + Emploi du temps + Supprimer |
+| Enseignants | `programmes.php` | Modifier + Supprimer |
+| Étudiants | `list.php` | Voir + Modifier + Supprimer |
+| Étudiants | `inscriptions.php` | Supprimer |
+| Disponibilites | `index.php` | Modifier + Supprimer |
+| Notes | `evaluations.php` | Modifier + Supprimer |
+| Utilisateurs | `index.php` | Modifier + Supprimer |
+| Uniformes | `index.php` | Modifier + Supprimer |
+| Type_frais | `index.php` | Modifier + Supprimer |
+| Stock_Categories | `index.php` | Modifier + Supprimer |
+| Frais | `index.php` | Modifier + Supprimer (×2 tables) |
+| Produits | `index.php` | Modifier + Supprimer |
+| Librairie | `index.php` | Modifier + Approvisionner + Supprimer |
+| Jours | `index.php` | Modifier + Supprimer |
+| Recu | `index.php` | Imprimer + Modifier + Supprimer |
+| Paiement_recu | `index.php` | Supprimer |
+| Echeance | `index.php` | Modifier + Supprimer |
+| Commandes | `index.php` | Voir + Select statut (dropdown natif) + Supprimer |
+
+**Couleurs des icônes** : bleu (`text-primary-light`) = modifier/voir ; vert (`text-success`) = activer/approvisionner ; orange (`text-warning`) = désactiver ; rouge (`text-danger`) = supprimer.
+
+#### Conduite — corrections
+
+| # | Correction | Détail |
+|---|---|---|
+| 1 | **Footer.php inclus 2 fois** | Supprimé le doublon (lignes 138 + 341 → 1 seule inclusion) |
+| 2 | **Trimestres filtrés par année active** | Le controller `Conduite::index()` ne charge plus que les périodes de l'année active (`id_annee = id_annee_active`). L'API `Periodes::api_list()` accepte désormais le paramètre `id_annee` pour filtrer côté serveur. |
+| 3 | **Changement d'année → rechargement des trimestres** | JS : quand on change l'année, les périodes sont rechargées via `API.periodes.list({ id_annee })` et le sélecteur est reconstruit dynamiquement (plus de simple masquage CSS) |
