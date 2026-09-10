@@ -123,7 +123,7 @@ if (in_array($server_name, ['localhost', '127.0.0.1', ''])) {
 	'dsn'	=> '',
 	'hostname' => getenv('DB_REMOTE_HOSTNAME') ?: 'localhost',
 	'port' => getenv('DB_REMOTE_PORT') ?: 3306,
-	'username' => getenv('DB_REMOTE_USERNAME') ?: 'abemarket_vipschool',
+	'username' => getenv('DB_REMOTE_USERNAME') ?: 'abemarket__g6z1UKJsDzK9OP4UX3biwlCZKWUKN2GF',
 	'password' => getenv('DB_REMOTE_PASSWORD') ?: 'Abe@@2028',
 	'database' => getenv('DB_REMOTE_DATABASE') ?: 'abemarket_vipschool',
 	'dbdriver' => 'mysqli',
