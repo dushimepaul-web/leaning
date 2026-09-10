@@ -508,18 +508,16 @@ async function loadData() {
       <td class="${parseFloat(c.benefice) >= 0 ? 'text-success' : 'text-danger'} fw-semibold">${parseFloat(c.benefice || 0).toLocaleString()} ${DEVISE}</td>
       <td><span class="${statutBadges[c.statut] || ''} px-24 py-4 radius-4 fw-medium text-sm">${statutLabels[c.statut] || c.statut}</span></td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="viewDetail('${c.uuid}')"><i class="ri-eye-line"></i> Voir détail</button></li>
-            <li class="dropdown-divider"></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="changeStatut('${c.uuid}','en_attente')"><i class="ri-time-line"></i> En attente</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="changeStatut('${c.uuid}','prete')"><i class="ri-check-double-line"></i> Prête</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="changeStatut('${c.uuid}','distribuee')"><i class="ri-checkbox-circle-line"></i> Distribuée</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="changeStatut('${c.uuid}','annulee')"><i class="ri-close-circle-line"></i> Annulée</button></li>
-            <li class="dropdown-divider"></li>
-            <li><button class="dropdown-item rounded text-danger d-flex align-items-center gap-2 py-6" onclick="confirmDelete('${c.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-6">
+          <button type="button" class="text-primary-light text-xl" onclick="viewDetail('${c.uuid}')"><i class="ri-eye-line"></i></button>
+          <select class="form-select form-select-sm border-secondary-300 radius-4 py-1" style="width:auto;font-size:12px" onchange="changeStatut('${c.uuid}',this.value);this.selectedIndex=0">
+            <option value="" selected disabled>Statut</option>
+            <option value="en_attente">En attente</option>
+            <option value="prete">Prête</option>
+            <option value="distribuee">Distribuée</option>
+            <option value="annulee">Annulée</option>
+          </select>
+          <button type="button" class="text-danger text-xl" onclick="confirmDelete('${c.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;

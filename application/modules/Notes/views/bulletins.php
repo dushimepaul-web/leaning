@@ -28,7 +28,7 @@
 .bulletin-card .bul-body table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
 .bulletin-card .bul-body table th,.bulletin-card .bul-body table td{border:1px solid #000;padding:3px 4px;text-align:center;font-weight:400}
 .bulletin-card .bul-body table thead th{background:#D9D9D9;font-weight:700;font-size:10px}
-.bulletin-card .bul-body table thead th.branches-header{background:#fff;width:140px;min-width:140px;text-align:center}
+.bulletin-card .bul-body table thead th.branches-header{background:#fff;width:200px;min-width:200px;text-align:center}
 .bulletin-card .bul-body table td.branches{text-align:left;font-weight:700;padding-left:6px}
 .bulletin-card .bul-body table td.matiere{color:#000;font-weight:400}
 .bulletin-card .bul-body table td.num{text-align:center}
@@ -98,7 +98,7 @@
         <span style="font-weight:600;color:#1e293b;font-size:14px;padding:0 8px" id="bulTitle">—</span>
       </div>
       <div class="btn-group">
-        <button onclick="if(gClasseId) window.open(BASE_URL + 'Notes/Bulletins/export/' + gClasseId, '_blank'); else Swal.fire({icon:'warning',title:'Attention',text:'Veuillez sélectionner une classe'});"><i class="ri-printer-line"></i> Imprimer tous</button>
+        <button onclick="if(gClasseId) window.open(API.base_url + 'Notes/Bulletins/export/' + gClasseId, '_blank'); else Swal.fire({icon:'warning',title:'Attention',text:'Veuillez sélectionner une classe'});"><i class="ri-printer-line"></i> Imprimer tous</button>
         <button class="primary" onclick="genererBulletinsClasse()"><i class="ri-magic-line"></i> Générer bulletins</button>
       </div>
     </div>
@@ -325,7 +325,7 @@ function renderBulletins(data,periodeNom,periodeId){
           <thead>
             ${modeB ? `
             <tr>
-              <th class="branches-header" rowspan="3"></th>
+              <th class="branches-header" rowspan="3">BLANCHES</th>
               <th colspan="4">MAXIMA</th>
               ${periodes.map(p=>`<th colspan="4">${p.libelle||''}</th>`).join('')}
               <th colspan="3" rowspan="2">TOTAUX ANNUELS</th>
@@ -340,7 +340,7 @@ function renderBulletins(data,periodeNom,periodeId){
               <th>MAX</th><th>TOT</th><th>%</th>
             </tr>` : `
             <tr>
-              <th class="branches-header" rowspan="2"></th>
+              <th class="branches-header" rowspan="2">BLANCHES</th>
               <th colspan="3">MAXIMA</th>
               ${periodes.map(p=>`<th colspan="3">${p.libelle||''}</th>`).join('')}
               <th colspan="3">TOTAUX ANNUELS</th>

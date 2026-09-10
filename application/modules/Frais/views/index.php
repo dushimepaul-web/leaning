@@ -413,12 +413,9 @@ async function loadFrais() {
       <td><strong>${parseFloat(f.montant || 0).toLocaleString()}</strong></td>
       <td>${f.echeance || '-'}</td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editFraisSidebar('${f.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            <li><button class="dropdown-item rounded text-danger-600 d-flex align-items-center gap-2 py-6" onclick="deleteFrais('${f.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <button type="button" class="text-primary-light text-xl" onclick="editFraisSidebar('${f.uuid}')"><i class="ri-edit-2-line"></i></button>
+          <button type="button" class="text-danger text-xl" onclick="deleteFrais('${f.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;
@@ -470,12 +467,9 @@ async function loadTypes() {
       <td><span class="fw-semibold">${f.libelle || '-'}</span></td>
       <td>${f.description || '-'}</td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editTypeSidebar(${i})"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            <li><button class="dropdown-item rounded text-danger-600 d-flex align-items-center gap-2 py-6" onclick="deleteType('${f.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <button type="button" class="text-primary-light text-xl" onclick="editTypeSidebar(${i})"><i class="ri-edit-2-line"></i></button>
+          <button type="button" class="text-danger text-xl" onclick="deleteType('${f.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;

@@ -59,7 +59,7 @@ class Evaluations extends MY_Controller {
         $sur = (int)($data['ponderee_sur'] ?? 20);
         if ($sur <= 0 || $sur > 1000) { $this->json_error('Note maximale invalide'); return; }
 
-        // Validation plafond ponderee_sur <= note_max_matiere (par période)
+        // Validation plafond ponderee_sur <= note_max_matiere (par groupe de type)
         $mc = $this->Model->readOne('matieres_classes', [
             'id_classe' => $data['id_classe'],
             'id_matiere' => $data['id_matiere'],
@@ -67,17 +67,41 @@ class Evaluations extends MY_Controller {
         ]);
         if ($mc && $mc['note_max_matiere'] !== null && floatval($mc['note_max_matiere']) > 0) {
             $max_autorise = floatval($mc['note_max_matiere']);
-            $row = $this->db->query("
-                SELECT COALESCE(SUM(ev.ponderee_sur), 0) AS total_sur
-                FROM evaluations ev
-                WHERE ev.id_classe = ? AND ev.id_matiere = ? AND ev.id_periode = ? AND ev.deleted_at IS NULL
-            ", [$data['id_classe'], $data['id_matiere'], $data['id_periode']])->row_array();
-            $total_actuel = floatval($row['total_sur']);
-            $nouveau_total = $total_actuel + $sur;
-            if ($nouveau_total > $max_autorise) {
-                $depassement = $nouveau_total - $max_autorise;
-                $this->json_error("Dépassement du plafond : total actuel = {$total_actuel}, + nouvelle évaluation = {$sur}, total = {$nouveau_total}, plafond = {$max_autorise} (dépassement de {$depassement})");
-                return;
+            $newType = in_array($data['type'] ?? '', $types_valides) ? $data['type'] : 'devoir';
+
+            // Groupe 1 : interrogation + devoir (TJ)
+            $groupeTJ = ['interrogation', 'devoir'];
+            // Groupe 2 : competance + ressource + examen
+            $groupeCompRessEx = ['competance', 'ressource', 'examen'];
+
+            if (in_array($newType, $groupeTJ)) {
+                $row = $this->db->query("
+                    SELECT COALESCE(SUM(ev.ponderee_sur), 0) AS total_sur
+                    FROM evaluations ev
+                    WHERE ev.id_classe = ? AND ev.id_matiere = ? AND ev.id_periode = ?
+                    AND ev.type IN ('interrogation','devoir') AND ev.deleted_at IS NULL
+                ", [$data['id_classe'], $data['id_matiere'], $data['id_periode']])->row_array();
+                $total_actuel = floatval($row['total_sur']);
+                $nouveau_total = $total_actuel + $sur;
+                if ($nouveau_total > $max_autorise) {
+                    $depassement = $nouveau_total - $max_autorise;
+                    $this->json_error("Dépassement plafond TJ : total actuel = {$total_actuel}, + nouvelle = {$sur}, total = {$nouveau_total}, plafond = {$max_autorise} (dépassement de {$depassement})");
+                    return;
+                }
+            } elseif (in_array($newType, $groupeCompRessEx)) {
+                $row = $this->db->query("
+                    SELECT COALESCE(SUM(ev.ponderee_sur), 0) AS total_sur
+                    FROM evaluations ev
+                    WHERE ev.id_classe = ? AND ev.id_matiere = ? AND ev.id_periode = ?
+                    AND ev.type IN ('competance','ressource','examen') AND ev.deleted_at IS NULL
+                ", [$data['id_classe'], $data['id_matiere'], $data['id_periode']])->row_array();
+                $total_actuel = floatval($row['total_sur']);
+                $nouveau_total = $total_actuel + $sur;
+                if ($nouveau_total > $max_autorise) {
+                    $depassement = $nouveau_total - $max_autorise;
+                    $this->json_error("Dépassement plafond Comp/Ress/Examen : total actuel = {$total_actuel}, + nouvelle = {$sur}, total = {$nouveau_total}, plafond = {$max_autorise} (dépassement de {$depassement})");
+                    return;
+                }
             }
         }
 
@@ -133,11 +157,12 @@ class Evaluations extends MY_Controller {
             if ($periode) $update['id_annee'] = $periode['id_annee'];
         }
 
-        // Validation plafond ponderee_sur <= note_max_matiere (par période)
+        // Validation plafond ponderee_sur <= note_max_matiere (par groupe de type)
         $check_classe = $update['id_classe'] ?? $existing['id_classe'];
         $check_matiere = $update['id_matiere'] ?? $existing['id_matiere'];
         $check_periode = $update['id_periode'] ?? $existing['id_periode'];
         $check_sur = $update['ponderee_sur'] ?? $existing['ponderee_sur'];
+        $check_type = $update['type'] ?? $existing['type'];
         $mc = $this->Model->readOne('matieres_classes', [
             'id_classe' => $check_classe,
             'id_matiere' => $check_matiere,
@@ -145,17 +170,37 @@ class Evaluations extends MY_Controller {
         ]);
         if ($mc && $mc['note_max_matiere'] !== null && floatval($mc['note_max_matiere']) > 0) {
             $max_autorise = floatval($mc['note_max_matiere']);
-            $row = $this->db->query("
-                SELECT COALESCE(SUM(ev.ponderee_sur), 0) AS total_sur
-                FROM evaluations ev
-                WHERE ev.id_classe = ? AND ev.id_matiere = ? AND ev.id_periode = ? AND ev.id_evaluation != ? AND ev.deleted_at IS NULL
-            ", [$check_classe, $check_matiere, $check_periode, $existing['id_evaluation']])->row_array();
-            $total_actuel = floatval($row['total_sur']);
-            $nouveau_total = $total_actuel + $check_sur;
-            if ($nouveau_total > $max_autorise) {
-                $depassement = $nouveau_total - $max_autorise;
-                $this->json_error("Dépassement du plafond : total actuel = {$total_actuel}, + évaluation = {$check_sur}, total = {$nouveau_total}, plafond = {$max_autorise} (dépassement de {$depassement})");
-                return;
+            $groupeTJ = ['interrogation', 'devoir'];
+            $groupeCompRessEx = ['competance', 'ressource', 'examen'];
+
+            if (in_array($check_type, $groupeTJ)) {
+                $row = $this->db->query("
+                    SELECT COALESCE(SUM(ev.ponderee_sur), 0) AS total_sur
+                    FROM evaluations ev
+                    WHERE ev.id_classe = ? AND ev.id_matiere = ? AND ev.id_periode = ?
+                    AND ev.type IN ('interrogation','devoir') AND ev.id_evaluation != ? AND ev.deleted_at IS NULL
+                ", [$check_classe, $check_matiere, $check_periode, $existing['id_evaluation']])->row_array();
+                $total_actuel = floatval($row['total_sur']);
+                $nouveau_total = $total_actuel + $check_sur;
+                if ($nouveau_total > $max_autorise) {
+                    $depassement = $nouveau_total - $max_autorise;
+                    $this->json_error("Dépassement plafond TJ : total actuel = {$total_actuel}, + nouvelle = {$check_sur}, total = {$nouveau_total}, plafond = {$max_autorise} (dépassement de {$depassement})");
+                    return;
+                }
+            } elseif (in_array($check_type, $groupeCompRessEx)) {
+                $row = $this->db->query("
+                    SELECT COALESCE(SUM(ev.ponderee_sur), 0) AS total_sur
+                    FROM evaluations ev
+                    WHERE ev.id_classe = ? AND ev.id_matiere = ? AND ev.id_periode = ?
+                    AND ev.type IN ('competance','ressource','examen') AND ev.id_evaluation != ? AND ev.deleted_at IS NULL
+                ", [$check_classe, $check_matiere, $check_periode, $existing['id_evaluation']])->row_array();
+                $total_actuel = floatval($row['total_sur']);
+                $nouveau_total = $total_actuel + $check_sur;
+                if ($nouveau_total > $max_autorise) {
+                    $depassement = $nouveau_total - $max_autorise;
+                    $this->json_error("Dépassement plafond Comp/Ress/Examen : total actuel = {$total_actuel}, + nouvelle = {$check_sur}, total = {$nouveau_total}, plafond = {$max_autorise} (dépassement de {$depassement})");
+                    return;
+                }
             }
         }
 

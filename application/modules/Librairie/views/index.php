@@ -163,14 +163,10 @@ async function loadData() {
       <td><strong>${(parseFloat(d.prix_unitaire || 0) - parseFloat(d.prix_achat || 0)).toLocaleString()} ${typeof DEVISE !== 'undefined' ? DEVISE : 'FC'}</strong></td>
       <td><span class="${stockBadge} px-16 py-4 radius-4 fw-medium text-sm">${stock}</span></td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editProduct('${d.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="approvisionner('${d.uuid}','${d.libelle}')"><i class="ri-add-box-line"></i> Approvisionner</button></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteProduct('${d.uuid}')"><i class="ri-delete-bin-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <button type="button" class="text-primary-light text-xl" onclick="editProduct('${d.uuid}')"><i class="ri-edit-2-line"></i></button>
+          <button type="button" class="text-success text-xl" onclick="approvisionner('${d.uuid}','${d.libelle}')"><i class="ri-add-box-line"></i></button>
+          <button type="button" class="text-danger text-xl" onclick="deleteProduct('${d.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;

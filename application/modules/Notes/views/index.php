@@ -314,7 +314,7 @@ async function loadGrilleNotes(){
   let body='';
   let scores=[];
   r.data.eleves.forEach((el,i)=>{
-    body+=`<tr><td class="sticky-left col-no">${i+1}</td><td class="sticky-left col-matricule">${el.matricule||'-'}</td><td class="sticky-left col-nom">${el.nom} ${el.prenom}</td>`;
+    body+=`<tr><td class="sticky-left col-no" data-rr="${el.id_etudiant}">${i+1}</td><td class="sticky-left col-matricule">${el.matricule||'-'}</td><td class="sticky-left col-nom">${el.nom} ${el.prenom}</td>`;
     let total=0,totalSur=0,nb=0;
     r.data.evaluations.forEach(ev=>{
       let n=(r.data.notes[el.id_etudiant]||{})[ev.id_evaluation];

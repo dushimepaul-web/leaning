@@ -31,6 +31,9 @@
       <button id="btnRegenerer" onclick="regenerer()" style="background:#0d6efd;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;display:flex;align-items:center;gap:8px;">
         <span style="font-size:16px;">&#x21BB;</span> Régénérer
       </button>
+      <button id="btnDiagnostiquer" onclick="diagnostiquer()" style="background:#ffc107;color:#000;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;">&#x1F50D;</span> Diagnostiquer
+      </button>
       <a href="<?= base_url('Horaires/fixes') ?>" style="background:#6f42c1;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;display:flex;align-items:center;gap:8px;text-decoration:none;">
         <span style="font-size:16px;">&#x1F512;</span> Sessions Fixes
       </a>
@@ -188,6 +191,95 @@ async function loadTimetable() {
   }
 }
 
+async function diagnostiquer() {
+  Swal.fire({ title: 'Diagnostic en cours...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); } });
+  try {
+    var r = await API.horaires.diagnostiquer();
+    Swal.close();
+    if (r.success && r.data && r.data.success) {
+      var v = r.data;
+      var diagnostics = v.diagnostics || [];
+      var warnings = diagnostics.filter(function(d) { return !d.blocking; });
+
+      if (warnings.length > 0) {
+        var html = '<div style="text-align:left;font-size:13px;">';
+        html += '<p style="color:#198754;font-weight:700;margin-bottom:8px;">&#x2705; Aucun problème bloquant</p>';
+        html += '<p style="color:#856404;font-weight:700;margin-bottom:6px;">&#x26A0; Avertissements (' + warnings.length + ')</p>';
+        html += '<ul style="padding-left:16px;margin-bottom:12px;">';
+        warnings.forEach(function(d) {
+          html += '<li style="margin:4px 0;color:#856404;">' + d.message + '</li>';
+        });
+        html += '</ul>';
+        html += '</div>';
+        Swal.fire({ icon: 'warning', title: 'Diagnostic : avertissements', html: html, confirmButtonText: 'Générer quand même', showDenyButton: true, denyButtonText: 'Fermer', width: 550 }).then(function(res) {
+          if (res.isConfirmed) regenerer();
+        });
+      } else {
+        var html = '<div style="text-align:left;font-size:14px;">';
+        html += '<p style="color:#198754;font-weight:700;margin-bottom:8px;">&#x2705; Aucun problème détecté</p>';
+        html += '</div>';
+        Swal.fire({ icon: 'success', title: 'Diagnostic OK', html: html, confirmButtonText: 'Générer maintenant', showDenyButton: true, denyButtonText: 'Fermer' }).then(function(res) {
+          if (res.isConfirmed) regenerer();
+        });
+      }
+    } else {
+      var diagnostics = (r.data && r.data.diagnostics) ? r.data.diagnostics : [];
+      var blocking = diagnostics.filter(function(d) { return d.blocking; });
+      var warnings = diagnostics.filter(function(d) { return !d.blocking; });
+
+      var html = '<div style="text-align:left;font-size:13px;">';
+
+      if (blocking.length > 0) {
+        html += '<p style="color:#dc3545;font-weight:700;margin-bottom:6px;">&#x274C; Problèmes bloquants (' + blocking.length + ')</p>';
+        html += '<ul style="padding-left:16px;margin-bottom:12px;">';
+        blocking.forEach(function(d) {
+          html += '<li style="margin:4px 0;color:#dc3545;">' + d.message + '</li>';
+        });
+        html += '</ul>';
+      }
+
+      if (warnings.length > 0) {
+        html += '<p style="color:#ffc107;font-weight:700;margin-bottom:6px;">&#x26A0; Avertissements (' + warnings.length + ')</p>';
+        html += '<ul style="padding-left:16px;margin-bottom:12px;">';
+        warnings.forEach(function(d) {
+          html += '<li style="margin:4px 0;color:#856404;">' + d.message + '</li>';
+        });
+        html += '</ul>';
+      }
+
+      if (blocking.length > 0) {
+        html += '<p style="font-size:12px;color:#666;margin-top:8px;"><strong>Que souhaitez-vous faire ?</strong></p>';
+      }
+
+      html += '</div>';
+
+      if (blocking.length > 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Diagnostic : problèmes détectés',
+          html: html,
+          showDenyButton: true,
+          showCancelButton: true,
+          confirmButtonText: 'Modifier les disponibilités',
+          denyButtonText: 'Modifier les fixes',
+          cancelButtonText: 'Fermer',
+          confirmButtonColor: '#0d6efd',
+          denyButtonColor: '#6c757d',
+          width: 550
+        }).then(function(result) {
+          if (result.isConfirmed) window.location.href = '<?= base_url("Disponibilites") ?>';
+          else if (result.isDenied) window.location.href = '<?= base_url("Horaires/fixes") ?>';
+        });
+      } else {
+        Swal.fire({ icon: 'warning', title: 'Diagnostic : avertissements', html: html, confirmButtonText: 'Compris', width: 500 });
+      }
+    }
+  } catch (e) {
+    Swal.close();
+    Swal.fire({ icon: 'error', title: 'Erreur', text: 'Erreur de connexion au serveur.' });
+  }
+}
+
 async function regenerer() {
   var result = await Swal.fire({
     title: 'Régénérer l\'emploi du temps ?',
@@ -257,11 +349,45 @@ async function regenerer() {
       loadTimetable();
     } else {
       var errText = r.message || 'Une erreur est survenue.';
-      if (r.detail) errText += '\n\n' + r.detail;
-      if (r.validation) {
-        errText += '\n\nAttendus: ' + r.validation.expected + ' | Placés: ' + r.validation.placed + ' | Manquants: ' + r.validation.missing;
-      }
-      if (r.diagnostics && r.diagnostics.length) {
+      if (r.messages && r.messages.length) {
+        var escapeHtml = function(value) {
+          return String(value || '').replace(/[&<>'"]/g, function(char) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char];
+          });
+        };
+        var reasons = r.messages.map(function(m) {
+          return '<li style="margin:4px 0;text-align:left;font-size:13px;">' + escapeHtml(m) + '</li>';
+        }).join('');
+
+        var html = '<div style="text-align:left;">';
+        html += '<p style="margin-bottom:8px;">La génération a échoué en raison des conflits suivants :</p>';
+        html += '<ul style="padding-left:18px;margin-bottom:12px;">' + reasons + '</ul>';
+        html += '<p style="font-size:13px;color:#666;margin-bottom:4px;"><strong>Que souhaitez-vous faire ?</strong></p>';
+        html += '</div>';
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Conflits détectés',
+          html: html,
+          showDenyButton: true,
+          showCancelButton: true,
+          confirmButtonText: '<i class="ri-calendar-line"></i> Modifier les disponibilités',
+          denyButtonText: '<i class="ri-lock-line"></i> Modifier les fixes',
+          cancelButtonText: 'Relancer la génération',
+          confirmButtonColor: '#0d6efd',
+          denyButtonColor: '#6c757d',
+          cancelButtonColor: '#198754',
+          width: 550
+        }).then(function(result) {
+          if (result.isConfirmed) {
+            window.location.href = '<?= base_url('Disponibilites') ?>';
+          } else if (result.isDenied) {
+            window.location.href = '<?= base_url('Horaires/fixes') ?>';
+          } else if (result.dismiss === Swal.DismissReason.cancel) {
+            regenerer();
+          }
+        });
+      } else if (r.diagnostics && r.diagnostics.length) {
         var escapeHtml = function(value) {
           return String(value || '').replace(/[&<>'"]/g, function(char) {
             return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char];

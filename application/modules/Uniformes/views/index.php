@@ -187,12 +187,9 @@ async function loadData() {
       <td><span class="${stockBadge} px-24 py-4 radius-4 fw-medium text-sm">${u.stock_actuel}</span></td>
       <td>${u.stock_minimum}</td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord('${u.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete('${u.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <button type="button" class="text-primary-light text-xl" onclick="editRecord('${u.uuid}')"><i class="ri-edit-2-line"></i></button>
+          <button type="button" class="text-danger text-xl" onclick="confirmDelete('${u.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;

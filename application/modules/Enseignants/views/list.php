@@ -136,14 +136,11 @@ async function loadData() {
       <td>${formatDate(e.date_embauche)}</td>
       <td><span class="${statusBadge} px-24 py-4 radius-4 fw-medium text-sm">${statusText}</span></td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><a href="${BASE_URL}Enseignants/details/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-user-3-line"></i> View</a></li>
-            <li><a href="${BASE_URL}Enseignants/edit/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-edit-2-line"></i> Edit</a></li>
-            <li><a href="${BASE_URL}Enseignants/timetable/${e.uuid}" class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6"><i class="ri-calendar-check-line"></i> Timetable</a></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteRecord('${e.uuid}')"><i class="ri-delete-bin-6-line"></i> Delete</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <a href="${BASE_URL}Enseignants/details/${e.uuid}" class="text-primary-light text-xl"><i class="ri-user-3-line"></i></a>
+          <a href="${BASE_URL}Enseignants/edit/${e.uuid}" class="text-warning text-xl"><i class="ri-edit-2-line"></i></a>
+          <a href="${BASE_URL}Enseignants/timetable/${e.uuid}" class="text-success text-xl"><i class="ri-calendar-check-line"></i></a>
+          <button type="button" class="text-danger text-xl" onclick="deleteRecord('${e.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;

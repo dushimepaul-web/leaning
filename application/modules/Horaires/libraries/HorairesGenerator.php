@@ -24,6 +24,15 @@ class HorairesGenerator {
         $fixes = $data['fixes'] ?? [];
         $diagnostics = [];
 
+        // Build teacher name map
+        $teacherNames = [];
+        foreach ($enseignements as $ens) {
+            $id = (int)$ens['id_enseignant'];
+            if (!isset($teacherNames[$id])) {
+                $teacherNames[$id] = $ens['enseignant'] ?? $ens['fullname'] ?? "Enseignant #$id";
+            }
+        }
+
         $teachingByMc = [];
         foreach ($enseignements as $ens) $teachingByMc[(int)$ens['id_matiere_classe']] = $ens;
 
@@ -62,18 +71,35 @@ class HorairesGenerator {
             $requiredDays = (int)ceil($weekly / $maxDaily);
             $daysWithSlots = $this->countDaysWithSlots($idProf, $jours, $creneaux, $indispos);
             if ($daysWithSlots < $requiredDays) {
-                $diagnostics[] = ['type' => 'jours_insuffisants', 'blocking' => true, 'message' => "Cours #$mcId ($weeklyh, max {$maxDaily}h/jour) exige $requiredDays jour(s) mais $daysWithSlots jour(s) disponible(s) pour l'enseignant #$idProf."];
+                $ensName = $teacherNames[$idProf] ?? "Enseignant#$idProf";
+                $matName = $mc['matiere_libelle'] ?? "Cours#$mcId";
+                $diagnostics[] = ['type' => 'jours_insuffisants', 'blocking' => true, 'message' => "$ensName : le cours $matName ({$weekly}h, max {$maxDaily}h/jour) exige $requiredDays jour(s) mais seulement $daysWithSlots jour(s) disponible(s)."];
             }
         }
 
         // 2. Par enseignant : vérifier capacité totale + marge
         foreach ($teacherLoad as $idProf => $load) {
             $capacity = $this->countTeacherCapacity($idProf, $jours, $creneaux, $indispos);
+            $ensName = $teacherNames[$idProf] ?? "Enseignant#$idProf";
+
+            // Détails des jours disponibles
+            $availableDays = $this->getAvailableDaysDetail($idProf, $jours, $creneaux, $indispos);
+            $daysList = [];
+            foreach ($availableDays as $d) {
+                $daysList[] = "{$d['jour']} ({$d['slots']} créneaux)";
+            }
+            $daysStr = !empty($daysList) ? implode(', ', $daysList) : 'aucun jour';
+
             if ($load > $capacity) {
-                $diagnostics[] = ['type' => 'capacite_enseignant', 'blocking' => true, 'message' => "Enseignant #$idProf : $load heure(s) demandées mais seulement $capacity créneau(x) autorisé(s). IMPOSSIBLE."];
+                $deficit = $load - $capacity;
+                $diagnostics[] = [
+                    'type' => 'capacite_enseignant',
+                    'blocking' => true,
+                    'message' => "$ensName : {$load}h/semaine mais seulement $capacity créneau(x) disponible(s) (jours : $daysStr). IMPOSSIBLE — il manque {$deficit} créneau(x).",
+                ];
             }
             if ($load === $capacity && $capacity > 0) {
-                $diagnostics[] = ['type' => 'marge_zero', 'blocking' => false, 'message' => "Enseignant #$idProf : MARGE ZÉRO — $load sessions = $capacity créneaux autorisés. Pré-placement automatique."];
+                $diagnostics[] = ['type' => 'marge_zero', 'blocking' => false, 'message' => "$ensName : MARGE ZÉRO — {$load} sessions = $capacity créneaux autorisés. Pré-placement automatique."];
             }
         }
 
@@ -145,6 +171,22 @@ class HorairesGenerator {
             }
         }
         return $days;
+    }
+
+    private function getAvailableDaysDetail($idProf, $jours, $creneaux, $indispos) {
+        $result = [];
+        foreach ($jours as $jour) {
+            $slots = 0;
+            foreach ($creneaux as $creneau) {
+                if (!isset($indispos[$idProf][(int)$jour['id_jour']][(int)$creneau['id_creneau']])) {
+                    $slots++;
+                }
+            }
+            if ($slots > 0) {
+                $result[] = ['jour' => $jour['libelle'] ?? "Jour#{$jour['id_jour']}", 'slots' => $slots];
+            }
+        }
+        return $result;
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -430,6 +472,18 @@ class HorairesGenerator {
             }
             log_message('error', 'UNPLACED: ' . json_encode($unplaced));
         }
+
+        // Build name maps for conflict details
+        $mapEns = [];
+        foreach ($enseignements as $ens) {
+            $mapEns[(int)$ens['id_enseignant']] = $ens['enseignant'] ?? $ens['fullname'] ?? "Enseignant #{$ens['id_enseignant']}";
+        }
+        $mapJours = [];
+        foreach ($jours as $j) {
+            $mapJours[(int)$j['id_jour']] = $j['libelle'] ?? "Jour #{$j['id_jour']}";
+        }
+        $bestState['mapEns'] = $mapEns;
+        $bestState['mapJours'] = $mapJours;
 
         // Validation finale complète
         $validation = $this->validateCompleteSchedule($bestState, $allPlacedForValidation);
@@ -1175,13 +1229,37 @@ class HorairesGenerator {
         $conflictsProf = $conflictsClasse = $duplicateSessions = 0;
         $dailyLimitViolations = $availabilityViolations = 0;
         $seenGrid = $seenProf = $seenSessionIds = $dailyCounts = [];
+        $conflictDetails = [];
+        $mapEns = $state['mapEns'] ?? [];
+        $mapJours = $state['mapJours'] ?? [];
 
         foreach ($state['sessionsPlaced'] as $session) {
             if (!isset($session['id_jour']) || !isset($session['id_creneau'])) continue;
             $ck = $this->makeGridKey((int)$session['id_classe'], (int)$session['id_jour'], $session['id_creneau']);
             $pk = $this->makeProfKey((int)$session['id_enseignant'], (int)$session['id_jour'], $session['id_creneau']);
-            if (isset($seenGrid[$ck])) $conflictsClasse++; else $seenGrid[$ck] = true;
-            if (isset($seenProf[$pk])) $conflictsProf++; else $seenProf[$pk] = true;
+            if (isset($seenGrid[$ck])) {
+                $conflictsClasse++;
+                $conflictDetails[] = [
+                    'type' => 'classe',
+                    'message' => "Conflit classe jour {$session['id_jour']} créneau {$session['id_creneau']}"
+                ];
+            } else {
+                $seenGrid[$ck] = true;
+            }
+            if (isset($seenProf[$pk])) {
+                $conflictsProf++;
+                $ensName = $mapEns[$session['id_enseignant']] ?? "Enseignant #{$session['id_enseignant']}";
+                $jourName = $mapJours[$session['id_jour']] ?? "Jour #{$session['id_jour']}";
+                $conflictDetails[] = [
+                    'type' => 'prof',
+                    'enseignant' => $ensName,
+                    'jour' => $jourName,
+                    'creneau' => $session['id_creneau'],
+                    'message' => "Conflit : {$ensName} déjà assigné {$jourName} créneau {$session['id_creneau']}"
+                ];
+            } else {
+                $seenProf[$pk] = true;
+            }
             if (isset($seenSessionIds[$session['session_id']])) $duplicateSessions++; else $seenSessionIds[$session['session_id']] = true;
             if (isset($state['indisponibilites'][(int)$session['id_enseignant']][(int)$session['id_jour']][$session['id_creneau']])) {
                 $availabilityViolations++;
@@ -1206,6 +1284,7 @@ class HorairesGenerator {
             'duplicate_sessions' => $duplicateSessions,
             'daily_limit_violations' => $dailyLimitViolations,
             'availability_violations' => $availabilityViolations,
+            'conflict_details' => $conflictDetails,
         ];
     }
 

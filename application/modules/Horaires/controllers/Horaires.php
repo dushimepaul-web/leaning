@@ -168,6 +168,28 @@ class Horaires extends MY_Controller {
         $this->json_success(null, 'Toutes les sessions fixes ont été supprimées');
     }
 
+    public function api_diagnostiquer() {
+        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+        $idAnnee = $annee ? $annee['id_annee'] : $this->id_annee_active;
+
+        $payload = $this->Horaires_model->get_generation_payload();
+        $payload['fixes'] = $this->Horaires_model->get_fixes_by_annee($idAnnee);
+        $preflight = $this->horairesgenerator->preflight($payload);
+
+        $warnings = 0;
+        foreach ($preflight['diagnostics'] as $d) {
+            if (empty($d['blocking'])) $warnings++;
+        }
+
+        return $this->json_success([
+            'success' => $preflight['success'],
+            'diagnostics' => $preflight['diagnostics'],
+            'warnings' => $warnings,
+            'placed' => 0,
+            'expected' => 0,
+        ]);
+    }
+
     public function api_generer() {
         $this->generer();
     }
@@ -214,10 +236,20 @@ class Horaires extends MY_Controller {
                     . ' | Conflits classe: ' . $validation['conflicts_classe']
                     . ' | Limites quotidiennes: ' . $validation['daily_limit_violations']
                     . ' | Indisponibilités: ' . $validation['availability_violations'];
+                $messages = [];
+                if (!empty($validation['conflict_details'])) {
+                    foreach ($validation['conflict_details'] as $cd) {
+                        $messages[] = $cd['message'];
+                    }
+                }
+                if ($validation['missing'] > 0) {
+                    $messages[] = "{$validation['missing']} cours non placé(s).";
+                }
                 return $this->json_response([
                     'success' => false,
-                    'message' => 'Génération échouée : Emploi du temps incomplet ou comportant des conflits. Aucune écriture effectuée.',
+                    'message' => 'Génération échouée : conflits détectés.',
                     'detail' => $detail,
+                    'messages' => $messages,
                     'validation' => $validation
                 ], 422);
             }

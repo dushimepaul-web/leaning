@@ -105,13 +105,10 @@ async function loadData() {
       <td><strong>${parseFloat(d.montant_total || 0).toLocaleString()}</strong></td>
       <td>${d.date_edition || '-'}</td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-           <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><a class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" href="${BASE_URL}Recus/imprimer/${d.uuid}" target="_blank"><i class="ri-printer-line"></i> Imprimer</a></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editData('${d.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deleteData('${d.uuid}')"><i class="ri-delete-bin-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <a class="text-success text-xl" href="${BASE_URL}Recus/imprimer/${d.uuid}" target="_blank"><i class="ri-printer-line"></i></a>
+          <button type="button" class="text-primary-light text-xl" onclick="editData('${d.uuid}')"><i class="ri-edit-2-line"></i></button>
+          <button type="button" class="text-danger text-xl" onclick="deleteData('${d.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;

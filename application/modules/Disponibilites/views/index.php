@@ -24,6 +24,17 @@
       <div class="card-body p-0 dataTable-wrapper">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-bottom border-neutral-200">
           <div class="d-flex flex-wrap align-items-center gap-16">
+            <div class="d-flex align-items-center gap-8">
+              <span class="text-sm text-secondary-light">Afficher</span>
+              <select id="pageLength" class="form-select form-select-sm" style="width:70px;" onchange="changePageLength()">
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="0">Tout</option>
+              </select>
+              <span class="text-sm text-secondary-light">lignes</span>
+            </div>
             <div class="dropdown">
               <button type="button" class="px-12 py-5-px border border-neutral-300 radius-8 d-flex align-items-center gap-20" data-bs-toggle="dropdown">
                 <span class="d-flex align-items-center gap-1 text-secondary-light text-sm"><i class="ri-file-upload-line text-md line-height-1"></i> Export</span>
@@ -36,7 +47,7 @@
               </ul>
             </div>
             <form class="navbar-search dt-search m-0">
-              <input type="text" id="dtSearch" class="dt-input bg-transparent radius-4" aria-controls="dataTable" name="search" placeholder="Rechercher...">
+              <input type="text" id="dtSearch" class="dt-input bg-transparent radius-4" aria-controls="dataTable" name="search" placeholder="Rechercher..." oninput="applyFilters()">
               <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
             </form>
           </div>
@@ -83,6 +94,7 @@
           </thead>
           <tbody id="dataBody"></tbody>
         </table>
+        <div id="pagination"></div>
       </div>
     </div>
   </div>
@@ -104,17 +116,23 @@
         <input type="text" class="form-control" id="id_enseignant_search" placeholder="Rechercher..." autocomplete="off">
         <div id="id_enseignant_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
       </div>
-      <div class="col-md-6 position-relative">
+      <div class="col-md-4 position-relative">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Jour *</label>
         <input type="hidden" id="id_jour">
         <input type="text" class="form-control" id="id_jour_search" placeholder="Rechercher..." autocomplete="off">
         <div id="id_jour_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
       </div>
-      <div class="col-md-6 position-relative">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Créneau *</label>
+      <div class="col-md-4 position-relative">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Créneau début *</label>
         <input type="hidden" id="id_creneau">
         <input type="text" class="form-control" id="id_creneau_search" placeholder="Rechercher..." autocomplete="off">
         <div id="id_creneau_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
+      </div>
+      <div class="col-md-4 position-relative" id="creneau_fin_wrapper">
+        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Créneau fin</label>
+        <input type="hidden" id="id_creneau_fin">
+        <input type="text" class="form-control" id="id_creneau_fin_search" placeholder="Laisser vide = 1 seul" autocomplete="off">
+        <div id="id_creneau_fin_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
       </div>
       <div class="col-12">
         <div class="form-check">
@@ -159,7 +177,7 @@
 </div>
 
 <script src="<?= base_url() ?>assets/js/autocomplete.js?v=<?= filemtime(FCPATH.'assets/js/autocomplete.js') ?>"></script>
-<script src="<?= base_url() ?>assets/js/api.js?v=<?= filemtime(FCPATH.'assets/js/api.js') ?>"></script>
+<script src="<?= base_url() ?>assets/js/api.js?v=<?= time() ?>"></script>
 <script id="disponibilites_enseignants_data" type="application/json"><?= json_encode($enseignants) ?></script>
 <script id="disponibilites_jours_data" type="application/json"><?= json_encode($jours) ?></script>
 <script id="disponibilites_creneaux_data" type="application/json"><?= json_encode($creneaux) ?></script>
@@ -167,51 +185,104 @@
 
 
 function applyFilters() {
-  const q = (document.getElementById('filterSearch')?.value || '').toLowerCase();
+  const q = (document.getElementById('dtSearch')?.value || '').toLowerCase();
   const statutVal = document.getElementById('filterStatut')?.value || '';
-  $('#dataTable tbody tr').each(function() {
-    const text = $(this).text().toLowerCase();
+  filteredData = allData.filter(d => {
+    const text = (d.enseignant + ' ' + d.jour + ' ' + d.creneau + ' ' + d.type).toLowerCase();
     const matchSearch = !q || text.indexOf(q) > -1;
     let matchStatut = true;
-    if (statutVal === 'actif') matchStatut = text.indexOf('disponible') > -1 && text.indexOf('indisponible') === -1;
-    else if (statutVal === 'inactif') matchStatut = text.indexOf('indisponible') > -1;
-    $(this).toggle(matchSearch && matchStatut);
+    if (statutVal === 'actif') matchStatut = d.type === 'disponible';
+    else if (statutVal === 'inactif') matchStatut = d.type === 'indisponible';
+    return matchSearch && matchStatut;
   });
+  currentPage = 1;
+  renderTable();
 }
 
 function resetFilters() {
+  if (document.getElementById('dtSearch')) document.getElementById('dtSearch').value = '';
   if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
   if (document.getElementById('filterStatut')) document.getElementById('filterStatut').value = '';
-  $('#dataTable tbody tr').show();
+  filteredData = allData;
+  currentPage = 1;
+  renderTable();
 }
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editingId = null;
 let deleteId = null;
+let allData = [];
+let filteredData = [];
+let currentPage = 1;
+let pageLimit = 10;
 
-async function loadData() {
-  const res = await API.disponibilites.list();
-  if (!res.success) { $('#dataBody').html('<tr><td colspan="6" class="text-center text-danger">Erreur</td></tr>'); return; }
+function changePageLength() {
+  pageLimit = parseInt(document.getElementById('pageLength').value) || 10;
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const source = filteredData;
+  const start = pageLimit === 0 ? 0 : (currentPage - 1) * pageLimit;
+  const pageData = pageLimit === 0 ? source : source.slice(start, start + pageLimit);
   let rows = '';
-  res.data.forEach((d, i) => {
+  pageData.forEach((d, i) => {
+    const idx = pageLimit === 0 ? i + 1 : start + i + 1;
     const typeBadge = d.type === 'disponible' ? 'bg-success-100 text-success-600' : 'bg-danger-100 text-danger-600';
     rows += `<tr>
-      <td>${i + 1}</td>
+      <td>${idx}</td>
       <td><span class="fw-semibold">${d.enseignant || '-'}</span></td>
       <td>${d.jour || '-'}</td>
       <td>${d.creneau || '-'}</td>
       <td><span class="${typeBadge} px-24 py-4 radius-4 fw-medium text-sm text-capitalize">${d.type}</span></td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord('${d.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete('${d.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <button type="button" class="text-primary-light text-xl" onclick="editRecord('${d.uuid}')"><i class="ri-edit-2-line"></i></button>
+          <button type="button" class="text-danger text-xl" onclick="confirmDelete('${d.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;
   });
+  if (!rows) rows = '<tr><td colspan="6" class="text-center text-secondary-light">Aucun résultat</td></tr>';
   $('#dataBody').html(rows);
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = filteredData.length;
+  const totalPages = pageLimit === 0 ? 1 : Math.ceil(total / pageLimit);
+  let html = '<div class="d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12">';
+  html += `<span class="text-sm text-secondary-light">Affichage de ${pageLimit === 0 ? 1 : (currentPage-1)*pageLimit+1} à ${pageLimit === 0 ? total : Math.min(currentPage*pageLimit, total)} sur ${total} entrées</span>`;
+  html += '<div class="d-flex align-items-center gap-4">';
+  html += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(1)" ${currentPage===1?'disabled':''}><i class="ri-arrow-left-double-line"></i></button>`;
+  html += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="ri-arrow-left-s-line"></i></button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    if (totalPages > 7 && p > 2 && p < totalPages - 1 && Math.abs(p - currentPage) > 1) {
+      if (p === 3 || p === totalPages - 2) html += '<span class="px-2">...</span>';
+      continue;
+    }
+    html += `<button class="btn btn-sm ${p===currentPage?'btn-primary':'btn-outline-secondary'}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}><i class="ri-arrow-right-s-line"></i></button>`;
+  html += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${totalPages})" ${currentPage>=totalPages?'disabled':''}><i class="ri-arrow-right-double-line"></i></button>`;
+  html += '</div></div>';
+  $('#pagination').html(html);
+}
+
+function goPage(p) {
+  const totalPages = pageLimit === 0 ? 1 : Math.ceil(filteredData.length / pageLimit);
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  renderTable();
+}
+
+async function loadData() {
+  const res = await API.disponibilites.list();
+  if (!res.success) { $('#dataBody').html('<tr><td colspan="6" class="text-center text-danger">Erreur</td></tr>'); return; }
+  allData = res.data || [];
+  filteredData = allData;
+  currentPage = 1;
+  renderTable();
 }
 
 function openAddSidebar() {
@@ -222,7 +293,10 @@ function openAddSidebar() {
   document.getElementById('all_creneaux').checked = false;
   document.getElementById('id_creneau').value = '';
   document.getElementById('id_creneau_search').value = '';
-  document.getElementById('id_creneau').closest('.col-md-6').style.display = '';
+  document.getElementById('id_creneau_fin').value = '';
+  document.getElementById('id_creneau_fin_search').value = '';
+  document.getElementById('id_creneau').closest('.col-md-4').style.display = '';
+  document.getElementById('creneau_fin_wrapper').style.display = '';
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -257,11 +331,15 @@ async function editRecord(id) {
 
 function toggleAllCreneaux() {
   const checked = document.getElementById('all_creneaux').checked;
-  const creneauField = document.getElementById('id_creneau').closest('.col-md-6');
-  creneauField.style.display = checked ? 'none' : '';
+  const creneauStart = document.getElementById('id_creneau').closest('.col-md-4');
+  const creneauEnd = document.getElementById('creneau_fin_wrapper');
+  creneauStart.style.display = checked ? 'none' : '';
+  creneauEnd.style.display = checked ? 'none' : '';
   if (checked) {
     document.getElementById('id_creneau').value = '';
     document.getElementById('id_creneau_search').value = '';
+    document.getElementById('id_creneau_fin').value = '';
+    document.getElementById('id_creneau_fin_search').value = '';
   }
 }
 
@@ -270,6 +348,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   const id_enseignant = parseInt(document.getElementById('id_enseignant').value) || 0;
   const id_jour = parseInt(document.getElementById('id_jour').value) || 0;
   const id_creneau = parseInt(document.getElementById('id_creneau').value) || 0;
+  const id_creneau_fin = parseInt(document.getElementById('id_creneau_fin').value) || 0;
   const type = document.getElementById('type').value;
   const allCreneaux = document.getElementById('all_creneaux').checked;
 
@@ -285,6 +364,8 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   let r;
   if (allCreneaux) {
     r = await API.disponibilites.bulk({ id_enseignant, id_jour, type });
+  } else if (id_creneau_fin && id_creneau_fin >= id_creneau) {
+    r = await API.disponibilites.bulkRange({ id_enseignant, id_jour, id_creneau_debut: id_creneau, id_creneau_fin: id_creneau_fin, type });
   } else {
     const data = { id_enseignant, id_jour, id_creneau, type };
     if (editingId) {
@@ -349,7 +430,7 @@ function exportCSV() {
       autoSetup('id_enseignant_search', 'id_enseignant', 'id_enseignant_results', JSON.parse(document.getElementById('disponibilites_enseignants_data').textContent).map(function(e) { return { id: e.id_enseignant, nom: e.fullname || e.nom, prenom: e.prenom || '' }; }), function(e) { return e.nom + (e.prenom ? ' ' + e.prenom : ''); });
       autoSetup('id_jour_search', 'id_jour', 'id_jour_results', JSON.parse(document.getElementById('disponibilites_jours_data').textContent).map(function(j) { return { id: j.id_jour, libelle: j.libelle }; }), function(j) { return j.libelle; });
       autoSetup('id_creneau_search', 'id_creneau', 'id_creneau_results', JSON.parse(document.getElementById('disponibilites_creneaux_data').textContent).map(function(c) { return { id: c.id_creneau, libelle: c.libelle, heure_debut: c.heure_debut, heure_fin: c.heure_fin }; }), function(c) { return c.libelle + ' (' + c.heure_debut + '-' + c.heure_fin + ')'; });
-      $('#dtSearch').on('keyup', function() { applyFilters(); });
+      autoSetup('id_creneau_fin_search', 'id_creneau_fin', 'id_creneau_fin_results', JSON.parse(document.getElementById('disponibilites_creneaux_data').textContent).map(function(c) { return { id: c.id_creneau, libelle: c.libelle, heure_debut: c.heure_debut, heure_fin: c.heure_fin }; }), function(c) { return c.libelle + ' (' + c.heure_debut + '-' + c.heure_fin + ')'; });
     }
   }, 50);
 })();

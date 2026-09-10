@@ -193,17 +193,14 @@ async function loadData() {
       <td><span class="${enCoursBadge} px-24 py-4 radius-4 fw-medium text-sm">${enCoursText}</span></td>
       <td><span class="${statusBadge} px-24 py-4 radius-4 fw-medium text-sm">${statusText}</span></td>
       <td>
-        <div class="btn-group">
-          <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
-          <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="editRecord('${s.uuid}')"><i class="ri-edit-2-line"></i> Modifier</button></li>
-            ${s.deleted_at !== null
-              ? `<li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="activatePeriod('${s.uuid}')"><i class="ri-check-line"></i> Activer</button></li>`
-              : `<li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="deactivatePeriod('${s.uuid}')"><i class="ri-close-line"></i> Désactiver</button></li>`
-            }
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="setActivePeriod('${s.uuid}')"><i class="ri-check-double-line"></i> Rendre en cours</button></li>
-            <li><button class="dropdown-item rounded text-secondary-light d-flex align-items-center gap-2 py-6" onclick="confirmDelete('${s.uuid}')"><i class="ri-delete-bin-6-line"></i> Supprimer</button></li>
-          </ul>
+        <div class="d-flex align-items-center gap-8">
+          <button type="button" class="text-primary-light text-xl" onclick="editRecord('${s.uuid}')"><i class="ri-edit-2-line"></i></button>
+          ${s.deleted_at !== null
+            ? `<button type="button" class="text-success text-xl" onclick="activatePeriod('${s.uuid}')"><i class="ri-check-line"></i></button>`
+            : `<button type="button" class="text-warning text-xl" onclick="deactivatePeriod('${s.uuid}')"><i class="ri-close-line"></i></button>`
+          }
+          <button type="button" class="text-info text-xl" onclick="setActivePeriod('${s.uuid}')"><i class="ri-check-double-line"></i></button>
+          <button type="button" class="text-danger text-xl" onclick="confirmDelete('${s.uuid}')"><i class="ri-delete-bin-6-line"></i></button>
         </div>
       </td>
     </tr>`;

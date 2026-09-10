@@ -142,18 +142,28 @@ let currentList = [];
 let currentPointView = null;
 let currentClasseId = null;
 const pointsDefautEcole = <?= (float)($points_defaut_ecole ?? 60) ?>;
+const idAnneeActive = '<?= $id_annee_active ?>';
+const idPeriodeActive = '<?= $id_periode_active ?>';
 
-document.getElementById('id_annee').addEventListener('change', function() {
-  const aid = this.value;
+function filterPeriodes() {
+  const aid = document.getElementById('id_annee').value;
   const sel = document.getElementById('id_periode');
-  let ok = false;
+  let firstVisible = null;
   Array.from(sel.options).forEach(function(opt) {
     if (!opt.value) return;
     const visible = opt.dataset.annee === aid;
     opt.style.display = visible ? '' : 'none';
-    if (visible && opt.selected) ok = true;
+    if (visible && !firstVisible) firstVisible = opt;
   });
-  if (!ok) sel.value = '';
+  if (firstVisible && !Array.from(sel.options).some(o => o.dataset.annee === aid && o.selected)) {
+    sel.value = firstVisible.value;
+  }
+}
+
+filterPeriodes();
+
+document.getElementById('id_annee').addEventListener('change', function() {
+  filterPeriodes();
   if (currentClasseId) loadData();
 });
 
