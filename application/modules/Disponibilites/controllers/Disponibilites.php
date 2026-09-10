@@ -101,4 +101,85 @@ class Disponibilites extends MY_Controller {
             $this->json_success(null, 'Disponibilité supprimée');
         else $this->json_error('Erreur');
     }
+
+    public function api_bulk_create() {
+        $data = $this->get_json_input();
+        if (empty($data['id_enseignant']) || empty($data['id_jour']) ||
+            !is_numeric($data['id_enseignant']) || !is_numeric($data['id_jour'])) {
+            $this->json_error('Enseignant et jour obligatoires'); return;
+        }
+        if (!$this->Model->readOne('enseignants', ['id_enseignant' => $data['id_enseignant'], 'deleted_at' => null])) {
+            $this->json_error('Enseignant introuvable'); return;
+        }
+        if (!$this->Model->readOne('jours_semaine', ['id_jour' => $data['id_jour']])) {
+            $this->json_error('Jour invalide'); return;
+        }
+
+        $type = !empty($data['type']) ? $data['type'] : 'disponible';
+        if (!in_array($type, ['disponible', 'indisponible'])) {
+            $this->json_error('Type invalide'); return;
+        }
+
+        $this->load->model('Horaires/Horaires_model');
+        $creneaux = $this->Horaires_model->get_creneaux_cours();
+        $creneauIds = [];
+        foreach ($creneaux as $cr) {
+            $id = (int)$cr['id_creneau'];
+            if ($id > 0) $creneauIds[] = $id;
+        }
+
+        $idEns = (int)$data['id_enseignant'];
+        $idJour = (int)$data['id_jour'];
+
+        $existingQuery = $this->db->query(
+            "SELECT id_creneau, type FROM disponibilites_enseignants WHERE id_enseignant = ? AND id_jour = ? AND deleted_at IS NULL",
+            [$idEns, $idJour]
+        );
+        $existingMap = [];
+        if ($existingQuery && $existingQuery->num_rows() > 0) {
+            foreach ($existingQuery->result_array() as $row) {
+                $existingMap[(int)$row['id_creneau']] = $row['type'];
+            }
+        }
+
+        $toInsert = [];
+        $toUpdate = [];
+        $skipped = 0;
+        $created = 0;
+
+        foreach ($creneauIds as $crId) {
+            if (isset($existingMap[$crId])) {
+                if ($existingMap[$crId] !== $type) {
+                    $toUpdate[] = $crId;
+                } else {
+                    $skipped++;
+                }
+                continue;
+            }
+            $toInsert[] = [
+                'uuid' => generate_uuid(),
+                'id_enseignant' => $idEns,
+                'id_creneau' => $crId,
+                'id_jour' => $idJour,
+                'type' => $type
+            ];
+        }
+
+        if (!empty($toInsert)) {
+            $this->db->insert_batch('disponibilites_enseignants', $toInsert);
+            $created += count($toInsert);
+        }
+
+        foreach ($toUpdate as $crId) {
+            $this->db->where('id_enseignant', $idEns)->where('id_creneau', $crId)->where('id_jour', $idJour)->where('deleted_at', null);
+            $this->db->update('disponibilites_enseignants', ['type' => $type]);
+            $created++;
+        }
+
+        $this->json_success([
+            'created' => $created,
+            'skipped' => $skipped,
+            'total' => count($creneauIds)
+        ], "$created disponibilité(s) créée(s), $skipped déjà existante(s)");
+    }
 }

@@ -284,14 +284,16 @@ async function loadFiche(){
   if(idMatiere){return loadFicheCours(id_classe,idMatiere,p,a);}
   var cls=data.classe||'';
   var an=data.annee_scolaire||'';
-  var ressActive = (data.ressources_active===undefined ? 1 : parseInt(data.ressources_active)) !== 0;
-  var compActive = (data.competences_active===undefined ? 1 : parseInt(data.competences_active)) !== 0;
-  var bothActive = ressActive && compActive;
-  var colSpan = bothActive ? 4 : 3;
-  var subHead = bothActive ? '<th>TJ</th><th>RESS</th><th>COMP</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
-  function cells(t){ return bothActive
-    ? [nf(t.tj), nf(t.ress), nf(t.comp), '<strong>'+nf(t.tot)+'</strong>']
-    : [nf(t.tj), nf(t.comp + t.ress), '<strong>'+nf(t.tot)+'</strong>']; }
+  var compActive = (data.competences_active===undefined ? 0 : parseInt(data.competences_active)) !== 0;
+  var ressActive = (data.ressources_active===undefined ? 0 : parseInt(data.ressources_active)) !== 0;
+  var exActive = (data.examen_active===undefined ? 0 : parseInt(data.examen_active)) !== 0;
+  var modeB = compActive || ressActive;
+  var modeA = exActive && !modeB;
+  var colSpan = modeB ? 4 : 3;
+  var subHead = modeB ? '<th>TJ</th><th>COMP</th><th>RESS</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+  function cells(t){ return modeB
+    ? [nf(t.tj), nf(t.comp), nf(t.ress), '<strong>'+nf(t.tot)+'</strong>']
+    : [nf(t.tj), nf((t.comp || 0) + (t.ress || 0) + (t.ex || 0)), '<strong>'+nf(t.tot)+'</strong>']; }
   var pids=periodes.map(function(p){return p.id_periode});
 
   var section=data.section||data.classe_section||'';
@@ -311,18 +313,18 @@ async function loadFiche(){
     '<div class="h-row"><span class="titre-cours">FICHE DE POINTS — '+titreCours+'</span><span class="h-right">'+(pLbl||'')+'</span></div>';
 
   function cumMax(mid,i){
-    var t={tj:0,comp:0,ress:0,tot:0};
+    var t={tj:0,comp:0,ress:0,ex:0,tot:0};
     for(var k=0;k<=i;k++){
       var mm=data.maxima&&data.maxima[mid]&&data.maxima[mid][pids[k]];
-      if(mm){t.tj+=mm.tj||0;t.comp+=mm.comp||0;t.ress+=mm.ress||0;}
+      if(mm){t.tj+=mm.tj||0;t.comp+=mm.comp||0;t.ress+=mm.ress||0;t.ex+=mm.ex||0;}
     }
-    t.tot=t.tj+t.comp+t.ress;
+    t.tot=t.tj+t.comp+t.ress+t.ex;
     return t;
   }
   function midMax(mid,i){
     var mm=data.maxima&&data.maxima[mid]&&data.maxima[mid][pids[i]];
-    if(!mm){return {tj:0,comp:0,ress:0,tot:0};}
-    return {tj:mm.tj||0,comp:mm.comp||0,ress:mm.ress||0,tot:(mm.tj||0)+(mm.comp||0)+(mm.ress||0)};
+    if(!mm){return {tj:0,comp:0,ress:0,ex:0,tot:0};}
+    return {tj:mm.tj||0,comp:mm.comp||0,ress:mm.ress||0,ex:mm.ex||0,tot:(mm.tj||0)+(mm.comp||0)+(mm.ress||0)+(mm.ex||0)};
   }
   function cumNotes(el,mid,i){
     var me=el.matieres.find(function(m){return m.id_matiere==mid;});
@@ -452,4 +454,3 @@ function exportFiche(){
 
 (function(){var wait=setInterval(function(){if(typeof API!=='undefined'){clearInterval(wait);autoSetup('id_classe_search','id_classe','id_classe_results',classesList.map(function(c){return{id:c.id_classe,libelle:c.libelle};}),function(c){return c.libelle;},function(){chargerCours(document.getElementById('id_classe').value);});autoSetup('id_matiere_search','id_matiere','id_matiere_results',matieresList,function(m){return m.libelle;});filterPeriodeFiches();}},50);})();
 </script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>

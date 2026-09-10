@@ -28,11 +28,17 @@ window.API = {
     try {
       const response = await fetch(url, options);
       const contentType = response.headers.get('content-type') || '';
-      if (!response.ok || contentType.indexOf('application/json') === -1) {
-        console.error('API Error: réponse non JSON', response.status, url);
-        return { success: false, status: response.status, message: 'Réponse invalide du serveur (' + response.status + ')' };
+      if (contentType.indexOf('application/json') !== -1) {
+        var jsonData = await response.json();
+        if (!response.ok) {
+          jsonData.status = response.status;
+        }
+        return jsonData;
       }
-      return await response.json();
+      if (!response.ok) {
+        return { success: false, status: response.status, message: 'Erreur serveur (' + response.status + ')' };
+      }
+      return { success: false, message: 'Réponse non JSON du serveur' };
     } catch (error) {
       console.error('API Error:', error);
       return { success: false, message: 'Erreur de connexion au serveur' };
@@ -86,11 +92,10 @@ window.API = {
    categories: { list: () => API.get('api/categories'), get: (id) => API.get('api/categories/' + id), create: (d) => API.post('api/categories/create', d), update: (id, d) => API.post('api/categories/' + id + '/update', d), delete: (id) => API.get('api/categories/' + id + '/delete') },
    mouvements: { list: () => API.get('api/mouvements'), create: (d) => API.post('api/mouvements/create', d) },
    commandes: { list: () => API.get('api/commandes'), get: (id) => API.get('api/commandes/' + id), create: (d) => API.post('api/commandes/create', d), update: (id, d) => API.post('api/commandes/' + id + '/update', d), delete: (id) => API.get('api/commandes/' + id + '/delete') },
-   horaires: { list: () => API.get('api/horaires'), create: (d) => API.post('api/horaires/create', d), update: (id, d) => API.post('api/horaires/' + id + '/update', d), delete: (id) => API.get('api/horaires/' + id + '/delete'), generer: () => API.post('api/horaires/generer') },
+   horaires: { list: () => API.get('api/horaires'), create: (d) => API.post('api/horaires/create', d), update: (id, d) => API.post('api/horaires/' + id + '/update', d), delete: (id) => API.get('api/horaires/' + id + '/delete'), generer: () => API.post('api/horaires/generer'), fixes: { list: () => API.get('api/horaires/fixes'), create: (d) => API.post('api/horaires/fixes/create', d), delete: (id) => API.get('api/horaires/fixes/' + id + '/delete'), clear: () => API.post('api/horaires/fixes/clear') } },
 
   parametres: { list: () => API.get('api/parametres'), update: (d) => API.post('api/parametres/update', d) },
    evenements: { list: () => API.get('api/evenements'), create: (d) => API.post('api/evenements/create', d), update: (id, d) => API.post('api/evenements/' + id + '/update', d), delete: (id) => API.get('api/evenements/' + id + '/delete') },
-   creneaux: { list: () => API.get('api/creneaux'), get: (id) => API.get('api/creneaux/' + id), create: (d) => API.post('api/creneaux/create', d), update: (id, d) => API.post('api/creneaux/' + id + '/update', d), delete: (id) => API.get('api/creneaux/' + id + '/delete') },
    jours: { list: () => API.get('api/jours'), get: (id) => API.get('api/jours/' + id), create: (d) => API.post('api/jours/create', d), update: (id, d) => API.post('api/jours/' + id + '/update', d), delete: (id) => API.get('api/jours/' + id + '/delete') },
     conduite: {
         list: (params) => API.get('api/conduite' + params),
@@ -100,7 +105,7 @@ window.API = {
         sanctionCreate: (d) => API.post('api/conduite/sanctions/create', d),
         sanctionDelete: (id) => API.get('api/conduite/sanctions/' + id + '/delete')
     },
-   disponibilites: { list: () => API.get('api/disponibilites'), get: (id) => API.get('api/disponibilites/' + id), create: (d) => API.post('api/disponibilites/create', d), update: (id, d) => API.post('api/disponibilites/' + id + '/update', d), delete: (id) => API.get('api/disponibilites/' + id + '/delete') },
+   disponibilites: { list: () => API.get('api/disponibilites'), get: (id) => API.get('api/disponibilites/' + id), create: (d) => API.post('api/disponibilites/create', d), bulk: (d) => API.post('api/disponibilites/bulk', d), update: (id, d) => API.post('api/disponibilites/' + id + '/update', d), delete: (id) => API.get('api/disponibilites/' + id + '/delete') },
    uniformes: { list: () => API.get('api/uniformes'), get: (id) => API.get('api/uniformes/' + id), create: (d) => API.post('api/uniformes/create', d), update: (id, d) => API.post('api/uniformes/' + id + '/update', d), delete: (id) => API.get('api/uniformes/' + id + '/delete') },
    audit: { list: () => API.get('api/audit') },
    notifications: { list: () => API.get('api/notifications'), markRead: (id) => API.get('api/notifications/' + id + '/read') },

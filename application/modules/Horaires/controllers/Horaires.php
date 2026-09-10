@@ -2,361 +2,291 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Horaires extends MY_Controller {
+
     public function __construct() {
         parent::__construct();
         $this->load->model('Horaires_model');
+        $this->load->library('HorairesGenerator');
     }
 
     public function index() {
-        $data['title'] = 'Emploi du temps';
-        $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
-        $data['enseignants'] = $this->Model->read('enseignants', ['deleted_at' => null]);
-        $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null]);
+        $parametres = $this->Horaires_model->get_parametres_map();
+        $data['classes'] = $this->db->where('deleted_at IS NULL')->get('classes')->result_array();
         $data['creneaux'] = $this->Horaires_model->get_creneaux_cours();
-        $data['jours'] = $this->Model->read('jours_semaine', [], 'ordre');
-        $data['generations'] = $this->Model->read('horaires_generations', ['deleted_at' => null]);
+        $data['creneaux_mardi'] = $this->Horaires_model->get_creneaux_mardi();
+        $data['jours'] = $this->db->where('deleted_at IS NULL')->order_by('id_jour', 'ASC')->get('jours_semaine')->result_array();
+        $data['jour_special'] = $parametres['jour_special'] ?? 'mardi';
+        $data['jour_special_actif'] = $parametres['jour_special_actif'] ?? '1';
+        $data['annee_label'] = '';
+        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+        if ($annee) {
+            $data['annee_label'] = $annee['libelle'] ?? ($annee['date_debut'] . '-' . $annee['date_fin']);
+        }
         $this->load->view('index', $data);
     }
 
-    public function api_get($id) {
-        $this->db->where('h.uuid', $id);
-        $this->db->where('h.deleted_at', null);
-        $this->db->select('h.*, c.libelle as classe, j.libelle as jour, j.ordre as jour_ordre, m.libelle as matiere, ens.fullname as enseignant, g.libelle as generation');
-        $this->db->from('horaires h');
-        $this->db->join('classes c', 'h.id_classe = c.id_classe', 'left');
-        $this->db->join('jours_semaine j', 'h.id_jour = j.id_jour', 'left');
-        $this->db->join('enseignements eg', 'h.id_enseignement = eg.id_enseignement', 'left');
-        $this->db->join('matieres_classes mc', 'eg.id_matiere_classe = mc.id_matiere_classe', 'left');
-        $this->db->join('matieres m', 'mc.id_matiere = m.id_matiere', 'left');
-        $this->db->join('enseignants ens', 'h.id_enseignant = ens.id_enseignant', 'left');
-        $this->db->join('horaires_generations g', 'h.id_generation = g.id_generation', 'left');
-        $q = $this->db->get();
-        $d = $q !== false ? $q->row_array() : null;
-        if (!$d) { $this->json_error('Horaire introuvable', 404); return; }
-        $this->json_success($d);
+    public function api_list() {
+        $this->json_success($this->Horaires_model->list_horaires());
     }
 
-    public function api_list() {
-        $this->json_success($this->Horaires_model->get_all());
+    public function api_get($id) {
+        $this->db->where('h.deleted_at', null);
+        $this->db->select('h.*, e.fullname as enseignant, m.code as matiere_code, m.libelle as matiere_libelle, c.libelle as classe_libelle');
+        $this->db->from('horaires h');
+        $this->db->join('enseignants e', 'h.id_enseignant = e.id_enseignant', 'left');
+        $this->db->join('matieres m', 'h.id_matiere = m.id_matiere', 'left');
+        $this->db->join('classes c', 'h.id_classe = c.id_classe', 'left');
+        $this->db->where('h.uuid', $id);
+        $q = $this->db->get();
+        $row = $q !== false ? $q->row_array() : null;
+        if (!$row) { $this->json_error('Horaire non trouvé', 404); return; }
+        $this->json_success($row);
     }
 
     public function api_create() {
         $data = $this->get_json_input();
-        if (empty($data['id_classe']) || empty($data['id_jour']) || empty($data['id_creneau'])) {
-            $this->json_error('Classe, jour et créneau obligatoires'); return;
+        if (empty($data['id_enseignement']) || empty($data['id_matiere']) || empty($data['id_enseignant']) ||
+            empty($data['id_classe']) || empty($data['id_creneau']) || empty($data['id_jour'])) {
+            $this->json_error('Tous les champs sont obligatoires'); return;
         }
-        if (!$this->Model->readOne('classes', ['id_classe' => $data['id_classe'], 'deleted_at' => null])) {
-            $this->json_error('Classe introuvable'); return;
-        }
-        if (!$this->Model->readOne('jours_semaine', ['id_jour' => $data['id_jour']])) {
-            $this->json_error('Jour invalide'); return;
-        }
-        $creneaux = $this->Horaires_model->get_creneaux_cours();
-        $creneau_ids = array_column($creneaux, 'id_creneau');
-        if (!in_array((int)$data['id_creneau'], $creneau_ids)) {
-            $this->json_error('Créneau invalide'); return;
-        }
-        if (!empty($data['id_enseignant']) && !$this->Model->readOne('enseignants', ['id_enseignant' => $data['id_enseignant'], 'deleted_at' => null])) {
-            $this->json_error('Enseignant introuvable'); return;
-        }
-        $this->load->helper('uuid');
-
-        $gen = $this->_getOrCreateGeneration();
-        if (!$gen) { $this->json_error('Erreur création génération'); return; }
-
-        $ens = $this->_resolveEnseignement($data);
-        if (!$ens) {
-            if (!empty($data['id_enseignant'])) {
-                $ens = $this->Model->readOne('enseignements', [
-                    'id_enseignant' => $data['id_enseignant'],
-                    'id_classe' => $data['id_classe'],
-                    'deleted_at' => null
-                ]);
-            }
-        }
-        if (!$ens) { $this->json_error('Aucun enseignement trouvé pour cette classe/matière'); return; }
-
-        $id_enseignant = !empty($data['id_enseignant']) ? $data['id_enseignant'] : $ens['id_enseignant'];
-
-        $conflict = $this->Model->readOne('horaires', [
-            'id_generation' => $gen['id_generation'],
-            'id_jour' => $data['id_jour'],
-            'id_creneau' => $data['id_creneau'],
-            'id_classe' => $data['id_classe'],
-            'deleted_at' => null
-        ]);
-        if ($conflict) { $this->json_error('Ce créneau est déjà occupé pour cette classe'); return; }
-
-        $teacherConflict = $this->Model->readOne('horaires', [
-            'id_generation' => $gen['id_generation'],
-            'id_jour' => $data['id_jour'],
-            'id_creneau' => $data['id_creneau'],
-            'id_enseignant' => $id_enseignant,
-            'deleted_at' => null
-        ]);
-        if ($teacherConflict) { $this->json_error('Cet enseignant est déjà occupé sur ce créneau'); return; }
-
+        $gen = $this->Horaires_model->get_latest_generation();
+        if (!$gen) { $this->json_error('Aucune génération existante'); return; }
         $insert = [
+            'uuid' => function_exists('random_string') ? random_string('alnum', 36) : md5(uniqid(rand(), true)),
             'id_generation' => $gen['id_generation'],
-            'id_enseignement' => $ens['id_enseignement'],
+            'id_enseignement' => $data['id_enseignement'],
+            'id_matiere' => $data['id_matiere'],
+            'id_enseignant' => $data['id_enseignant'],
             'id_classe' => $data['id_classe'],
-            'id_jour' => $data['id_jour'],
             'id_creneau' => $data['id_creneau'],
-            'id_enseignant' => $id_enseignant,
+            'id_jour' => $data['id_jour'],
+            'deleted_at' => null
         ];
         $id = $this->Model->createLastId('horaires', $insert);
-        if ($id) $this->json_success(['id_horaire' => $id], 'Horaire ajouté');
-        else $this->json_error('Erreur');
+        if ($id) $this->json_success(['id_horaire' => $id], 'Horaire créé');
+        else $this->json_error('Erreur lors de la création');
     }
 
     public function api_update($id) {
         $data = $this->get_json_input();
-        $allowed = ['id_classe', 'id_jour', 'id_creneau', 'id_enseignant'];
-        $update = array_intersect_key($data, array_flip($allowed));
-        if (empty($update) && empty($data['id_matiere'])) { $this->json_error('Aucune donnée à modifier'); return; }
-        if (!empty($data['id_classe']) || !empty($data['id_matiere'])) {
-            $row = $this->Model->readOne('horaires', ['uuid' => $id]);
-            if ($row) {
-                $resolve = ['id_classe' => isset($data['id_classe']) ? $data['id_classe'] : $row['id_classe'], 'id_matiere' => isset($data['id_matiere']) ? $data['id_matiere'] : null];
-                $ens = $this->_resolveEnseignement($resolve);
-                if ($ens) $update['id_enseignement'] = $ens['id_enseignement'];
-            }
-        }
-        if (!empty($update)) {
-            if ($this->Model->update('horaires', ['uuid' => $id], $update))
-                $this->json_success(null, 'Horaire mis à jour');
-            else $this->json_error('Erreur');
-        } else {
-            $this->json_success(null, 'Aucune modification');
-        }
+        $existing = $this->Model->readOne('horaires', ['uuid' => $id]);
+        if (!$existing) { $this->json_error('Horaire non trouvé', 404); return; }
+        $allowed = ['id_enseignement', 'id_matiere', 'id_enseignant', 'id_classe', 'id_creneau', 'id_jour'];
+        $update = array_intersect_key($data ?? [], array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
+        if ($this->Model->update('horaires', ['uuid' => $id], $update))
+            $this->json_success(null, 'Horaire mis à jour');
+        else $this->json_error('Erreur lors de la mise à jour');
     }
 
     public function api_delete($id) {
         if ($this->Model->update('horaires', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')]))
             $this->json_success(null, 'Horaire supprimé');
-        else $this->json_error('Erreur');
-    }
-
-    public function api_generer() {
-        // CORRECTION: Verrouillage de concurrence MySQL GET_LOCK avec timeout de 5 secondes
-        $lockName = 'gen_horaires_annee_' . $this->id_annee_active;
-        $lockQuery = $this->db->query("SELECT GET_LOCK(?, 5) as lock_res", [$lockName])->row();
-        if (!$lockQuery || $lockQuery->lock_res != 1) {
-            $this->json_error('Une génération est déjà en cours, veuillez patienter.');
-            return;
-        }
-
-        $this->load->helper('uuid');
-        $gen = $this->_getOrCreateGeneration();
-        if (!$gen) { 
-            $this->db->query("SELECT RELEASE_LOCK(?)", [$lockName]);
-            $this->json_error('Erreur création génération'); 
-            return; 
-        }
-
-        try {
-            $jours = $this->Horaires_model->get_jours_actifs();
-            $creneaux = $this->Horaires_model->get_creneaux_cours();
-            $matieresClasses = $this->Horaires_model->get_matieres_classes_a_planifier();
-
-            if (empty($jours) || empty($creneaux) || empty($matieresClasses)) {
-                $this->db->query("SELECT RELEASE_LOCK(?)", [$lockName]);
-                $this->json_error('Données insuffisantes pour la génération'); 
-                return;
-            }
-
-            $rawDispos = $this->Horaires_model->get_disponibilites_enseignants();
-            $indisponible = [];
-            foreach ($rawDispos as $d) { $indisponible[$d['id_enseignant']][$d['id_jour']][$d['id_creneau']] = true; }
-
-            $contraintes = $this->Horaires_model->get_contraintes_horaires($this->id_annee_active);
-            $contraintesIndex = [];
-            foreach ($contraintes as $ct) { $contraintesIndex[$ct['type']][$ct['id_concerne']][] = $ct; }
-
-            $mapMC2Ens = [];
-            foreach ($matieresClasses as $mc) {
-                $mapMC2Ens[$mc['id_matiere_classe']] = $this->Horaires_model->get_or_create_enseignement(
-                    $mc['id_matiere_classe'], $mc['id_enseignant'], $mc['id_matiere'], $mc['id_classe']
-                );
-            }
-
-            $grille = [];
-            $occupationProf = [];
-            $heuresParJourMC = [];
-
-            $estLibre = function($idProf, $idClasse, $idMatiere, $idJour, $idCreneau) use (&$grille, &$occupationProf, &$indisponible, &$contraintesIndex) {
-                $gkey = $idClasse . '_' . $idJour . '_' . $idCreneau;
-                if (isset($grille[$gkey])) return false;
-                $pkey = $idProf . '_' . $idJour . '_' . $idCreneau;
-                if (isset($occupationProf[$pkey])) return false;
-                if (isset($indisponible[$idProf][$idJour][$idCreneau])) return false;
-                if (isset($contraintesIndex['matiere'][$idMatiere])) {
-                    foreach ($contraintesIndex['matiere'][$idMatiere] as $ct) {
-                        if ($ct['regle'] === 'interdit' && $ct['id_jour'] == $idJour) {
-                            if (!$ct['id_creneau_debut'] || ($idCreneau >= $ct['id_creneau_debut'] && $idCreneau <= $ct['id_creneau_fin'])) return false;
-                        }
-                    }
-                }
-                return true;
-            };
-
-            $placer = function($idProf, $idClasse, $idMatiere, $idEns, $idJour, $idCreneau, $idMC = null) use (&$grille, &$occupationProf, &$heuresParJourMC) {
-                $gkey = $idClasse . '_' . $idJour . '_' . $idCreneau;
-                $pkey = $idProf . '_' . $idJour . '_' . $idCreneau;
-                $grille[$gkey] = [
-                    'id_enseignement' => $idEns,
-                    'id_matiere' => $idMatiere,
-                    'id_enseignant' => $idProf,
-                    'id_classe' => $idClasse,
-                    'id_jour' => $idJour,
-                    'id_creneau' => $idCreneau,
-                ];
-                $occupationProf[$pkey] = true;
-                if ($idMC !== null) {
-                    $hkey = $idMC . '_' . $idJour;
-                    $heuresParJourMC[$hkey] = ($heuresParJourMC[$hkey] ?? 0) + 1;
-                }
-            };
-
-            $coursNonPlaces = [];
-            $created = 0;
-
-            foreach ($matieresClasses as $cours) {
-                $idMC = $cours['id_matiere_classe'];
-                $nbHeures = (int)$cours['nb_heures_par_semaine'];
-                $nbHeuresParJour = max(1, (int)$cours['nb_heures_par_jour']);
-                $idProf = $cours['id_enseignant'];
-                $idClasse = $cours['id_classe'];
-                $idMatiere = $cours['id_matiere'];
-                $idEns = $mapMC2Ens[$idMC] ?? 0;
-
-                // CORRECTION: Remplissage jour par jour complet et décrémentation par pas de 1 heure
-                $tryPlace = function($idProf, $idClasse, $idMatiere, $idEns, $nbHeuresParJour, $idMC, &$nbHeures, &$created, $jours, $creneaux, &$estLibre, &$placer, &$heuresParJourMC) {
-                    $placedAny = false;
-                    foreach ($jours as $jour) {
-                        if ($nbHeures <= 0) break;
-                        $hkey = $idMC . '_' . $jour['id_jour'];
-                        // Remplir le jour jusqu'à la limite nb_heures_par_jour
-                        while ($nbHeures > 0 && ($nbHeuresParJour <= 0 || ($heuresParJourMC[$hkey] ?? 0) < $nbHeuresParJour)) {
-                            $slotFound = false;
-                            foreach ($creneaux as $cr) {
-                                if ($nbHeures <= 0) break;
-                                if ($nbHeuresParJour > 0 && ($heuresParJourMC[$hkey] ?? 0) >= $nbHeuresParJour) break;
-                                if (!empty($cr['type_creneau']) && $cr['type_creneau'] !== 'cours') continue;
-                                if (!$estLibre($idProf, $idClasse, $idMatiere, $jour['id_jour'], $cr['id_creneau'])) continue;
-                                $placer($idProf, $idClasse, $idMatiere, $idEns, $jour['id_jour'], $cr['id_creneau'], $idMC);
-                                // CORRECTION: 1 créneau placé = 1 heure
-                                $nbHeures -= 1; 
-                                $created++;
-                                $placedAny = true;
-                                $slotFound = true;
-                            }
-                            if (!$slotFound) break;
-                        }
-                    }
-                    return $placedAny;
-                };
-
-                $maxAttempts = 1; // PERFORMANCE MAXIMALE: 1 seul essai direct, abandon immédiat si collision pour garantir < 0.5 seconde
-                $attempts = 0;
-                while ($nbHeures > 0 && $attempts++ < $maxAttempts) {
-                    if ($tryPlace($idProf, $idClasse, $idMatiere, $idEns, $nbHeuresParJour, $idMC, $nbHeures, $created, $jours, $creneaux, $estLibre, $placer, $heuresParJourMC)) {
-                        // tryPlace gère déjà les décrémentations et le placement en boucle par jour
-                    } else {
-                        // CORRECTION: Diagnostic précis des échecs avec raison et heures manquantes
-                        $coursNonPlaces[] = [
-                            'matiere' => $cours['matiere_libelle'] . ' (' . $cours['matiere_code'] . ')',
-                            'heures_manquantes' => $nbHeures,
-                            'raison' => 'aucun_creneau_libre'
-                        ];
-                        break;
-                    }
-                }
-            }
-
-            if (!$this->Horaires_model->insert_horaires_batch($gen['id_generation'], $grille)) {
-                $this->db->query("SELECT RELEASE_LOCK(?)", [$lockName]);
-                $this->json_error('Erreur lors de l\'insertion'); 
-                return;
-            }
-
-            // Libération du verrou MySQL
-            $this->db->query("SELECT RELEASE_LOCK(?)", [$lockName]);
-
-            $msg = $created . ' créneaux créés';
-            if (!empty($coursNonPlaces)) {
-                $detailsText = [];
-                foreach ($coursNonPlaces as $cp) {
-                    $detailsText[] = $cp['matiere'] . ' : ' . $cp['heures_manquantes'] . 'h manquante(s), raison: ' . $cp['raison'];
-                }
-                $msg .= ', ' . count($coursNonPlaces) . ' non placés (' . implode('; ', $detailsText) . ')';
-            }
-
-            $this->json_success([
-                'created' => $created,
-                'generation' => $gen['libelle'],
-                'statut' => 'brouillon',
-                'message' => $msg,
-                'conflits_restants' => count($coursNonPlaces),
-                'details_conflits' => $coursNonPlaces,
-            ], $msg);
-
-        } catch (Exception $e) {
-            $this->db->query("SELECT RELEASE_LOCK(?)", [$lockName]);
-            $this->json_error('Erreur : ' . $e->getMessage());
-        }
+        else $this->json_error('Erreur lors de la suppression');
     }
 
     public function api_generations() {
-        $this->json_success($this->Model->read('horaires_generations', ['deleted_at' => null]));
-    }
-
-    private function _getOrCreateGeneration() {
-        $this->load->helper('uuid');
-        $gen = $this->Model->readOne('horaires_generations', ['id_annee' => $this->id_annee_active, 'deleted_at' => null]);
-        if (!$gen) {
-            $genId = $this->Model->createLastId('horaires_generations', [
-                'uuid' => generate_uuid(),
-                'libelle' => 'Emploi du temps ' . date('Y') . '-' . (date('Y') + 1),
-                'id_annee' => $this->id_annee_active,
-                'statut' => 'brouillon'
-            ]);
-            $gen = $genId ? $this->Model->readOne('horaires_generations', ['id_generation' => $genId]) : null;
-        }
-        return $gen;
-    }
-
-    private function _resolveEnseignement($data) {
-        if (!empty($data['id_matiere']) && !empty($data['id_classe'])) {
-            $mc = $this->Model->readOne('matieres_classes', [
-                'id_matiere' => $data['id_matiere'],
-                'id_classe' => $data['id_classe']
-            ]);
-            if (!$mc) {
-                $this->load->helper('uuid');
-                $mc_id = $this->Model->createLastId('matieres_classes', [
-                    'uuid' => generate_uuid(),
-                    'id_matiere' => $data['id_matiere'],
-                    'id_classe' => $data['id_classe'],
-                    'note_max_matiere' => 1.0,
-                ]);
-                if ($mc_id) $mc = $this->Model->readOne('matieres_classes', ['id_matiere_classe' => $mc_id]);
-            }
-            if ($mc) {
-                return $this->Model->readOne('enseignements', [
-                    'id_matiere_classe' => $mc['id_matiere_classe'],
-                    'deleted_at' => null
-                ]);
-            }
-        }
-        return null;
+        $this->db->order_by('id_generation', 'DESC');
+        $q = $this->db->get('horaires_generations');
+        $this->json_success($q !== false ? $q->result_array() : []);
     }
 
     public function api_matieres_by_classe($id_classe) {
-        $this->json_success($this->Horaires_model->get_matieres_by_classe($id_classe));
+        $this->db->select('mc.*, m.code as matiere_code, m.libelle as matiere_libelle, e.fullname as enseignant');
+        $this->db->from('matieres_classes mc');
+        $this->db->join('matieres m', 'mc.id_matiere = m.id_matiere', 'left');
+        $this->db->join('enseignants e', 'mc.id_enseignant = e.id_enseignant', 'left');
+        $this->db->where('mc.id_classe', $id_classe);
+        $this->db->where('mc.deleted_at', null);
+        $this->db->where('mc.nb_heures_par_semaine >', 0);
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : []);
     }
 
     public function api_enseignant_by_classe_matiere($id_classe, $id_matiere) {
-        $this->json_success($this->Horaires_model->get_enseignant_by_classe_matiere($id_classe, $id_matiere));
+        $this->db->select('e.*, ens.id_enseignement');
+        $this->db->from('enseignements ens');
+        $this->db->join('enseignants e', 'ens.id_enseignant = e.id_enseignant', 'left');
+        $this->db->where('ens.id_classe', $id_classe);
+        $this->db->where('ens.id_matiere', $id_matiere);
+        $this->db->where('ens.deleted_at', null);
+        $q = $this->db->get();
+        $this->json_success($q !== false ? $q->result_array() : []);
+    }
+
+    public function fixes() {
+        $data['title'] = 'Sessions Fixes';
+        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+        $data['annee_label'] = $annee ? ($annee['libelle'] ?? '') : '';
+        $data['id_annee'] = $annee ? $annee['id_annee'] : 0;
+        $data['classes'] = $this->db->where('deleted_at IS NULL')->get('classes')->result_array();
+        $data['creneaux'] = $this->Horaires_model->get_creneaux_cours();
+        $data['jours'] = $this->db->where('deleted_at IS NULL')->order_by('id_jour', 'ASC')->get('jours_semaine')->result_array();
+        $data['enseignants'] = $this->db->where('deleted_at IS NULL')->get('enseignants')->result_array();
+        $this->load->view('fixes', $data);
+    }
+
+    public function api_fixes_list() {
+        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+        if (!$annee) { $this->json_error('Aucune année active'); return; }
+        $this->json_success($this->Horaires_model->get_fixes($annee['id_annee']));
+    }
+
+    public function api_fixes_create() {
+        $data = $this->get_json_input();
+        if (empty($data['id_classe']) || empty($data['id_matiere_classe']) || empty($data['id_enseignant']) ||
+            empty($data['id_jour']) || empty($data['id_creneau'])) {
+            $this->json_error('Tous les champs sont obligatoires'); return;
+        }
+        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+        if (!$annee) { $this->json_error('Aucune année active'); return; }
+
+        $insert = [
+            'uuid' => generate_uuid(),
+            'id_annee' => $annee['id_annee'],
+            'id_classe' => (int)$data['id_classe'],
+            'id_matiere_classe' => (int)$data['id_matiere_classe'],
+            'id_enseignant' => (int)$data['id_enseignant'],
+            'id_jour' => (int)$data['id_jour'],
+            'id_creneau' => (int)$data['id_creneau'],
+        ];
+        $id = $this->Horaires_model->add_fixe($insert);
+        if ($id) $this->json_success(['id_horaire_fixe' => $id], 'Session fixe créée');
+        else $this->json_error('Erreur lors de la création');
+    }
+
+    public function api_fixes_delete($uuid) {
+        if ($this->Horaires_model->remove_fixe($uuid))
+            $this->json_success(null, 'Session fixe supprimée');
+        else $this->json_error('Erreur lors de la suppression');
+    }
+
+    public function api_fixes_clear() {
+        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+        if (!$annee) { $this->json_error('Aucune année active'); return; }
+        $this->Horaires_model->clear_fixes($annee['id_annee']);
+        $this->json_success(null, 'Toutes les sessions fixes ont été supprimées');
+    }
+
+    public function api_generer() {
+        $this->generer();
+    }
+
+    public function generer() {
+        $lockName = 'vip_school_horaires_generation_lock';
+        $lockAcquired = false;
+
+        try {
+            $lockQuery = $this->db->query("SELECT GET_LOCK(?, 10) as lk", [$lockName]);
+            $lockAcquired = (bool)$lockQuery->row()->lk;
+
+            if (!$lockAcquired) {
+                return $this->json_error("Une génération est déjà en cours. Veuillez patienter.", 423);
+            }
+
+            $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+            $idAnnee = $annee ? $annee['id_annee'] : $this->id_annee_active;
+
+            $payload = $this->Horaires_model->get_generation_payload();
+            $payload['fixes'] = $this->Horaires_model->get_fixes_by_annee($idAnnee);
+            $preflight = $this->horairesgenerator->preflight($payload);
+            if (empty($preflight['success'])) {
+                $blockingMessages = [];
+                foreach ($preflight['diagnostics'] as $d) {
+                    if (!empty($d['blocking'])) $blockingMessages[] = $d['message'];
+                }
+                return $this->json_response([
+                    'success' => false,
+                    'message' => 'Génération impossible : corrigez les contraintes suivantes.',
+                    'diagnostics' => $preflight['diagnostics'],
+                    'blocking_messages' => $blockingMessages
+                ], 422);
+            }
+            $result = $this->horairesgenerator->generate($payload);
+
+            log_message('error', 'GENERATE RESULT: ' . json_encode($result['validation']));
+
+            if (!$result['success'] || $result['validation']['missing'] > 0 || $result['validation']['conflicts_prof'] > 0 || $result['validation']['conflicts_classe'] > 0 || $result['validation']['daily_limit_violations'] > 0 || $result['validation']['availability_violations'] > 0) {
+                $validation = $result['validation'];
+                $detail = 'Placés: ' . $validation['placed'] . '/' . $validation['expected']
+                    . ' | Manquants: ' . $validation['missing']
+                    . ' | Conflits prof: ' . $validation['conflicts_prof']
+                    . ' | Conflits classe: ' . $validation['conflicts_classe']
+                    . ' | Limites quotidiennes: ' . $validation['daily_limit_violations']
+                    . ' | Indisponibilités: ' . $validation['availability_violations'];
+                return $this->json_response([
+                    'success' => false,
+                    'message' => 'Génération échouée : Emploi du temps incomplet ou comportant des conflits. Aucune écriture effectuée.',
+                    'detail' => $detail,
+                    'validation' => $validation
+                ], 422);
+            }
+
+            $this->db->truncate('horaires');
+
+            $this->db->trans_begin();
+
+            $generationId = $this->Horaires_model->create_generation_record([
+                'uuid' => function_exists('random_string') ? random_string('alnum', 36) : md5(uniqid(rand(), true)),
+                'id_annee' => $idAnnee,
+                'statut' => 'brouillon'
+            ]);
+
+            $batchRows = [];
+            $sessionsToSave = !empty($result['sessionsPlaced']) ? $result['sessionsPlaced'] : $result['grid'];
+            foreach ($sessionsToSave as $session) {
+                $isFixe = !empty($session['type']) && $session['type'] === 'fixe';
+                $batchRows[] = [
+                    'uuid' => function_exists('random_string') ? random_string('alnum', 36) : md5(uniqid(rand(), true)),
+                    'id_generation' => $generationId,
+                    'id_enseignement' => $session['id_enseignement'],
+                    'id_matiere' => $session['id_matiere'],
+                    'id_enseignant' => $session['id_enseignant'],
+                    'id_classe' => $session['id_classe'],
+                    'id_creneau' => $session['id_creneau'],
+                    'id_jour' => $session['id_jour'],
+                    'deleted_at' => null
+                ];
+            }
+
+            if (!empty($batchRows)) {
+                $this->Horaires_model->insert_horaires_batch($batchRows);
+            }
+
+            $insertedCount = $this->db->where('id_generation', $generationId)->where('deleted_at IS NULL')->count_all_results('horaires');
+            $expectedTotal = $result['validation']['expected'];
+            if ($insertedCount !== (int)$expectedTotal) {
+                throw new Exception("Erreur de double validation post-insertion : Lignes insérées ($insertedCount) != Attendues ($expectedTotal).");
+            }
+
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Erreur critique lors de la transaction BDD.");
+            }
+
+            $this->db->trans_commit();
+
+            $v = $result['validation'];
+            return $this->json_success([
+                'success' => true,
+                'message' => 'Génération réussie à 100% (' . $v['placed'] . '/' . $v['expected'] . ')',
+                'created' => $v['placed'],
+                'conflits_restants' => $v['conflicts_prof'] + $v['conflicts_classe'] + $v['missing'],
+                'pass5' => ['swap_logistique' => 0],
+                'cre' => ['placees' => 0, 'log' => []],
+                'placements_swap_logistique' => [],
+                'validation' => $v
+            ]);
+
+        } catch (Exception $e) {
+            if ($this->db->trans_status() !== NULL) {
+                $this->db->trans_rollback();
+            }
+            return $this->json_error("Erreur critique : " . $e->getMessage(), 500);
+
+        } finally {
+            if ($lockAcquired) {
+                $this->db->query("SELECT RELEASE_LOCK(?)", [$lockName]);
+            }
+        }
     }
 }

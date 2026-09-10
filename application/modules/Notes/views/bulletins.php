@@ -98,7 +98,7 @@
         <span style="font-weight:600;color:#1e293b;font-size:14px;padding:0 8px" id="bulTitle">—</span>
       </div>
       <div class="btn-group">
-        <button onclick="if(gClasseId) window.open(API.base_url + 'Notes/Bulletins/export/' + gClasseId, '_blank'); else Swal.fire({icon:'warning',title:'Attention',text:'Veuillez sélectionner une classe'});"><i class="ri-printer-line"></i> Imprimer tous</button>
+        <button onclick="if(gClasseId) window.open(BASE_URL + 'Notes/Bulletins/export/' + gClasseId, '_blank'); else Swal.fire({icon:'warning',title:'Attention',text:'Veuillez sélectionner une classe'});"><i class="ri-printer-line"></i> Imprimer tous</button>
         <button class="primary" onclick="genererBulletinsClasse()"><i class="ri-magic-line"></i> Générer bulletins</button>
       </div>
     </div>
@@ -110,7 +110,7 @@
 <?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 const Toast=Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:2500,timerProgressBar:true});
-let gClasseId=null,gClasseNom='';
+let gClasseId=null,gClasseNom='',gPeriodeId='all';
 
 document.getElementById('id_classe').addEventListener('click', function() {
   document.getElementById('classeDropdown').classList.remove('d-none');
@@ -163,7 +163,7 @@ document.getElementById('id_annee').addEventListener('change', async function() 
       });
     }
   } catch(e) {
-    console.error('[Periodes] Erreur chargement:', e);
+    console.error('[Periodes]', e);
   }
 });
 
@@ -185,44 +185,16 @@ async function openBulletinPeriode(id,periodeId,periodeNom){
   document.getElementById('bulletinsList').innerHTML='<div class="text-center py-32"><div class="spinner-border text-primary-600"></div><p class="mt-8 text-secondary-light">Chargement des bulletins...</p></div>';
 
   const url=API.base_url+'api/bulletins/complet/'+id+'?periode='+periodeId+'&annee='+document.getElementById('id_annee').value+'&cumul=1';
-  console.log('[Bulletins] URL appelée:', url);
   try {
     const resp = await fetch(url);
-    console.log('[Bulletins] HTTP status:', resp.status, resp.statusText);
     if (!resp.ok) {
-      const errText = await resp.text();
-      console.error('[Bulletins] Réponse HTTP error:', errText.substring(0, 500));
       document.getElementById('bulletinsList').innerHTML='<div class="text-center py-32 text-danger">Erreur HTTP '+resp.status+' — '+resp.statusText+'</div>';
       return;
     }
     const r = await resp.json();
-    console.log('[Bulletins] JSON reçu, success:', r.success, 'keys:', Object.keys(r));
-    if (r.data) {
-      console.log('[Bulletins] data keys:', Object.keys(r.data));
-      console.log('[Bulletins] eleves:', r.data.eleves ? r.data.eleves.length : 'MISSING');
-      console.log('[Bulletins] matieres:', r.data.matieres ? r.data.matieres.length : 'MISSING');
-      console.log('[Bulletins] periodes:', r.data.periodes ? r.data.periodes.length : 'MISSING');
-      console.log('[Bulletins] maxima:', r.data.maxima ? Object.keys(r.data.maxima).length + ' keys' : 'MISSING');
-      console.log('[Bulletins] competences_active:', r.data.competences_active);
-      console.log('[Bulletins] ressources_active:', r.data.ressources_active);
-      if (r.data.eleves && r.data.eleves[0]) {
-        const el0 = r.data.eleves[0];
-        console.log('[Bulletins] premier élève:', el0.fullname, 'matieres:', el0.matieres ? el0.matieres.length : 'MISSING');
-        if (el0.matieres && el0.matieres[0]) {
-          const m0 = el0.matieres[0];
-          console.log('[Bulletins] première matière:', m0.libelle, 'id_matiere:', m0.id_matiere, 'periodes keys:', m0.periodes ? Object.keys(m0.periodes) : 'MISSING');
-          if (m0.periodes) {
-            const k = Object.keys(m0.periodes)[0];
-            console.log('[Bulletins] periodes['+k+']:', JSON.stringify(m0.periodes[k]));
-          }
-        }
-      }
-    }
     if(!r.success){Swal.fire({icon:'error',text:r.message});return}
     renderBulletins(r.data,periodeNom,periodeId);
-    console.log('[Bulletins] renderBulletins terminé OK');
   } catch(e) {
-    console.error('[Bulletins] EXCEPTION:', e.message, e.stack);
     document.getElementById('bulletinsList').innerHTML='<div class="text-center py-32 text-danger">Erreur JS: '+e.message+'</div>';
   }
 }
@@ -238,7 +210,6 @@ async function genererBulletinsClasse(){
 }
 
 function renderBulletins(data,periodeNom,periodeId){
-  console.log('[Render] Début renderBulletins, periodeNom:', periodeNom, 'periodeId:', periodeId);
   const periodes=data.periodes||[];
   const matieres=data.matieres||[];
   const maxima=data.maxima||{};
@@ -250,7 +221,9 @@ function renderBulletins(data,periodeNom,periodeId){
   const examenActive = (data.examen_active===undefined ? 0 : parseInt(data.examen_active)) !== 0;
   const modeB = ressActive || compActive;
   const modeA = examenActive && !modeB;
-  const CONDUITE_DEFAUT=60, relTj=15, relEx=15, relComp=0, relRess=15, relTot=30;
+  const CONDUITE_DEFAUT=60;
+  const compPct = parseFloat(data.competences_pourcentage) || 40;
+  const ressPct = parseFloat(data.ressources_pourcentage) || 60;
   const pids=periodes.map(p=>p.id_periode);
 
   // Cumul : trimestre choisi = cumul depuis le 1er trimestre ; 'all' = bulletin complet
@@ -276,34 +249,34 @@ function renderBulletins(data,periodeNom,periodeId){
     const mm=maxima[mid]&&maxima[mid][pids[i]];
     return mm?{tj:mm.tj||0,comp:mm.comp||0,ress:mm.ress||0,ex:mm.ex||0,tot:(mm.tj||0)+(mm.comp||0)+(mm.ress||0)+(mm.ex||0)}:{tj:0,comp:0,ress:0,ex:0,tot:0};
   }
-  function maxBlock(mid){return cumulMode?cumMax(mid,selIdx):midMax(mid,0);}
+  function maxBlock(mid){return midMax(mid, cumulMode ? selIdx : 0);}
   function noteCol(el,mid,i){
     const me=matEl(el,mid);
     const t={tj:0,comp:0,ress:0,ex:0,tot:0};
-    if(cumulMode){
-      for(let k=0;k<=i;k++){const per=me.periodes[pids[k]]||{tj:0,comp:0,ress:0,ex:0};t.tj+=per.tj||0;t.comp+=per.comp||0;t.ress+=per.ress||0;t.ex+=per.ex||0;}
-    }else{
-      const per=me.periodes[pids[i]]||{tj:0,comp:0,ress:0,ex:0};
-      t.tj=per.tj||0;t.comp=per.comp||0;t.ress=per.ress||0;t.ex=per.ex||0;
-    }
+    const per=me.periodes[pids[i]]||{tj:0,comp:0,ress:0,ex:0};
+    t.tj=per.tj||0;t.comp=per.comp||0;t.ress=per.ress||0;t.ex=per.ex||0;
     t.tot=t.tj+t.comp+t.ress+t.ex;
     return t;
   }
   function matAnn(el,mid){
-    if(cumulMode){return {max:cumMax(mid,selIdx).tot,note:noteCol(el,mid,selIdx).tot};}
     const me=matEl(el,mid);
-    return {max:me.annuel.max||0,note:me.annuel.note||0};
+    let totNote = 0, totMax = 0;
+    periodes.forEach(p => {
+      const per = me.periodes[p.id_periode] || {tj:0, comp:0, ress:0, ex:0};
+      totNote += (per.tj||0) + (per.comp||0) + (per.ress||0) + (per.ex||0);
+      const mm = maxima[mid] && maxima[mid][p.id_periode] ? maxima[mid][p.id_periode] : {tj:0,comp:0,ress:0,ex:0};
+      totMax += (mm.tj||0) + (mm.comp||0) + (mm.ress||0) + (mm.ex||0);
+    });
+    return {max: totMax, note: totNote};
   }
   function cdVal(el,pid){
     const cp=(el.points_conduite&&el.points_conduite[pid]);
     return cp?cp.points:CONDUITE_DEFAUT;
   }
   function cdCol(el,i){
-    if(cumulMode){let s=0;for(let k=0;k<=i;k++){s+=cdVal(el,pids[k]);}return s;}
     return cdVal(el,pids[i]);
   }
   function cdAn(el){
-    if(cumulMode){let s=0;for(let k=0;k<=selIdx;k++){s+=cdVal(el,pids[k]);}return s;}
     return periodes.reduce(function(s,p){return s+cdVal(el,p.id_periode)},0);
   }
   function stCol(el,i){
@@ -329,7 +302,6 @@ function renderBulletins(data,periodeNom,periodeId){
     });
     const cdTot=cdAn(el);
     const cdMax=cumulMode?CONDUITE_DEFAUT*(selIdx+1):CONDUITE_DEFAUT*periodes.length;
-    const relMax=cumulMode?relTot*(selIdx+1):relTot*periodes.length;
 
     html+=`<div class="bulletin-card">
       <div class="bul-header">
@@ -381,9 +353,11 @@ function renderBulletins(data,periodeNom,periodeId){
           </thead>
           <tbody>`;
 
-    // Séparer les matières en Cours Généraux & Langues (est_general == 1) et Cours Techniques (est_general == 0)
-    const generaux = matieres.filter(m => parseInt(m.est_general) === 1);
-    const techniques = matieres.filter(m => parseInt(m.est_general) !== 1);
+    // Séparer les matières actives (générales/techniques) et inactives
+    const matieresActives = matieres.filter(m => parseInt(m.est_actif) !== 0);
+    const matieresInactives = el.matieres_inactives || [];
+    const generaux = matieresActives.filter(m => parseInt(m.est_general) === 1);
+    const techniques = matieresActives.filter(m => parseInt(m.est_general) !== 1);
 
     function renderMatiereGroup(list) {
       let groupHtml = '';
@@ -485,7 +459,7 @@ function renderBulletins(data,periodeNom,periodeId){
     </tr>`;
 
     // ---- C: Conduite ----
-    const conduiteMax=cumulMode?cdMax:CONDUITE_DEFAUT;
+    const conduiteMax=CONDUITE_DEFAUT;
     html+=`<tr>
       <td class="branches">Conduite</td>
       <td class="num gris">${conduiteMax}</td>${'<td></td>'.repeat(colSpan-2)}<td class="num">${conduiteMax}</td>`;
@@ -493,9 +467,9 @@ function renderBulletins(data,periodeNom,periodeId){
       if(colBlank(i)){html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">-</td>`;return;}
       html+=`<td></td>`.repeat(colSpan-1)+`<td class="num">${cdCol(el,i)}</td>`;
     });
-    html+=`<td class="num"><strong>${cdMax}</strong></td>
+    html+=`<td class="num"><strong>${CONDUITE_DEFAUT * periodes.length}</strong></td>
       <td class="num"><strong>${cdTot.toFixed(1)}</strong></td>
-      <td>${fmtPct(cdTot,cdMax)}</td>
+      <td>${fmtPct(cdTot, CONDUITE_DEFAUT * periodes.length)}</td>
     </tr>`;
 
     // ---- Total ----
@@ -633,43 +607,73 @@ function renderBulletins(data,periodeNom,periodeId){
       <td class="num gris"><strong>${el.rang > 0 ? el.rang + 'e' : '—'}</strong></td>
     </tr>`;
 
-    // ---- G: Religion ----
-    const relMaxTotal = relMax;
-    const relPeriodCells = ()=>modeB
-      ? `<td class="num">${relTj}</td><td class="num">-</td><td class="num">${relRess}</td><td class="num">${relTot}</td>`
-      : `<td class="num">${relTj}</td><td class="num">-</td><td class="num">${relTot}</td>`;
-    const relBlankPeriod = ()=>modeB
-      ? `<td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td>`
-      : `<td class="num">-</td><td class="num">-</td><td class="num">-</td>`;
+    // ---- Cours Inactifs (après Place) ----
+    if(matieresInactives.length > 0) {
+      matieresInactives.forEach(mat => {
+        const mid = mat.id_matiere;
+        const maxTjInactif = parseFloat(mat.note_max_matiere) || 0;
+        let maxCompInactif = 0, maxRessInactif = 0, maxExInactif = 0;
+        let maxTotInactif = maxTjInactif;
+        if(modeB) {
+          maxCompInactif = Math.round(maxTjInactif * compPct / 100 * 10) / 10;
+          maxRessInactif = Math.round(maxTjInactif * ressPct / 100 * 10) / 10;
+          maxTotInactif = maxTjInactif + maxCompInactif + maxRessInactif;
+        } else if(modeA) {
+          maxExInactif = maxTjInactif;
+          maxTotInactif = maxTjInactif * 2;
+        }
 
-    html+=`<tr>
-      <td class="branches">Religion</td>
-      ${relPeriodCells()}`;
-    periodes.forEach((p,i)=>{
-      if(colBlank(i)){html+=relBlankPeriod();return;}
-      html+=relPeriodCells();
-    });
-    html+=`<td class="num"><strong>${relMaxTotal}</strong></td>
-      <td class="num"><strong>-</strong></td>
-      <td></td>
-    </tr>`;
+        let matHtml = `<tr>
+          <td class="branches matiere">${mat.libelle}</td>`;
+        if(modeB) {
+          matHtml += `<td class="num">${nf(maxTjInactif)}</td><td class="num">${nf(maxCompInactif)}</td><td class="num">${nf(maxRessInactif)}</td><td class="num"><strong>${nf(maxTotInactif)}</strong></td>`;
+        } else {
+          matHtml += `<td class="num">${nf(maxTjInactif)}</td><td class="num">${nf(maxExInactif)}</td><td class="num"><strong>${nf(maxTotInactif)}</strong></td>`;
+        }
+
+        let annNote = 0, annMax = 0;
+        periodes.forEach((p,i) => {
+          if(colBlank(i)){
+            matHtml += `<td class="num">-</td>`.repeat(colSpan);
+            return;
+          }
+          const per = mat.periodes[p.id_periode] || {tj:0,comp:0,ress:0,ex:0};
+          let ntTj = per.tj||0, ntComp = per.comp||0, ntRess = per.ress||0, ntEx = per.ex||0;
+          if(modeB) ntEx = 0;
+          else if(modeA) { ntComp = 0; ntRess = 0; }
+          else { ntComp = 0; ntRess = 0; ntEx = 0; }
+          const ntTot = ntTj+ntComp+ntRess+ntEx;
+          annNote += ntTot;
+          if(modeB) {
+            matHtml += `<td class="num">${nf(ntTj)}</td><td class="num">${nf(ntComp)}</td><td class="num">${nf(ntRess)}</td><td class="num"><strong>${nf(ntTot)}</strong></td>`;
+          } else {
+            matHtml += `<td class="num">${nf(ntTj)}</td><td class="num">${nf(ntEx)}</td><td class="num"><strong>${nf(ntTot)}</strong></td>`;
+          }
+        });
+
+        matHtml += `<td class="num"><strong>-</strong></td>
+          <td class="num"><strong>${nf(annNote)}</strong></td>
+          <td class="num"><strong>-</strong></td>
+        </tr>`;
+        html += matHtml;
+      });
+    }
 
     // ---- H: Signatures (2 rows) ----
-    html+=`<tr>
+    html+=`<tr style="height:40px;">
       <td class="branches" rowspan="2">Signatures</td>
-      <td>PARENTS</td>${'<td></td>'.repeat(colSpan-1)}`;
+      <td colspan="${colSpan}">PARENTS</td>`;
     periodes.forEach((p,i)=>{
-      html+=`<td></td>`.repeat(colSpan);
+      html+=`<td colspan="${colSpan}"></td>`;
     });
-    html+=`<td></td><td></td><td></td>
+    html+=`<td colspan="3" rowspan="2"></td>
     </tr>`;
-    html+=`<tr>
-      <td>TITULAIRE</td>${'<td></td>'.repeat(colSpan-1)}`;
+    html+=`<tr style="height:40px;">
+      <td colspan="${colSpan}">TITULAIRE</td>`;
     periodes.forEach((p,i)=>{
-      html+=`<td></td>`.repeat(colSpan);
+      html+=`<td colspan="${colSpan}"></td>`;
     });
-    html+=`<td></td><td></td><td></td>
-    </tr>`;
+    html+=`</tr>`;
 
     html+=`</tbody>
         </table>
@@ -678,6 +682,5 @@ function renderBulletins(data,periodeNom,periodeId){
   });
 
   document.getElementById('bulletinsList').innerHTML=html||'<div class="text-center py-32 text-secondary-light">Aucun élève trouvé</div>';
-  console.log('[Render] HTML généré, longueur:', html.length, 'chars');
 }
 </script>

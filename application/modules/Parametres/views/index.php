@@ -169,6 +169,30 @@
                     <input type="number" class="form-control radius-8" id="nb_creneaux_jour" value="8" min="1" max="12">
                     <small class="text-secondary-light">Nombre de périodes de cours effectifs par jour (ex: 8 créneaux)</small>
                   </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold text-primary-light text-sm mb-8">Jour spécial (Culte)</label>
+                    <select class="form-select radius-8" id="jour_special">
+                      <option value="lundi">Lundi</option>
+                      <option value="mardi" selected>Mardi</option>
+                      <option value="mercredi">Mercredi</option>
+                      <option value="jeudi">Jeudi</option>
+                      <option value="vendredi">Vendredi</option>
+                    </select>
+                    <small class="text-secondary-light">Jour avec Culte après la pause (modifiable)</small>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-primary-light text-sm mb-8">Durée Culte (min)</label>
+                    <input type="number" class="form-control radius-8" id="duree_culte" value="35" min="5" max="120">
+                    <small class="text-secondary-light">Durée de la Culte le jour spécial</small>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label fw-semibold text-primary-light text-sm mb-8">Activer jour spécial</label>
+                    <div class="form-check form-switch mt-8">
+                      <input class="form-check-input" type="checkbox" id="jour_special_actif" checked>
+                      <label class="form-check-label" for="jour_special_actif">Activé</label>
+                    </div>
+                    <small class="text-secondary-light">Désactiver si pas de jour spécial</small>
+                  </div>
                 </div>
               </div>
             </div>
@@ -545,7 +569,7 @@ let lastSaved = null;
 
 const STATIC_KEYS = new Set([
   'nom_ecole','telephone_ecole','email_ecole','adresse_ecole',
-  'heure_debut_journee','duree_cours','duree_pause','duree_vigie','nb_creneaux_jour',
+  'heure_debut_journee','duree_cours','duree_pause','duree_vigie','duree_culte','nb_creneaux_jour','jour_special','jour_special_actif',
   'devise','points_conduite_defaut',
   'mention_excellent','mention_excellent_libelle','mention_tres_bien','mention_tres_bien_libelle',
   'mention_bien','mention_bien_libelle','mention_assez_bien','mention_assez_bien_libelle',
@@ -628,6 +652,9 @@ function collectFormData() {
     duree_pause: document.getElementById('duree_pause').value || '20',
     duree_vigie: document.getElementById('duree_vigie').value || '10',
     nb_creneaux_jour: document.getElementById('nb_creneaux_jour').value || '8',
+    jour_special: document.getElementById('jour_special').value || 'mardi',
+    duree_culte: document.getElementById('duree_culte').value || '35',
+    jour_special_actif: document.getElementById('jour_special_actif').checked ? '1' : '0',
     devise: document.getElementById('devise').value,
     email_protocol: document.getElementById('email_protocol').value,
     email_smtp_host: document.getElementById('email_smtp_host').value,
@@ -712,6 +739,9 @@ async function loadSettings() {
     if (s.duree_pause) document.getElementById('duree_pause').value = s.duree_pause;
     if (s.duree_vigie) document.getElementById('duree_vigie').value = s.duree_vigie;
     if (s.nb_creneaux_jour) document.getElementById('nb_creneaux_jour').value = s.nb_creneaux_jour;
+    if (s.jour_special) document.getElementById('jour_special').value = s.jour_special;
+    if (s.duree_culte) document.getElementById('duree_culte').value = s.duree_culte;
+    document.getElementById('jour_special_actif').checked = (s.jour_special_actif === '1' || s.jour_special_actif === 'true' || s.jour_special_actif === 'on');
     if (s.devise) document.getElementById('devise').value = s.devise;
     if (s.email_protocol) document.getElementById('email_protocol').value = s.email_protocol;
     if (s.email_smtp_host) document.getElementById('email_smtp_host').value = s.email_smtp_host;

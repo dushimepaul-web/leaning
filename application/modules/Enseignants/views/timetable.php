@@ -3,126 +3,142 @@
 <div class="dashboard-main-body">
   <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
     <div>
-      <h1 class="fw-semibold mb-4 h6 text-primary-light">Teacher Timetable</h1>
+      <h1 class="fw-semibold mb-4 h6 text-primary-light">Emploi du temps - Enseignant</h1>
       <div>
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
-        <a href="<?= base_url('Enseignants') ?>" class="text-secondary-light hover-text-primary hover-underline"> / Teacher</a>
+        <a href="<?= base_url('Enseignants') ?>" class="text-secondary-light hover-text-primary hover-underline"> / Enseignants</a>
         <a href="<?= base_url('Enseignants/details/' . $teacher['uuid']) ?>" class="text-secondary-light hover-text-primary hover-underline"> / <?= htmlspecialchars($teacher['fullname'] ?? '') ?></a>
-        <span class="text-secondary-light"> / Timetable</span>
+        <span class="text-secondary-light"> / Emploi du temps</span>
       </div>
     </div>
   </div>
+
   <div class="mt-24">
-    <div class="card h-100">
+    <div class="card">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-bottom border-neutral-200">
-        <h5 class="fw-semibold mb-0"><?= htmlspecialchars($teacher['fullname'] ?? '') ?> - Timetable</h5>
-      </div>
-      <?php
-      $horaires = [];
-      if ($teacher['id_enseignant']) {
-        $this->load->model('Horaires/Horaires_model');
-        $creneauxList = $this->Horaires_model->get_creneaux_cours();
-        $creneauxMap = [];
-        foreach ($creneauxList as $cr) {
-            $creneauxMap[$cr['id_creneau']] = $cr;
-        }
-
-        $this->db->select('h.*, c.libelle as classe_libelle, m.libelle as matiere_libelle, j.libelle as jour_libelle');
-        $this->db->from('horaires h');
-        $this->db->join('classes c', 'c.id_classe = h.id_classe', 'left');
-        $this->db->join('enseignements en', 'en.id_enseignement = h.id_enseignement', 'left');
-        $this->db->join('matieres_classes mc', 'mc.id_matiere_classe = en.id_matiere_classe', 'left');
-        $this->db->join('matieres m', 'm.id_matiere = mc.id_matiere', 'left');
-        $this->db->join('jours_semaine j', 'j.id_jour = h.id_jour');
-        $this->db->where('h.id_enseignant', $teacher['id_enseignant']);
-        $this->db->where('h.deleted_at', null);
-        $this->db->order_by('h.id_jour, h.id_creneau');
-        $q = $this->db->get();
-        $horaires = $q !== false ? $q->result_array() : array();
-
-        foreach ($horaires as &$h) {
-            $cid = $h['id_creneau'];
-            if (isset($creneauxMap[$cid])) {
-                $h['creneau_libelle'] = $creneauxMap[$cid]['libelle'];
-                $h['heure_debut'] = $creneauxMap[$cid]['heure_debut'];
-                $h['heure_fin'] = $creneauxMap[$cid]['heure_fin'];
-                $h['ordre'] = $creneauxMap[$cid]['ordre'];
-            } else {
-                $h['creneau_libelle'] = 'Cours ' . $cid;
-                $h['heure_debut'] = '';
-                $h['heure_fin'] = '';
-                $h['ordre'] = $cid;
-            }
-        }
-      }
-      $by_jour = [];
-      foreach ($horaires as $h) {
-        $by_jour[$h['id_jour']][] = $h;
-      }
-      $title_colors = [
-        ['bg' => 'bg-warning-100', 'text' => 'text-warning-600'],
-        ['bg' => 'bg-info-100', 'text' => 'text-info-600'],
-        ['bg' => 'bg-success-100', 'text' => 'text-success-600'],
-        ['bg' => 'bg-danger-100', 'text' => 'text-danger-600'],
-        ['bg' => 'bg-primary-100', 'text' => 'text-primary-600'],
-      ];
-      ?>
-      <div class="card-body p-20 d-flex flex-column gap-20">
-        <div class="overflow-x-auto d-flex scroll-sm pb-8">
-          <div class="d-flex gap-16 flex-shrink-0 flex-grow-1">
-            <?php foreach ($jours as $j): ?>
-              <div class="flex-grow-1" style="min-width:220px;">
-                <h6 class="text-md mb-8"><?= $j['libelle'] ?></h6>
-                <div class="d-flex flex-column gap-16">
-                  <?php $entries = $by_jour[$j['id_jour']] ?? []; ?>
-                  <?php if (empty($entries)): ?>
-                    <div class="text-center text-secondary-light py-20 radius-8 border" style="background:#f8f9fa;">
-                      <span>Aucun cours</span>
-                    </div>
-                  <?php else: ?>
-                    <?php foreach ($entries as $idx => $h):
-                      $c = $title_colors[$idx % count($title_colors)];
-                    ?>
-                      <div class="attendance-card border radius-8 overflow-hidden">
-                        <h6 class="text-sm <?= $c['bg'] ?> <?= $c['text'] ?> fw-semibold py-10 px-16 text-center mb-0 card-title">
-                          <?= htmlspecialchars($h['classe_libelle'] ?? 'N/A') ?>
-                        </h6>
-                        <div class="px-10 py-16 d-flex flex-column gap-10">
-                          <div class="d-flex align-items-center gap-8">
-                            <span class="d-flex line-height-1 text-secondary-light text-lg">
-                              <i class="ri-book-open-line"></i>
-                            </span>
-                            <div class="text-primary-light text-sm d-flex">
-                              <span class="w-64-px flex-shrink-0"> Subject </span>
-                              <span class="flex-grow-1">: <?= htmlspecialchars($h['matiere_libelle'] ?? $h['creneau_libelle']) ?></span>
-                            </div>
-                          </div>
-                          <div class="d-flex align-items-center gap-8">
-                            <span class="d-flex line-height-1 text-secondary-light text-lg">
-                              <i class="ri-building-4-line"></i>
-                            </span>
-                            <div class="text-primary-light text-sm d-flex">
-                              <span class="w-64-px flex-shrink-0"> Room No </span>
-                              <span class="flex-grow-1">: -</span>
-                            </div>
-                          </div>
-                          <div class="d-flex align-items-center gap-8">
-                            <span class="d-flex line-height-1 text-secondary-light text-lg">
-                              <i class="ri-time-line"></i>
-                            </span>
-                            <div class="text-primary-light text-sm d-flex">
-                              <span class="flex-grow-1"><?= !empty($h['heure_debut']) && !empty($h['heure_fin']) ? date('h:i A', strtotime($h['heure_debut'])) . ' - ' . date('h:i A', strtotime($h['heure_fin'])) : '-' ?></span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </div>
-              </div>
-            <?php endforeach; ?>
-          </div>
+        <div class="d-flex align-items-center gap-12">
+          <a href="<?= base_url('Enseignants') ?>" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-6">
+            <i class="ri-arrow-left-line"></i> Retour
+          </a>
+          <h5 class="fw-semibold mb-0">
+            <i class="ri-user-line text-primary"></i>
+            <?= htmlspecialchars($teacher['fullname'] ?? '') ?>
+          </h5>
         </div>
+        <span class="badge bg-primary-100 text-primary-600 px-12 py-4 radius-4 fw-500 text-sm">
+          <?= count($horaires ?? []) ?> cours / semaine
+        </span>
+      </div>
+
+      <?php
+      $classes = [];
+      foreach ($horaires ?? [] as $h) {
+          $cl = $h['classe_libelle'] ?? 'N/A';
+          $classes[$cl][] = $h;
+      }
+      ksort($classes);
+
+      $class_colors = [
+        ['header' => 'bg-primary-100 text-primary-700', 'border' => 'border-primary-300'],
+        ['header' => 'bg-success-100 text-success-700', 'border' => 'border-success-300'],
+        ['header' => 'bg-warning-100 text-warning-700', 'border' => 'border-warning-300'],
+        ['header' => 'bg-info-100 text-info-700', 'border' => 'border-info-300'],
+        ['header' => 'bg-danger-100 text-danger-700', 'border' => 'border-danger-300'],
+        ['header' => 'bg-purple-100 text-purple-700', 'border' => 'border-purple-300'],
+      ];
+      $ci = 0;
+      ?>
+
+      <div class="card-body p-20">
+        <?php if (empty($classes)): ?>
+          <div class="text-center text-secondary-light py-40">
+            <i class="ri-calendar-line text-lg mb-8 d-block"></i>
+            Aucun cours programmé
+          </div>
+        <?php else: ?>
+          <div class="overflow-x-auto">
+            <table class="table table-bordered mb-0" style="min-width:1100px;">
+              <thead>
+                <tr>
+                  <th style="width:130px;" class="bg-dark text-white fw-600">Horaire</th>
+                  <?php foreach ($jours as $j): ?>
+                    <th class="bg-dark text-white fw-600 text-center"><?= htmlspecialchars($j['libelle']) ?></th>
+                  <?php endforeach; ?>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                $creneaux_all = [];
+                foreach ($horaires ?? [] as $h) {
+                    $key = $h['id_creneau'];
+                    if (!isset($creneaux_all[$key])) {
+                        $creneaux_all[$key] = [
+                            'id' => $key,
+                            'debut' => $h['heure_debut'] ?? '',
+                            'fin' => $h['heure_fin'] ?? '',
+                            'libelle' => $h['creneau_libelle'] ?? "Cours $key"
+                        ];
+                    }
+                }
+                uasort($creneaux_all, function($a, $b) { return strcmp($a['debut'], $b['debut']); });
+                ?>
+                <?php foreach ($creneaux_all as $cr): ?>
+                  <tr>
+                    <td class="fw-600 text-dark bg-light" style="font-size:12px; white-space:nowrap;">
+                      <?php
+                      $de = !empty($cr['debut']) ? date('H:i', strtotime($cr['debut'])) : '?';
+                      $fi = !empty($cr['fin']) ? date('H:i', strtotime($cr['fin'])) : '?';
+                      echo $de . '<br>' . $fi;
+                      ?>
+                    </td>
+                    <?php foreach ($jours as $j):
+                      $jid = $j['id_jour'];
+                      $found = null;
+                      foreach ($horaires ?? [] as $h) {
+                          if ($h['id_jour'] == $jid && $h['id_creneau'] == $cr['id']) {
+                              $found = $h;
+                              break;
+                          }
+                      }
+                      $cc = $class_colors[$ci % count($class_colors)];
+                    ?>
+                      <td class="text-center align-middle p-6" style="min-width:140px;">
+                        <?php if ($found): ?>
+                          <div class="radius-6 overflow-hidden border <?= $cc['border'] ?>" style="font-size:12px;">
+                            <div class="<?= $cc['header'] ?> fw-600 py-4 px-6">
+                              <?= htmlspecialchars($found['classe_libelle']) ?>
+                            </div>
+                            <div class="py-4 px-6 bg-white">
+                              <div class="fw-500 text-dark" style="font-size:11px;">
+                                <?= htmlspecialchars($found['matiere_libelle']) ?>
+                              </div>
+                            </div>
+                          </div>
+                        <?php else: ?>
+                          <span class="text-secondary-light" style="font-size:11px;">-</span>
+                        <?php endif; ?>
+                      </td>
+                    <?php endforeach; ?>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+
+          <?php $ci++; ?>
+          <div class="mt-20 pt-16 border-top border-neutral-200">
+            <div class="d-flex flex-wrap gap-12">
+              <?php foreach ($classes as $clName => $clSessions): ?>
+                <div class="d-flex align-items-center gap-6">
+                  <div class="w-12-px h-12-px radius-2 <?= $class_colors[$ci % count($class_colors)]['header'] ?>"></div>
+                  <span class="text-sm text-dark fw-500"><?= htmlspecialchars($clName) ?></span>
+                  <span class="text-xs text-secondary-light">(<?= count($clSessions) ?>h)</span>
+                </div>
+                <?php $ci++; ?>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>

@@ -34,15 +34,17 @@ $matieres = $c['matieres'] ?? [];
 $eleves = $c['eleves'] ?? [];
 $maxima = $c['maxima'] ?? [];
 $pids = array_column($periodes, 'id_periode');
-$ress_active = isset($c['ressources_active']) ? intval($c['ressources_active']) !== 0 : true;
-$comp_active = isset($c['competences_active']) ? intval($c['competences_active']) !== 0 : true;
-$both_active = $ress_active && $comp_active;
-$col_span = $both_active ? 4 : 3;
-$sub_head = $both_active ? '<th>TJ</th><th>RESS</th><th>COMP</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
-function fcells($t) { global $both_active;
+$ress_active = isset($c['ressources_active']) ? intval($c['ressources_active']) !== 0 : false;
+$comp_active = isset($c['competences_active']) ? intval($c['competences_active']) !== 0 : false;
+$ex_active = isset($c['examen_active']) ? intval($c['examen_active']) !== 0 : false;
+$mode_b = $comp_active || $ress_active;
+$mode_a = $ex_active && !$mode_b;
+$col_span = $mode_b ? 4 : 3;
+$sub_head = $mode_b ? '<th>TJ</th><th>COMP</th><th>RESS</th><th>TOT</th>' : '<th>TJ</th><th>EX</th><th>TOT</th>';
+function fcells($t) { global $mode_b;
   $fmt = function($v){ return $v > 0 ? number_format($v, 1) : '-'; };
-  if ($both_active) return [$fmt($t['tj']), $fmt($t['ress']), $fmt($t['comp']), '<strong>'.$fmt($t['tot']).'</strong>'];
-  return [$fmt($t['tj']), $fmt(($t['comp'] ?? 0) + ($t['ress'] ?? 0)), '<strong>'.$fmt($t['tot']).'</strong>'];
+  if ($mode_b) return [$fmt($t['tj']), $fmt($t['comp']), $fmt($t['ress']), '<strong>'.$fmt($t['tot']).'</strong>'];
+  return [$fmt($t['tj']), $fmt(($t['comp'] ?? 0) + ($t['ress'] ?? 0) + ($t['ex'] ?? 0)), '<strong>'.$fmt($t['tot']).'</strong>'];
 }
 ?>
 
@@ -83,7 +85,7 @@ function fcells($t) { global $both_active;
     <tbody>
       <?php
       // Totaux maxima classe
-      $mTot = ['tj' => 0, 'comp' => 0, 'ress' => 0, 'tot' => 0];
+      $mTot = ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0, 'tot' => 0];
       foreach ($matieres as $m) {
           $mid = $m['id_matiere'];
           foreach ($pids as $pid) {
@@ -91,9 +93,10 @@ function fcells($t) { global $both_active;
               $mTot['tj'] += $mm['tj'] ?? 0;
               $mTot['comp'] += $mm['comp'] ?? 0;
               $mTot['ress'] += $mm['ress'] ?? 0;
+              $mTot['ex'] += $mm['ex'] ?? 0;
           }
       }
-      $mTot['tot'] = $mTot['tj'] + $mTot['comp'] + $mTot['ress'];
+      $mTot['tot'] = $mTot['tj'] + $mTot['comp'] + $mTot['ress'] + $mTot['ex'];
       ?>
       <!-- Ligne MAXIMA -->
       <tr class="bg-g" style="font-weight:700">
@@ -110,34 +113,36 @@ function fcells($t) { global $both_active;
       <?php foreach ($matieres as $mat):
         $mid = $mat['id_matiere'];
         // Maxima cumulés pour cette matière
-        $matMaxTj = 0; $matMaxComp = 0; $matMaxRess = 0;
+        $matMaxTj = 0; $matMaxComp = 0; $matMaxRess = 0; $matMaxEx = 0;
         foreach ($pids as $pid) {
             $mm = $maxima[$mid][$pid] ?? [];
             $matMaxTj += $mm['tj'] ?? 0;
             $matMaxComp += $mm['comp'] ?? 0;
             $matMaxRess += $mm['ress'] ?? 0;
+            $matMaxEx += $mm['ex'] ?? 0;
         }
-        $matMaxTot = $matMaxTj + $matMaxComp + $matMaxRess;
+        $matMaxTot = $matMaxTj + $matMaxComp + $matMaxRess + $matMaxEx;
       ?>
       <tr>
         <td class="text-left" style="font-weight:700"><?= htmlspecialchars($mat['libelle']) ?></td>
         <?= implode('', array_map(function($c){ return '<td>'.$c.'</td>'; }, fcells(['tj' => $matMaxTj, 'comp' => $matMaxComp, 'ress' => $matMaxRess, 'tot' => $matMaxTot]))) ?>
 
         <?php 
-        $annTj = 0; $annComp = 0; $annRess = 0;
+        $annTj = 0; $annComp = 0; $annRess = 0; $annEx = 0;
         foreach ($periodes as $pe):
           $pid = $pe['id_periode'];
-          $tTj = 0; $tComp = 0; $tRess = 0;
+          $tTj = 0; $tComp = 0; $tRess = 0; $tEx = 0;
           foreach ($eleves as $el) {
               $mEl = null;
               foreach ($el['matieres'] as $m) { if ($m['id_matiere'] == $mid) { $mEl = $m; break; } }
-              $per = $mEl && isset($mEl['periodes'][$pid]) ? $mEl['periodes'][$pid] : ['tj' => 0, 'comp' => 0, 'ress' => 0];
+              $per = $mEl && isset($mEl['periodes'][$pid]) ? $mEl['periodes'][$pid] : ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0];
               $tTj += $per['tj'] ?? 0;
               $tComp += $per['comp'] ?? 0;
               $tRess += $per['ress'] ?? 0;
+              $tEx += $per['ex'] ?? 0;
           }
-          $tTot = $tTj + $tComp + $tRess;
-          $annTj += $tTj; $annComp += $tComp; $annRess += $tRess;
+          $tTot = $tTj + $tComp + $tRess + $tEx;
+          $annTj += $tTj; $annComp += $tComp; $annRess += $tRess; $annEx += $tEx;
         ?>
         <?= implode('', array_map(function($c){ return '<td>'.$c.'</td>'; }, fcells(['tj' => $tTj, 'comp' => $tComp, 'ress' => $tRess, 'tot' => $tTot]))) ?>
         <?php endforeach; ?>

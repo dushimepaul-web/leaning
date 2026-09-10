@@ -25,16 +25,27 @@ class Bulletins_model extends Model
         $etudiant_ids = array_column($eleves, 'id_etudiant');
 
         // Pass 2: Matières
-        $matieres = $this->db
+        $all_matieres = $this->db
             ->query("
-                SELECT DISTINCT m.id_matiere, m.libelle, m.code, m.est_general
+                SELECT DISTINCT m.id_matiere, m.libelle, m.code, m.est_general, m.est_actif, mc.note_max_matiere
                 FROM matieres_classes mc
                 JOIN matieres m ON mc.id_matiere = m.id_matiere
                 WHERE mc.id_classe = ? AND mc.deleted_at IS NULL AND m.deleted_at IS NULL
                 ORDER BY m.est_general DESC, m.libelle
             ", [$id_classe])->result_array();
 
-        if (empty($matieres)) return null;
+        if (empty($all_matieres)) return null;
+
+        // Séparer matières actives et inactives
+        $matieres = [];
+        $matieres_inactives = [];
+        foreach ($all_matieres as $m) {
+            if (intval($m['est_actif']) === 0) {
+                $matieres_inactives[] = $m;
+            } else {
+                $matieres[] = $m;
+            }
+        }
 
         // Pass 3: Périodes de l'année scolaire sélectionnée uniquement
         // (les périodes des autres années sont ignorées pour ne pas polluer le bulletin).
@@ -56,19 +67,48 @@ class Bulletins_model extends Model
 
         $periode_ids = array_column($toutes_periodes, 'id_periode');
         $matiere_ids = array_column($matieres, 'id_matiere');
+        $matiere_inactif_ids = array_column($matieres_inactives, 'id_matiere');
+        $all_matiere_ids = array_merge($matiere_ids, $matiere_inactif_ids);
 
-        // Pass 4: MAXIMA classe (depuis coefficient matieres_classes)
+        // Pass 4: MAXIMA classe (uniquement matières actives)
         $maxima = $this->_get_maxima($id_classe, $periode_ids, $matiere_ids);
 
-        // Pass 5: Notes élèves agrégées — filtrées par période si spécifiée (sauf mode cumul)
+        // Pass 5: Notes élèves agrégées — toutes les matières (actives + inactives pour affichage)
         $filtre_notes = ($cumul || !$id_periode || $id_periode === 'all') ? null : $id_periode;
-        $notes_map = $this->_get_notes_aggregated($etudiant_ids, $matiere_ids, $toutes_periodes, $filtre_notes);
+        $notes_map = $this->_get_notes_aggregated($etudiant_ids, $all_matiere_ids, $toutes_periodes, $filtre_notes);
 
         // Pass 5b: Points de conduite par élève et par période
         $conduite_map = $this->_get_conduite_map($etudiant_ids, $toutes_periodes);
 
         // Pass 6: Construire le résultat
         $result = $this->_build_result($eleves, $matieres, $toutes_periodes, $notes_map, $maxima, $conduite_map);
+
+        // Pass 6b: Ajouter les matières inactives aux données de chaque élève
+        if (!empty($matieres_inactives)) {
+            foreach ($result['eleves'] as &$el) {
+                $eid = $el['id_etudiant'];
+                $el['matieres_inactives'] = [];
+                foreach ($matieres_inactives as $mat) {
+                    $mid = $mat['id_matiere'];
+                    $mn = $notes_map[$eid][$mid] ?? null;
+                    $mat_data = ['id_matiere' => $mid, 'libelle' => $mat['libelle'], 'code' => $mat['code'] ?? '', 'est_general' => $mat['est_general'], 'note_max_matiere' => $mat['note_max_matiere'] ?? 0, 'periodes' => []];
+                    foreach ($toutes_periodes as $per) {
+                        $pid = $per['id_periode'];
+                        $p = $mn[$pid] ?? ['tj' => 0, 'comp' => 0, 'ress' => 0, 'ex' => 0];
+                        $mat_data['periodes'][$pid] = $p;
+                    }
+                    $el['matieres_inactives'][] = $mat_data;
+                }
+            }
+            unset($el);
+            $result['matieres_inactives'] = $matieres_inactives;
+        } else {
+            foreach ($result['eleves'] as &$el) {
+                $el['matieres_inactives'] = [];
+            }
+            unset($el);
+            $result['matieres_inactives'] = [];
+        }
 
         // Détection dynamique des catégories basée sur les données réelles d'évaluations
         $categories = $this->_detecter_categories($id_classe);
@@ -162,7 +202,6 @@ class Bulletins_model extends Model
         $pct_comp = floatval($this->get_setting('pourcentage_competences_examen', 40));
         $pct_ress = floatval($this->get_setting('pourcentage_ressources_examen', 60));
 
-        // Utiliser la note max de la matière définie dans matieres_classes (note_max_matiere) directement comme TJ
         $coeffs = $this->db
             ->select('id_matiere, note_max_matiere')
             ->from('matieres_classes')

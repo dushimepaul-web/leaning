@@ -15,6 +15,11 @@
     </button>
   </div>
   <div class="mt-24">
+    <div class="alert alert-info mb-16">
+      <strong>Règle de génération :</strong> si un enseignant possède au moins un créneau marqué
+      <em>disponible</em>, seuls ses créneaux marqués disponibles peuvent être utilisés. Sans créneau
+      disponible explicite, tous les créneaux restent ouverts sauf ceux marqués <em>indisponible</em>.
+    </div>
     <div class="card h-100">
       <div class="card-body p-0 dataTable-wrapper">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-bottom border-neutral-200">
@@ -63,20 +68,12 @@
                 </form>
               </div>
             </div>
-            <span>Lignes par page :</span>
-            <div class="dt-length"><select id="dtLength" name="dataTable_length" aria-controls="dataTable" class="dt-input form-control form-select">
-              <option value="5">5</option>
-              <option value="10" selected>10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select></div>
           </div>
         </div>
-        <table class="table bordered-table mb-0 data-table" id="dataTable" data-page-length='10' style="width:100%">
+        <table class="table bordered-table mb-0" id="dataTable" style="width:100%">
           <thead>
             <tr>
-                            <th scope="col"><div class="form-check style-check d-flex align-items-center"><input class="form-check-input" type="checkbox"><label class="form-check-label">S.L</label></div></th>
+              <th class="text-center" style="width:5%">#</th>
               <th>Enseignant</th>
               <th>Jour</th>
               <th>Créneau</th>
@@ -120,6 +117,15 @@
         <div id="id_creneau_results" class="list-group position-absolute z-99 w-100 shadow radius-8 border" style="display:none;max-height:200px;overflow-y:auto;"></div>
       </div>
       <div class="col-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="all_creneaux" onchange="toggleAllCreneaux()">
+          <label class="form-check-label text-sm fw-semibold text-primary-light" for="all_creneaux">
+            Tous les créneaux de cette journée
+          </label>
+        </div>
+        <small class="text-secondary-light">Si coché, créera une entrée pour chaque créneau du jour sélectionné</small>
+      </div>
+      <div class="col-12">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Type</label>
         <select class="form-control form-select" id="type">
           <option value="disponible">Disponible</option>
@@ -157,25 +163,26 @@
 <script id="disponibilites_enseignants_data" type="application/json"><?= json_encode($enseignants) ?></script>
 <script id="disponibilites_jours_data" type="application/json"><?= json_encode($jours) ?></script>
 <script id="disponibilites_creneaux_data" type="application/json"><?= json_encode($creneaux) ?></script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>
 <script>
 
 
 function applyFilters() {
-  const table = $('#dataTable').DataTable();
-  const searchVal = document.getElementById('filterSearch')?.value || '';
+  const q = (document.getElementById('filterSearch')?.value || '').toLowerCase();
   const statutVal = document.getElementById('filterStatut')?.value || '';
-  table.search(searchVal);
-  table.column(4).search(statutVal === 'actif' ? 'disponible' : statutVal === 'inactif' ? 'indisponible' : '', false, true).draw();
+  $('#dataTable tbody tr').each(function() {
+    const text = $(this).text().toLowerCase();
+    const matchSearch = !q || text.indexOf(q) > -1;
+    let matchStatut = true;
+    if (statutVal === 'actif') matchStatut = text.indexOf('disponible') > -1 && text.indexOf('indisponible') === -1;
+    else if (statutVal === 'inactif') matchStatut = text.indexOf('indisponible') > -1;
+    $(this).toggle(matchSearch && matchStatut);
+  });
 }
 
 function resetFilters() {
   if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
   if (document.getElementById('filterStatut')) document.getElementById('filterStatut').value = '';
-  const table = $('#dataTable').DataTable();
-  table.search('');
-  table.column(4).search('');
-  table.draw();
+  $('#dataTable tbody tr').show();
 }
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
 let editingId = null;
@@ -205,13 +212,6 @@ async function loadData() {
     </tr>`;
   });
   $('#dataBody').html(rows);
-  if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
-  $('#dataTable').DataTable({
-    pageLength: 10, scrollX: true,
-    lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
-    language: { search: '', searchPlaceholder: 'Rechercher...', lengthMenu: 'Lignes par page: _MENU_', info: '', zeroRecords: 'Aucune disponibilité trouvée', infoEmpty: '', infoFiltered: '' },
-    dom: 't<"d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-top border-neutral-200"<"d-flex align-items-center gap-8 text-secondary-light"i><"d-flex align-items-center gap-2"p>>'
-  });
 }
 
 function openAddSidebar() {
@@ -219,6 +219,10 @@ function openAddSidebar() {
   document.getElementById('sidebarTitle').textContent = 'Ajouter une disponibilité';
   document.getElementById('mainForm').reset();
   document.getElementById('recordId').value = '';
+  document.getElementById('all_creneaux').checked = false;
+  document.getElementById('id_creneau').value = '';
+  document.getElementById('id_creneau_search').value = '';
+  document.getElementById('id_creneau').closest('.col-md-6').style.display = '';
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -251,28 +255,51 @@ async function editRecord(id) {
   }
 }
 
+function toggleAllCreneaux() {
+  const checked = document.getElementById('all_creneaux').checked;
+  const creneauField = document.getElementById('id_creneau').closest('.col-md-6');
+  creneauField.style.display = checked ? 'none' : '';
+  if (checked) {
+    document.getElementById('id_creneau').value = '';
+    document.getElementById('id_creneau_search').value = '';
+  }
+}
+
 document.getElementById('mainForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const id_enseignant = parseInt(document.getElementById('id_enseignant').value) || 0;
   const id_jour = parseInt(document.getElementById('id_jour').value) || 0;
   const id_creneau = parseInt(document.getElementById('id_creneau').value) || 0;
   const type = document.getElementById('type').value;
-  if (!id_enseignant || !id_jour || !id_creneau) {
-    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Veuillez sélectionner un enseignant, un jour et un créneau' });
+  const allCreneaux = document.getElementById('all_creneaux').checked;
+
+  if (!id_enseignant || !id_jour) {
+    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Veuillez sélectionner un enseignant et un jour' });
     return;
   }
-  const data = { id_enseignant: id_enseignant, id_jour: id_jour, id_creneau: id_creneau, type: type };
-  let r;
-  if (editingId) {
-    r = await API.disponibilites.update(editingId, data);
-  } else {
-    r = await API.disponibilites.create(data);
+  if (!allCreneaux && !id_creneau) {
+    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Veuillez sélectionner un créneau ou cocher "Tous les créneaux"' });
+    return;
   }
-  if (r.success) {
+
+  let r;
+  if (allCreneaux) {
+    r = await API.disponibilites.bulk({ id_enseignant, id_jour, type });
+  } else {
+    const data = { id_enseignant, id_jour, id_creneau, type };
+    if (editingId) {
+      r = await API.disponibilites.update(editingId, data);
+    } else {
+      r = await API.disponibilites.create(data);
+    }
+  }
+
+  if (r && r.success) {
     closeSidebar();
-    Toast.fire({ icon: 'success', title: editingId ? 'Disponibilité modifiée' : 'Disponibilité créée' });
-    loadData();
-  } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); }
+    Toast.fire({ icon: 'success', title: r.message || (editingId ? 'Disponibilité modifiée' : 'Disponibilité créée') });
+    editingId = null;
+    await loadData();
+  } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r ? r.message : 'Erreur inconnue' }); }
 });
 
 function confirmDelete(id) {
@@ -285,28 +312,27 @@ document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar
 document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
   if (!deleteId) return;
   const r = await API.disponibilites.delete(deleteId);
-  if (r.success) {
+  if (r && r.success) {
     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
     Toast.fire({ icon: 'success', title: 'Disponibilité supprimée' });
-    loadData();
-  } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); }
+    await loadData();
+  } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r ? r.message : 'Erreur inconnue' }); }
   deleteId = null;
 });
 
 function exportCSV() {
-  const table = $('#dataTable').DataTable();
-  const data = table.rows({ filter: 'applied' }).data();
-  let csv = '\uFEFF';
   const headers = ['#', 'Enseignant', 'Jour', 'Créneau', 'Type'];
-  csv += headers.join(',') + '\n';
-  data.each(function(row) {
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  $('#dataTable tbody tr:visible').each(function() {
     const cols = [];
-    for (let i = 0; i < 5; i++) {
-      let val = $(row[i]).text().trim() || row[i] || '';
-      val = '"' + val.replace(/"/g, '""') + '"';
-      cols.push(val);
-    }
-    csv += cols.join(',') + '\n';
+    $(this).find('td').each(function(i) {
+      if (i < 5) {
+        let val = $(this).text().trim();
+        val = '"' + val.replace(/"/g, '""') + '"';
+        cols.push(val);
+      }
+    });
+    if (cols.length) csv += cols.join(',') + '\n';
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -317,14 +343,13 @@ function exportCSV() {
 
 (function() {
   var wait = setInterval(function() {
-    if (typeof jQuery !== 'undefined' && $.fn && $.fn.DataTable && typeof API !== 'undefined' && API.disponibilites) {
+    if (typeof jQuery !== 'undefined' && $.fn && typeof API !== 'undefined' && API.disponibilites) {
       clearInterval(wait);
       loadData();
       autoSetup('id_enseignant_search', 'id_enseignant', 'id_enseignant_results', JSON.parse(document.getElementById('disponibilites_enseignants_data').textContent).map(function(e) { return { id: e.id_enseignant, nom: e.fullname || e.nom, prenom: e.prenom || '' }; }), function(e) { return e.nom + (e.prenom ? ' ' + e.prenom : ''); });
       autoSetup('id_jour_search', 'id_jour', 'id_jour_results', JSON.parse(document.getElementById('disponibilites_jours_data').textContent).map(function(j) { return { id: j.id_jour, libelle: j.libelle }; }), function(j) { return j.libelle; });
       autoSetup('id_creneau_search', 'id_creneau', 'id_creneau_results', JSON.parse(document.getElementById('disponibilites_creneaux_data').textContent).map(function(c) { return { id: c.id_creneau, libelle: c.libelle, heure_debut: c.heure_debut, heure_fin: c.heure_fin }; }), function(c) { return c.libelle + ' (' + c.heure_debut + '-' + c.heure_fin + ')'; });
-      $('#dtSearch').on('keyup', function() { $('#dataTable').DataTable().search(this.value).draw(); });
-      $('#dtLength').on('change', function() { $('#dataTable').DataTable().page.len(+this.value).draw(); });
+      $('#dtSearch').on('keyup', function() { applyFilters(); });
     }
   }, 50);
 })();

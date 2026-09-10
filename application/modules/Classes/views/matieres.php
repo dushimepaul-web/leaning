@@ -56,7 +56,7 @@
               <th>Code</th>
               <th>Libellé</th>
               <th>Type</th>
-              <th>Statut</th>
+              <th>Cours actif</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -90,6 +90,14 @@
           <input class="form-check-input" type="checkbox" id="est_general" value="1" style="width: 20px; height: 20px;">
           <label class="form-check-label text-sm fw-semibold text-primary-light" for="est_general">
             Cours Général / Langue (Coché = Général, Non coché = Technique)
+          </label>
+        </div>
+      </div>
+      <div class="col-sm-12">
+        <div class="form-check d-flex align-items-center gap-2">
+          <input class="form-check-input" type="checkbox" id="est_actif" value="1" checked style="width: 20px; height: 20px;">
+          <label class="form-check-label text-sm fw-semibold text-primary-light" for="est_actif">
+            Cours actif (Coché = actif dans les calculs, Non coché = affiché mais hors totaux/%/rang)
           </label>
         </div>
       </div>
@@ -134,6 +142,7 @@ function openAddSidebar() {
     document.getElementById('code').value = '';
     document.getElementById('libelle').value = '';
     document.getElementById('est_general').checked = false;
+    document.getElementById('est_actif').checked = true;
     document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -145,6 +154,7 @@ function openEditSidebar(data) {
   document.getElementById('code').value = data.code || '';
   document.getElementById('libelle').value = data.libelle || '';
   document.getElementById('est_general').checked = (parseInt(data.est_general) === 1);
+  document.getElementById('est_actif').checked = (parseInt(data.est_actif) !== 0);
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
 }
@@ -160,8 +170,9 @@ async function loadData() {
   let rows = '';
   res.data.forEach((s, i) => {
     const isDeleted = s.deleted_at !== null;
-    const statusBadge = isDeleted ? 'bg-danger-100 text-danger-600' : 'bg-success-100 text-success-600';
-    const statusText = isDeleted ? 'Inactif' : 'Actif';
+    const isActive = parseInt(s.est_actif) !== 0;
+    const actifBadge = isActive ? 'bg-success-100 text-success-600' : 'bg-danger-100 text-danger-600';
+    const actifText = isActive ? 'Actif' : 'Inactif';
     const isGeneral = parseInt(s.est_general) === 1;
     const typeBadge = isGeneral ? '<span class="bg-primary-100 text-primary-600 px-16 py-4 radius-4 fw-medium text-sm">Général & Langue</span>' : '<span class="bg-warning-150 text-warning-700 px-16 py-4 radius-4 fw-medium text-sm">Technique</span>';
     rows += `<tr>
@@ -169,7 +180,7 @@ async function loadData() {
       <td><span class="fw-semibold">${s.code || '-'}</span></td>
       <td>${s.libelle}</td>
       <td>${typeBadge}</td>
-      <td><span class="${statusBadge} px-24 py-4 radius-4 fw-medium text-sm">${statusText}</span></td>
+      <td><span class="${actifBadge} px-24 py-4 radius-4 fw-medium text-sm">${actifText}</span></td>
       <td>
         <div class="btn-group">
           <button type="button" class="text-primary-light text-xl" data-bs-toggle="dropdown"><iconify-icon icon="tabler:dots-vertical"></iconify-icon></button>
@@ -201,7 +212,8 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
   const data = {
     code: document.getElementById('code').value,
     libelle: document.getElementById('libelle').value,
-    est_general: document.getElementById('est_general').checked ? 1 : 0
+    est_general: document.getElementById('est_general').checked ? 1 : 0,
+    est_actif: document.getElementById('est_actif').checked ? 1 : 0
   };
   if (!data.code || !data.libelle) {
     Swal.fire({ icon: 'warning', title: 'Validation', text: 'Code et libellé sont obligatoires' });

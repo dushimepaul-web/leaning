@@ -166,15 +166,16 @@ $route['api/horaires'] = 'Horaires/Horaires/api_list';
 $route['api/horaires/create'] = 'Horaires/Horaires/api_create';
 $route['api/horaires/generer'] = 'Horaires/Horaires/api_generer';
 $route['api/horaires/generations'] = 'Horaires/Horaires/api_generations';
-$route['api/horaires/(:any)/update'] = 'Horaires/Horaires/api_update/$1';
-$route['api/horaires/(:any)/delete'] = 'Horaires/Horaires/api_delete/$1';
+$route['api/horaires/fixes'] = 'Horaires/Horaires/api_fixes_list';
+$route['api/horaires/fixes/create'] = 'Horaires/Horaires/api_fixes_create';
+$route['api/horaires/fixes/clear'] = 'Horaires/Horaires/api_fixes_clear';
+$route['api/horaires/fixes/(:any)/delete'] = 'Horaires/Horaires/api_fixes_delete/$1';
+$route['api/horaires/fixes/(:any)'] = 'Horaires/Horaires/api_fixes_list';
 $route['api/horaires/matieres/(:any)'] = 'Horaires/Horaires/api_matieres_by_classe/$1';
 $route['api/horaires/enseignant/(:any)/(:any)'] = 'Horaires/Horaires/api_enseignant_by_classe_matiere/$1/$2';
+$route['api/horaires/(:any)/update'] = 'Horaires/Horaires/api_update/$1';
+$route['api/horaires/(:any)/delete'] = 'Horaires/Horaires/api_delete/$1';
 $route['api/horaires/(:any)'] = 'Horaires/Horaires/api_get/$1';
-
-
-
-// API - Parametres
 $route['api/parametres'] = 'Parametres/Parametres/api_list';
 $route['api/parametres/update'] = 'Parametres/Parametres/api_update';
 $route['api/parametres/upload_logo'] = 'Parametres/Parametres/api_upload_logo';
@@ -264,9 +265,14 @@ $route['api/librairie/(:any)/delete'] = 'Librairie/Librairie/api_delete/$1';
 // API - Disponibilites
 $route['api/disponibilites'] = 'Disponibilites/Disponibilites/api_list';
 $route['api/disponibilites/create'] = 'Disponibilites/Disponibilites/api_create';
+$route['api/disponibilites/bulk'] = 'Disponibilites/Disponibilites/api_bulk_create';
 $route['api/disponibilites/(:any)'] = 'Disponibilites/Disponibilites/api_get/$1';
 $route['api/disponibilites/(:any)/update'] = 'Disponibilites/Disponibilites/api_update/$1';
 $route['api/disponibilites/(:any)/delete'] = 'Disponibilites/Disponibilites/api_delete/$1';
+
+
+// Horaires Fixes - Page
+$route['Horaires/fixes'] = 'Horaires/Horaires/fixes';
 
 
 // API - Audit
@@ -319,7 +325,7 @@ $route['Uniformes'] = 'Uniformes/Uniformes/index';
 $route['Parametres'] = 'Parametres/Parametres/index';
 $route['Commandes'] = 'Commandes/Commandes/index';
 $route['Rapports'] = 'Rapports/Rapports/index';
-$route['Assurances'] = 'Assurances/Assurances/index';
+// $route['Assurances'] = 'Assurances/Assurances/index'; // Module inexistant
 // $route['Creneaux'] = 'Creneaux/Creneaux/index';
 $route['Disponibilites'] = 'Disponibilites/Disponibilites/index';
 
@@ -331,7 +337,7 @@ $route['Types_frais'] = 'Type_frais/Type_frais/index';
 
 $route['Paiement_recus'] = 'Paiement_recu/Paiement_recu/index';
 $route['Recus/imprimer/(:any)'] = 'Recu/Recu/imprimer/$1';
-$route['Toilettes'] = 'Toilettes/Toilettes/index';
+// $route['Toilettes'] = 'Toilettes/Toilettes/index'; // Module inexistant
 $route['Librairie'] = 'Librairie/Librairie/index';
 
 // Sub-module pages for sidebar route_map

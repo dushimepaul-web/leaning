@@ -153,4 +153,3 @@ function exportCSV(){var t=$('#dataTable').DataTable(),d=t.rows({filter:'applied
     if(pMatiere&&matieresList.length){var m=matieresList.find(function(x){return x.id_matiere==pMatiere});if(m){document.getElementById('id_matiere').value=m.id_matiere;document.getElementById('id_matiere_search').value=m.libelle}}
   },600)}},50);})();
 </script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>

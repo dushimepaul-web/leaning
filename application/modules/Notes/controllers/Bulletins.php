@@ -211,6 +211,8 @@ class Bulletins extends MY_Controller {
         $coeff_map = [];
         foreach ($mc_rows as $mc) { $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1); }
 
+        $etudiant_ids = array_column($students, 'id_etudiant');
+        $this->db->where_in('n.id_etudiant', $etudiant_ids);
         $this->db->where_in('n.id_evaluation', $evalIds);
         $this->db->where('n.deleted_at', null);
         $allNotes = $this->db->get('notes n')->result_array();
@@ -426,7 +428,7 @@ class Bulletins extends MY_Controller {
             : 'N/A';
 
         $all_subjects = $this->Model->readQuery("
-            SELECT m.id_matiere AS id, m.libelle AS name, m.code, m.est_general, mc.note_max_matiere, mc.nb_heures_par_semaine, 1 AS is_active
+            SELECT m.id_matiere AS id, m.libelle AS name, m.code, m.est_general, m.est_actif, mc.note_max_matiere, mc.nb_heures_par_semaine
             FROM matieres_classes mc
             JOIN matieres m ON m.id_matiere = mc.id_matiere
             WHERE mc.id_classe = ? AND mc.deleted_at IS NULL AND m.deleted_at IS NULL
@@ -436,6 +438,17 @@ class Bulletins extends MY_Controller {
         if (empty($all_subjects)) {
             echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucune matière assignée à cette classe.</h3>";
             return;
+        }
+
+        // Séparer matières actives et inactives
+        $subjects = [];
+        $subjects_inactifs = [];
+        foreach ($all_subjects as $s) {
+            if (intval($s['est_actif']) === 0) {
+                $subjects_inactifs[] = $s;
+            } else {
+                $subjects[] = $s;
+            }
         }
 
         $all_subject_ids = array_column($all_subjects, 'id');
@@ -452,6 +465,9 @@ class Bulletins extends MY_Controller {
         $p1 = $periode_map[1] ?? 0;
         $p2 = $periode_map[2] ?? 0;
         $p3 = $periode_map[3] ?? 0;
+
+        $etudiant_placeholders = !empty($etudiant_ids) ? str_repeat('?,', count($etudiant_ids) - 1).'?' : '?';
+        $matiere_placeholders = !empty($all_subject_ids) ? str_repeat('?,', count($all_subject_ids) - 1).'?' : '?';
 
         $query = "
             SELECT 
@@ -490,8 +506,8 @@ class Bulletins extends MY_Controller {
             
             FROM notes n
             JOIN evaluations ev ON ev.id_evaluation = n.id_evaluation
-            WHERE n.id_etudiant IN (".str_repeat('?,', count($etudiant_ids) - 1)."?)
-            AND ev.id_matiere IN (".str_repeat('?,', count($all_subject_ids) - 1)."?)
+            WHERE n.id_etudiant IN ({$etudiant_placeholders})
+            AND ev.id_matiere IN ({$matiere_placeholders})
             AND ev.id_annee = ?
             AND n.deleted_at IS NULL AND ev.deleted_at IS NULL
             GROUP BY n.id_etudiant, ev.id_matiere
@@ -508,7 +524,7 @@ class Bulletins extends MY_Controller {
         $conduite_rows = $this->Model->readQuery("
             SELECT pc.id_etudiant, pc.id_periode, pc.points_initial, pc.points_retires
             FROM points_conduite pc
-            WHERE pc.id_etudiant IN (".str_repeat('?,', count($etudiant_ids) - 1)."?)
+            WHERE pc.id_etudiant IN ({$etudiant_placeholders})
             AND pc.id_periode IN (?,?,?)
             AND pc.deleted_at IS NULL
         ", array_merge($etudiant_ids, [$p1, $p2, $p3]));
@@ -540,13 +556,111 @@ class Bulletins extends MY_Controller {
 
         $data['title'] = 'Bulletins de la classe ' . $classe_nom;
         $data['eleves'] = $eleves;
-        $data['subjects'] = $all_subjects;
+        $data['subjects'] = $subjects;
+        $data['subjects_inactifs'] = $subjects_inactifs;
         $data['periodes'] = $periodes;
         $data['annee_scolaire'] = $annee_scolaire;
         $data['classe_nom'] = $classe_nom;
         $data['aggregated_data'] = $aggregated_data;
         $data['conduite_map'] = $conduite_map;
-        
+        $data['conduite_val'] = 60;
+
+        $data['per_tots'] = [];
+        $data['maxima_map'] = [];
+        $data['rangs_periode'] = [];
+
+        $pct_comp_val = floatval($this->Model->get_setting('pourcentage_competences_examen', 40));
+        $pct_ress_val = floatval($this->Model->get_setting('pourcentage_ressources_examen', 60));
+
+        foreach ($subjects as $subj) {
+            $max_tj_subj = floatval($subj['note_max_matiere'] ?: 15);
+            $max_comp_subj = round($max_tj_subj * $pct_comp_val / 100, 1);
+            $max_ress_subj = round($max_tj_subj * $pct_ress_val / 100, 1);
+            foreach ([1, 2, 3] as $pnum) {
+                if ($mode_b) {
+                    $data['maxima_map'][$subj['id']][$pnum] = ['tj' => $max_tj_subj, 'comp' => $max_comp_subj, 'ress' => $max_ress_subj, 'ex' => 0, 'tot' => $max_tj_subj + $max_comp_subj + $max_ress_subj];
+                } elseif ($mode_a) {
+                    $data['maxima_map'][$subj['id']][$pnum] = ['tj' => $max_tj_subj, 'comp' => 0, 'ress' => 0, 'ex' => $max_tj_subj, 'tot' => $max_tj_subj * 2];
+                } else {
+                    $data['maxima_map'][$subj['id']][$pnum] = ['tj' => $max_tj_subj, 'comp' => 0, 'ress' => 0, 'ex' => 0, 'tot' => $max_tj_subj];
+                }
+            }
+        }
+
+        $notes_map = [];
+        foreach ($aggregated_data as $row) {
+            $notes_map[$row['inscription_id']][$row['subject_id']] = $row;
+        }
+
+        foreach ($eleves as $eid => $el) {
+            $stud_notes = $notes_map[$eid] ?? [];
+            $cd = isset($conduite_map[$eid]) ? $conduite_map[$eid] : [];
+            $per_tots_el = [];
+            foreach ([1, 2, 3] as $pnum) {
+                $pid = $periode_map[$pnum] ?? 0;
+                $total = 0;
+                if ($pid) {
+                    foreach ($subjects as $subj) {
+                        $sd = $stud_notes[$subj['id']] ?? null;
+                        if ($sd) {
+                            $tj = (float)$sd["note_t{$pnum}_tj"];
+                            $comp = (float)$sd["note_t{$pnum}_comp"];
+                            $ress = (float)$sd["note_t{$pnum}_ress"];
+                            $ex = (float)$sd["note_t{$pnum}_ex"];
+                            if ($mode_b) $ex = 0;
+                            elseif ($mode_a) { $comp = 0; $ress = 0; }
+                            else { $comp = 0; $ress = 0; $ex = 0; }
+                            $total += $tj + $comp + $ress + $ex;
+                        }
+                    }
+                    $cd_val = isset($cd[$pid]) ? $cd[$pid] : 60;
+                    $total += $cd_val;
+                }
+                $per_tots_el[$pnum] = ['tot' => $total];
+            }
+            $data['per_tots'][$eid] = $per_tots_el;
+        }
+
+        foreach ([1, 2, 3] as $pnum) {
+            $scores = [];
+            foreach ($eleves as $eid => $el) {
+                $stud_notes = $notes_map[$eid] ?? [];
+                $cd = isset($conduite_map[$eid]) ? $conduite_map[$eid] : [];
+                $pid = $periode_map[$pnum] ?? 0;
+                $note_tot = 0;
+                $max_tot = 0;
+                if ($pid) {
+                    foreach ($subjects as $subj) {
+                        $sd = $stud_notes[$subj['id']] ?? null;
+                        $mx = $data['maxima_map'][$subj['id']][$pnum] ?? ['tj'=>0,'comp'=>0,'ress'=>0,'ex'=>0,'tot'=>0];
+                        if ($sd) {
+                            $tj = (float)$sd["note_t{$pnum}_tj"];
+                            $comp = (float)$sd["note_t{$pnum}_comp"];
+                            $ress = (float)$sd["note_t{$pnum}_ress"];
+                            $ex = (float)$sd["note_t{$pnum}_ex"];
+                            if ($mode_b) $ex = 0;
+                            elseif ($mode_a) { $comp = 0; $ress = 0; }
+                            else { $comp = 0; $ress = 0; $ex = 0; }
+                            $note_tot += $tj + $comp + $ress + $ex;
+                        }
+                        $max_tot += $mx['tot'];
+                    }
+                    $cd_val = isset($cd[$pid]) ? $cd[$pid] : 60;
+                    $note_tot += $cd_val;
+                    $max_tot += 60;
+                }
+                $pct = $max_tot > 0 ? ($note_tot / $max_tot * 100) : 0;
+                $scores[$eid] = $pct;
+            }
+            arsort($scores);
+            $rang = 1; $prev = -1;
+            foreach ($scores as $eid => $pct) {
+                if ($prev >= 0 && $pct < $prev) $rang++;
+                $data['rangs_periode'][$pnum][$eid] = ($pct > 0) ? $rang : 0;
+                $prev = $pct;
+            }
+        }
+
         $this->load->view('print_bulletins', $data);
     }
 }

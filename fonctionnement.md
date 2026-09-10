@@ -4,12 +4,10 @@ Ce document décrit la logique métier implémentée dans l'application. Il est 
 
 ## 1. Le TJ (Total de Jours / points max d'une matière)
 
-- Le **TJ** d'une matière par période = **coefficient calculé** = `nb_heures_par_semaine × facteur_points_heure`.
-- `facteur_points_heure` = **15** par défaut (paramètre global : `facteur_points_heure`).
-- Exemple : CHIMIE 12 h/semaine → TJ = 12 × 15 = **180 points max**.
-- Si les heures ne sont pas renseignées (`nb_heures_par_semaine` = 0) → TJ = 0 (maxima à 0 tant que les heures sont manquantes).
+- Le **TJ** d'une matière par période = `matieres_classes.note_max_matiere` (poids de la matière pour la classe).
+- Si `note_max_matiere` n'est pas renseigné (0 ou null) → TJ = 0.
 
-> Règle confirmée par l'utilisateur : **TJ = coefficient calculé (heures × facteur)** — la colonne stockée `matieres_classes.note_max_matiere` (ex-`coefficient`) n'est pas utilisée dans le calcul du TJ.
+> Règle confirmée par l'utilisateur : **TJ = note_max_matiere directement** — `nb_heures_par_semaine` et `facteur_points_heure` ne sont pas utilisés dans le calcul du TJ.
 
 ## 2. Types d'évaluation et catégories
 
@@ -177,9 +175,9 @@ Ces paramètres ont été **supprimés de la base et du code** car obsolètes / 
 
 | Paramètre | Raison |
 |---|---|
-| `tj_points` | Ancien calcul du TJ (points fixes) — remplacé par le coefficient calculé. |
+| `tj_points` | Ancien calcul du TJ (points fixes) — remplacé par `note_max_matiere`. |
 | `examen_pourcentage` | Redondant avec les « à l'examen (%) ». |
-| `points_par_heure` | Ancien facteur — remplacé par `facteur_points_heure`. |
+| `points_par_heure` | Ancien facteur — TJ utilise désormais `note_max_matiere` directement. |
 | `ressources_pourcentage` (global) | Doublon de « Ressources à l'examen (%) » — la surcharge par classe reste possible dans la page Classes. |
 | `competences_pourcentage` (global) | Idem (doublon de « Compétences à l'examen (%) »). |
 | `comportement_sans_bulletin` | Supprimé : sans bulletin → l'élève redouble toujours. |
@@ -218,21 +216,195 @@ La table `parametres` contient désormais **41 paramètres** (audit : tous utili
 | `email_smtp_crypto` | tls | Chiffrement (`tls`/`ssl`) | `Cpanel_email.php:42` |
 | `email_sendmail_path` | (vide) | Chemin sendmail si protocole `mail` | `Cpanel_email.php:44` |
 
-### 8.3. Horaires
+### 8.3. Horaires (Emploi du temps)
 
-| Clé | Valeur | Rôle | Utilisé dans |
+#### Paramètres
+
+| Clé | Défaut | Rôle | Utilisé dans |
 |---|---|---|---|
-| `heure_debut_journee` | 07:30 | Heure du premier créneau | `Horaires_model.php:68` |
-| `duree_cours` | 45 | Durée (min) d'un cours | `Horaires_model.php:69` |
-| `duree_pause` | 20 | Durée (min) d'une pause | `Horaires_model.php:70` |
-| `duree_vigie` | 10 | Durée (min) de la vigie | `Horaires_model.php:71` |
-| `nb_creneaux_jour` | 8 | Nombre de créneaux par jour | `Horaires_model.php:72` |
+| `heure_debut_journee` | 07:30 | Heure du premier créneau | `Horaires_model.php:57` |
+| `duree_cours` | 45 | Durée (min) d'un cours | `Horaires_model.php:58` |
+| `duree_pause` | 20 | Durée (min) de la pause (insérée au milieu) | `Horaires_model.php:59` |
+| `duree_vigie` | 10 | Durée (min) de la vigie matinale (créneau spécial) | `Horaires_model.php:60` |
+| `nb_creneaux_jour` | 8 | Nombre de créneaux cours par jour | `Horaires_model.php:61` |
+| `duree_culte` | 35 | Durée (min) du culte (jour spécial uniquement) | `Horaires_model.php:123` |
+| `jour_special` | mardi | Code du jour spécial (culte) | `Horaires.php:16` |
+| `jour_special_actif` | 1 | Active/désactive l'affichage du jour spécial | `Horaires.php:17` |
+
+#### Architecture
+
+```
+modules/Horaires/
+├── controllers/Horaires.php   (287 lignes — index + CRUD + api_generer + generer)
+├── models/Horaires_model.php  (332 lignes — requêtes + compute_creneaux + list_horaires)
+├── libraries/HorairesGenerator.php (réécrit — préflight + pré-placement tight + générateur groupé + swap + brute force)
+└── views/index.php            (491 lignes — grille + exports A4/Excel)
+```
+
+**Principe fondamental** : chaque génération effectue un `TRUNCATE` de la table `horaires` puis réécrit toutes les sessions. Pas de soft delete sur les anciennes sessions d'une génération.
+
+**Routes API** (`config/routes.php:164-173`) :
+
+| Route | Méthode | Rôle |
+|---|---|---|
+| `api/horaires` | `api_list` | Liste tous les horaires |
+| `api/horaires/{uuid}` | `api_get` | Détail d'un horaire par UUID |
+| `api/horaires/create` | `api_create` | Ajouter un horaire |
+| `api/horaires/{uuid}/update` | `api_update` | Modifier un horaire |
+| `api/horaires/{uuid}/delete` | `api_delete` | Suppression logique (soft delete) |
+| `api/horaires/generer` | `api_generer` | Générer l'emploi du temps (algorithme complet) |
+| `api/horaires/generations` | `api_generations` | Lister les générations |
+| `api/horaires/matieres/{id}` | `api_matieres_by_classe` | Matières d'une classe |
+| `api/horaires/enseignant/{id}/{id}` | `api_enseignant_by_classe_matiere` | Enseignant par classe/matière |
+
+#### Schéma BDD (3 tables)
+
+**`horaires`** — table principale
+
+| Colonne | Type | Rôle |
+|---|---|---|
+| `id_horaire` | int PK AUTO | Identifiant |
+| `uuid` | char(36) UNIQUE | UUID public |
+| `id_generation` | int FK → `horaires_generations` | Génération (CASCADE) |
+| `id_enseignement` | int FK → `enseignements` | Lien enseignement |
+| `id_matiere` | int FK → `matieres` (SET NULL) | Matière |
+| `id_enseignant` | int FK → `enseignants` | Enseignant |
+| `id_classe` | int FK → `classes` | Classe |
+| `id_creneau` | int/string | Créneau (1,2,3… / `vigile` / `pause3` / `culte`) |
+| `id_jour` | int FK → `jours_semaine` | Jour de la semaine |
+| `deleted_at` | datetime nullable | Soft delete |
+
+**UNIQUE** : `(id_generation, id_creneau, id_jour, id_enseignant)` — un enseignant = 1 cours/créneau/jour.
+**UNIQUE** : `(id_generation, id_creneau, id_jour, id_classe)` — une classe = 1 cours/créneau/jour.
+
+**`horaires_generations`** — suivi des générations
+
+| Colonne | Type | Rôle |
+|---|---|---|
+| `id_generation` | int PK AUTO | Identifiant |
+| `uuid` | char(36) UNIQUE | UUID public |
+| `libelle` | varchar(100) | Nom (ex: "Emploi du temps 2026") |
+| `id_annee` | int FK → `annees_scolaires` | Année scolaire (CASCADE) |
+| `date_generation` | datetime | Date de création |
+| `statut` | enum(brouillon,publie,archive) | État |
+
+**`contraintes_horaires`** — contraintes de planification
+
+| Colonne | Type | Rôle |
+|---|---|---|
+| `id_contrainte` | int PK AUTO | Identifiant |
+| `type` | enum(matiere,classe,enseignant,global) | Portée de la contrainte |
+| `id_concerne` | int nullable | ID matière/classe/enseignant (NULL = global) |
+| `id_jour` | int FK → `jours_semaine` | Jour concerné |
+| `id_creneau_debut` / `id_creneau_fin` | int nullable | Plage de créneaux |
+| `regle` | varchar(50) | `interdit` / `preferer_matin` / `max_consecutifs` / `seulement_creneau` |
+| `valeur` | varchar(255) | Valeur associée à la règle |
+
+#### Types de créneaux
+
+Les créneaux sont **calculés dynamiquement** depuis les paramètres (pas de table `creneaux`). Types possibles :
+
+| Type | ID | Description |
+|---|---|---|
+| `cours` | integer (1, 2, 3…) | Créneaux normaux |
+| `vigile` | `vigile` | Salut du drapeau (premier créneau, optionnel si `duree_vigie > 0`) |
+| `pause` | `pause{i}` | Pause/récréation (insérée au milieu, après créneau `nb_creneaux/2`) |
+| `culte` | `culte` | Culte du mardi (durée `duree_culte`, remplace la pause standard) |
+
+#### Algorithme de génération (`api_generer`)
+
+Le générateur utilise un **verrou MySQL** (`GET_LOCK`) pour éviter les exécutions concurrentes.
+
+**Entrées** : classes, matieres_classes, enseignements, jours (filtrés `deleted_at IS NULL`), créneaux (cours uniquement — vigile/pause/culte = affichage), indisponibilités.
+
+##### Preflight — Validation avant écriture
+
+Le preflight classe les diagnostics en deux catégories :
+
+| Type | Bloquant ? | Exemples |
+|---|---|---|
+| **Blocking** (bloque la génération) | Oui | Affectation manquante, capacité dépassée (charge > capacité), jours insuffisants, conflit de fixe, fixe hors limites |
+| **Warning** (information uniquement) | Non | Marge zéro (enseignant tight) |
+
+Seuls les diagnostics `blocking => true` empêchent la génération. Un enseignant à marge zéro n'est **pas** une erreur — c'est un cas valide géré par le pré-placement tight.
+
+##### Processus
+
+| Étape | Stratégie | Description |
+|---|---|---|
+| **Preflight** | Validation complète | Vérifie : affectations manquantes, capacité enseignant, marge zéro, jours insuffisants par cours, limites quotidiennes, créneaux fixes (disponibilité + conflits + limites). Blocage immédiat si violation. |
+| **Construction** | Map MC→Ens | Construit `$mapMC2Ens` : chaque `id_matiere_classe` → `{id_enseignement, id_enseignant}` depuis `enseignements` |
+| **Sessions** | Expansion | Chaque `matieres_classes` avec `nb_heures_par_semaine > 0` génère N sessions (une par heure/semaine) |
+| **Filtrage fixe** | Déduction | Retire les sessions auto correspondant aux créneaux fixes |
+| **Pré-placement tight** | TightTeacherPre | Détecte les enseignants dont total >= available - 1 (marge 0 ou 1). Triage par marge croissante. Sessions converties en fixe. |
+| **Groupement** | Par (classe, matière) | Sessions regroupées par `id_classe` + `id_matiere_classe` pour traitement groupé |
+| **3 ordonnancements** | Groupes contraints | Teste 3 ordres : (1) plus de sessions d'abord, (2) plus contraints d'abord, (3) par charge enseignant |
+| **Placement groupé** | PlaceGroupConsecutive | Pour chaque groupe : place les sessions sur le même jour avec des créneaux consécutifs (C1→C2→C3). |
+| **Swap** | Déplacement (depth 3) | Si cellule ou prof bloqué → déplace la session existante vers un autre slot libre |
+| **Rattrapage** | Individuel | Sessions non encore placées → itère jour×créneau |
+| **Brute force** | Relocalisation (depth 6) | Dernier recours : retire des sessions pour libérer des slots |
+| **Optimisation** | ConsecutivePost | Réorganiser les sessions d'une même matière sur un jour pour les rendre consécutives |
+| **Validation** | Complète | Vérifie unicité classe/créneau/jour, unicité prof/créneau/jour, limites quotidiennes, disponibilités, 0 cases vides |
+| **Insertion** | TRUNCATE + Batch | TRUNCATE la table `horaires` (hors transaction), puis INSERT batch dans une transaction MySQL |
+
+**Priorité succession** : les cours multi-heures (ex: FRA TECH 3h) sont placés de préférence sur le même jour avec des créneaux consécutifs (ex: C4→C5→C6). Ceci est une **préférence**, pas une obligation — si le placement consécutif bloque, le cours est placé librement. Pendant les **swaps**, la contrainte de succession n'est **pas appliquée** (priorité au placement complet).
+
+**Grille finale** : chaque classe × chaque jour × chaque créneau = **exactement 1 session** (aucune case vide).
+
+**Contraintes respectées** : indisponibilités enseignants (`disponibilites_enseignants`), unicité classe/créneau/jour, unicité enseignant/créneau/jour, `nb_heures_par_jour` (maximum de séances d'une matière par jour).
+
+**Insertion** : TRUNCATE de la table `horaires` avant la transaction (évite le COMMIT implicite de TRUNCATE dans une transaction). Puis INSERT batch de toutes les sessions. Statut = `brouillon`.
+
+**Jours** : seuls les jours avec `deleted_at IS NULL` sont utilisés (samedi supprimé = 5 jours × 8 créneaux = 40 slots/classe).
+
+**Retry** : si les ordres déterministes ne donnent pas 100%, jusqu'à **50 tentatives aléatoires** sont effectuées. Si toujours pas 100%, des **20 passes de rattrapage par swap** puis **5 rounds de brute force** (depth 6) sont lancés.
+
+#### Enseignants tight (marge nulle)
+
+Un enseignant est dit « tight » quand le nombre total de sessions (toutes classes confondues) est **>= au nombre de créneaux disponibles**. Exemple : un enseignant disponible 2 jours (8 créneaux/jour) avec 16h de cours/semaine est tight (marge = 0).
+
+**Règles** :
+- **charge > capacité** → blocage immédiat avant génération
+- **charge = capacité** (marge 0) → tous les créneaux autorisés DOIVENT être occupés
+- **charge = capacité - 1** (marge 1) → pré-placement tight activé
+
+**Traitement** :
+1. **Détection** : calcule pour chaque enseignant le ratio `total / available`.
+2. **Triage** : enseignants à marge 0 d'abord, puis marge 1.
+3. **Pré-placement** : les sessions tight sont converties en sessions « fixe » et placées en priorité sur tous les créneaux disponibles de l'enseignant, en respectant `nb_heures_par_jour` par matière/classe.
+4. **Validation preflight** : vérifie que chaque cours d'un enseignant tight a suffisamment de jours disponibles.
+
+**Exemple concret** : enseignant disponible lundi et jeudi (2 × 8 = 16 créneaux), enseigne 3 classes (6h + 5h + 5h = 16h/semaine). Les 16 créneaux seront tous occupés. Quand il quitte une classe à un créneau, il entre immédiatement dans une autre.
+
+#### Résultat typique de génération (vérifié en base)
+
+| Métrique | Valeur attendue |
+|---|---|
+| Total sessions | Exactement `sum(nb_heures_par_semaine)` pour toutes les matières_classes |
+| Conflits enseignant | 0 — un enseignant = 1 cours/créneau/jour |
+| Conflits classe | 0 — une classe = 1 cours/créneau/jour |
+| Heures/semaine par cours | Exactement `nb_heures_par_semaine` pour chaque matiere_classe |
+| Limites quotidiennes | 0 violation — chaque cours respecte `nb_heures_par_jour` |
+| Sessions non placées | 0 — sinon la génération est refusée |
+
+#### Jour spécial (mardi)
+
+Quand `jour_special_actif = 1`, la vue affiche **deux grilles par classe** :
+- **Grille principale** : tous les jours **sauf** le jour spécial (créneaux standard via `get_creneaux_cours()`)
+- **Grille secondaire** : jour spécial uniquement (créneaux avec culte via `get_creneaux_mardi()`)
+
+Le mardi a un **ensemble de créneaux différent** : le créneau `culte` remplace la pause standard, avec sa propre durée (`duree_culte`).
+
+#### Exports
+
+- **A4** : impression via `window.open()` avec CSS `@media print`, 4 classes par page, Police Times New Roman
+- **Excel** : via SheetJS (`xlsx.full.min.js`), un onglet par classe
 
 ### 8.4. Notation & bulletin
 
 | Clé | Valeur | Rôle | Utilisé dans |
 |---|---|---|---|
-| `facteur_points_heure` | 15 | **TJ = heures hebdomadaires × facteur** (coefficient calculé) | `Bulletins_model.php:122` ; `Bulletins.php:467` ; `Fiches.php:113` ; `print_bulletins.php:43` |
+| `facteur_points_heure` | 15 | Non utilisé — TJ = `note_max_matiere` directement | (obsolète, conservé pour compatibilité) |
 | `pourcentage_ressources_examen` | 60.00 | % du TJ alloué aux Ressources (MAX RESS = TJ × %/100) | `Bulletins_model.php:84,124` ; `Bulletins.php:463` ; `Fiches.php:115` |
 | `pourcentage_competences_examen` | 40 | % du TJ alloué aux Compétences (MAX COMP = TJ × %/100) | `Bulletins_model.php:87,123` ; `Bulletins.php:466` ; `Fiches.php:114` |
 
@@ -302,7 +474,7 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 - **Audit complet des paramètres** : chaque clé vérifiée — répertoire complet ajouté en **section 8** (rôle + lieu d'utilisation fichier:ligne pour chacun).
 - **Corruption `?` corrigée en base** : les mots contenant des accents étaient stockés avec des `?` littéraux (0x3F) — `classes.libelle` (1ère PEDAGOGIQUE), `menus.libelle` (Scolarité, Reçus, Échéanciers, Paramètres, Disponibilités, Générer), `produits.unite` (pièce). Vérifié par scan binaire (`LIKE '%?%' COLLATE utf8mb4_bin`) sur les 154 colonnes texte.
 - **`evaluations.sur` → `evaluations.ponderee_sur`** (renommée) : barème de chaque évaluation (défaut 20). Grille de notes, fiches et bulletins utilisent `note / ponderee_sur` pour normaliser.
-- **`matieres_classes.coefficient` → `matieres_classes.note_max_matiere`** (renommée) : « note max matière » (poids de la matière pour la classe, défaut 1.0). Utilisée dans la clôture (`× 6`) et affichée dans la grille de notes (`×note_max_matiere`), les programmes et les horaires. L'API et les vues des enseignants utilisent désormais `note_max_matiere`.
+- **`matieres_classes.coefficient` → `matieres_classes.note_max_matiere`** (renommée) : « note max matière » (poids de la matière pour la classe, défaut 1.0). Utilisée comme TJ dans `_get_maxima()`, affichée dans la grille de notes, les programmes et les horaires. L'API et les vues des enseignants utilisent désormais `note_max_matiere`.
 - **Coefficient supprimé de la table `evaluations`** : le formulaire et l'API d'évaluation n'acceptent que `ponderee_sur` ; la colonne « Coeff. » a été retirée des tableaux d'évaluations.
 - **Types d'évaluation alignés sur l'enum** `('interrogation','devoir','ressource','competance','examen')` : listes déroulantes (ajout/modification) mises à jour dans les modules Notes et Evaluations.
 - **`api_grille_notes` corrigé** : le select des évaluations ne contenait pas `ev.id_matiere` → warning « Undefined array key » → en-têtes déjà envoyés → réponse HTML au lieu de JSON (« Unexpected token '<' »). `ev.id_matiere` ajouté au select ; `api.js` protégé contre les réponses non-JSON (message d'erreur propre au lieu de `response.json()` qui plante).
@@ -316,6 +488,36 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 - **Bulletins — correction mapping types** : `Bulletins_model::_get_notes_aggregated` utilisait des types inexistants (`'composition'`, `'tp'`) → les notes compétence/ressource n'étaient jamais comptées (RESS = 0). Corrigé : **TJ = interrogation + devoir, COMP = competance, RESS = ressource** (même mapping que la fiche élève). Les notes de type `examen` ne sont pas affichées (ni fiche ni bulletin).
 - **Bulletins — robustesse agrégation notes** : `Bulletins_model::_get_notes_aggregated` a été simplifié pour sommer **toutes les notes** de la table `notes` par période pour chaque matière (sans filtre strict sur le type d'évaluation), garantissant que toute note enregistrée s'affiche bien sur le bulletin.
 - **Emploi du temps (Horaires)** : les jours de la semaine s'affichent de gauche à droite dans l'ordre chronologique (**Lundi, Mardi, Mercredi...**). La pause s'insère automatiquement au milieu.
+- **Succession consécutive multi-heures** : les cours multi-heures (ex: FRA TECH 3h) sont placés sur le même jour avec des créneaux consécutifs (C4→C5→C6). Préférence (pas obligation) — 95.1% de taux consécutif. Swap sans contrainte de succession.
+- **Documentation Horaires étoffée** : section 8.3 complétée avec les 8 paramètres (ajout `duree_culte`, `jour_special`, `jour_special_actif`), architecture (3 fichiers, 9 routes API), schéma BDD (3 tables avec colonnes et contraintes UNIQUE), algorithme de génération (5 passes + CRE), types de créneaux, fonctionnement du jour spécial (mardi = grille séparée avec culte), et exports A4/Excel.
+- **Audit & corrections Horaires (12 fixes)** :
+  - `_cloneSchedule()` : deep copy corrigée (shallow copy → copie indépendante des entrées grille)
+  - `_searchChain()` : bug backtracking corrigé (suppression `unset($visited)` qui permettait de revisiter les états → boucles infinies possibles)
+  - Pass 5 : requête DB dans boucle remplacée par un preload batch (1 requête au lieu de N×M)
+  - Pass 5 : exclusion du prof cible ajoutée dans les candidats substituts
+  - `$pass3cPlacees` : variable inutilisée supprimée (init + rapport)
+  - `insert_horaires_batch()` : UUID inline remplacé par `generate_uuid()` helper
+  - `Disponibilites/views/index.php` : double inclusion `Footer.php` corrigée
+  - `Disponibilites_model` : code mort supprimé (méthodes `get_all`, `create_record`, `delete_record` inutilisées)
+  - `Enseignants/views/timetable.php` : requête SQL + model load déplacés dans le controller, vue nettoyée
+  - `Horaires_model` : ajout `get_horaires_by_enseignant()` pour centraliser la logique
+  - SheetJS : CDN externe remplacé par copie locale (`assets/vendor/xlsx.full.min.js`)
+  - `api.js` : objet `creneaux` orphelin supprimé (routes commentées)
+
+### Session horaires — correction bug placement multi-heures
+
+- **Bug critique Pass 4/5 corrigé** : les passes 4 (intersection, swap intelligent) et 5 (substitution, déplacement) ne plaçaient qu'**1 seule séance** d'un bloc multi-heures puis marcaient `placed = true` sur tout le bloc. 14 heures étaient perdues silencieusement (226/240 au lieu de 240/240).
+- **Fix** : ajout d'une fonction `$placerResteBloc()` qui, après le 1er placement, cherche les créneaux restants en essayant : (1) consécutifs sur le même jour, (2) isolés sur le même jour, (3) consécutifs puis isolés sur les autres jours. Les 4 points de bug (intersection, swap, substitution, déplacement) appellent maintenant `$placerResteBloc()` et ne marquent `placed = true` que si `$reste === 0`.
+- **Validation corrigée** : le compteur `seances_placees` comptait les **blocs** marqués placed, pas les **séances réelles** dans la grille. Remplacé par un comptage direct `count($grille)` et une comparaison MC attendu vs placé.
+- **Résultat test** : 239/240 séances, **0 conflits prof**, **0 conflits classe**, 9 blocs dégradés, 6 violations de succession. La séance manquante (IG I BUREAUTIQUE) est un **blocage physique** : le seul créneau libre (Lundi 1) est occupé par le même prof qui enseigne BASE DE DONNEES en IG II.
+- **Fichiers modifiés** : `application/modules/Horaires/controllers/Horaires.php` (lignes ~535-600 : `$placerResteBloc`, lignes ~970-1000 : fix intersection, ~1060-1070 : fix swap, ~1275-1285 : fix substitution, ~1375-1385 : fix déplacement, ~1480-1510 : validation).
+
+### Session horaires — déplacement inter-classes (240/240)
+
+- **Problème** : quand un prof enseigne dans 2 classes (ex: ARAKAZA Arcade = BUREAUTIQUE IG I + BASE DE DONNEES IG II), le système pouvait le bloquer sur le seul créneau libre d'une classe.
+- **Solution** : ajout de `$deplacementInterClasse()` — quand le prof est bloqué sur le seul créneau libre, le système décale son cours dans l'autre classe vers un autre créneau, puis place le cours courant au créneau libéré.
+- **Résultat final** : **240/240 séances**, 0 conflits prof, 0 conflits classe, 10 placements forcés (dont 4 déplacements inter-classes). Toutes les 6 classes (BA I-III, IG I-III) ont exactement 40 créneaux remplis.
+- **Fichier modifié** : `application/modules/Horaires/controllers/Horaires.php` — ajout `$deplacementInterClasse` (~100 lignes), intégré dans `$placerResteBloc` comme étape 3.
 
 ### Session bulletins — correction critique et dynamisme
 
@@ -336,3 +538,87 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 - **Logging diagnostique ajouté** à `bulletins.php` (`openBulletinPeriode` et `renderBulletins`) — console.log détaillés avec try/catch, status HTTP, structure des données, pour faciliter le debug.
 - **Paramètres `ressources_active` et `competences_active` supprimés** de la table `parametres` et de la page Paramètres — les valeurs sont désormais gérées **uniquement par classe** dans la table `classes` (pas de paramètre global). Whitelist, UI et JS nettoyés. parametres = 41.
 - Dump `DB/vip_school.sql` régénéré après chaque changement de base.
+
+### Session horaires — reconstruction complète du générateur (sept. 2026)
+
+**Problème** : le module Horaires ne fonctionnait pas (page inaccessible, API 500, génération incomplète, cases vides dans la grille).
+
+**12 corrections appliquées** :
+
+| # | Correction | Détail |
+|---|---|---|
+| 1 | **Controller : index() manquante** | Méthode `index()` absente → page `/Horaires` inaccessible. Ajout avec toutes les variables PHP requises par la vue. |
+| 2 | **Controller : CRUD manquant** | `api_list`, `api_get`, `api_create`, `api_update`, `api_delete` absentes (routes définies mais méthodes manquantes). |
+| 3 | **Controller : FK `id_annee`** | INSERT `horaires_generations` échouait (FK `id_annee` manquante). Ajoutée dans `create_generation_record()`. |
+| 4 | **Controller : soft-delete avant régénération** | Anciens horaires non supprimés → duplication entre générations. Ajout de soft-delete (`deleted_at = NOW()`). |
+| 5 | **Controller : réponse API** | Vue attend `r.data.created` mais contrôleur renvoyait `r.data.validation` → "undefined créneaux créés". Format corrigé. |
+| 6 | **Model : compute_creneaux()** | Ne générait que des entiers sans horaires. Reconstruit : vigile, cours 1-N avec `heure_debut`/`heure_fin`/`libelle`, pause au milieu. |
+| 7 | **Model : payload générateur** | `get_generation_payload()` passait vigile/pause au générateur → `Duplicate entry` UNIQUE. Filtré : type `cours` uniquement. |
+| 8 | **Model : méthodes manquantes** | `get_creneaux_cours()`, `get_creneaux_mardi()`, `list_horaires()`, `get_latest_generation()` absentes. |
+| 9 | **Generator : id_enseignant** | Lisait `id_enseignant` depuis `matieres_classes` (NULL) au lieu de `enseignements`. `mapMC2Ens` reconstruit. |
+| 10 | **Jours déletés** | Requête `jours_semaine` ne filtrait pas `deleted_at` → samedi inclus (soft-delete) → 6×8=48 slots, 40h → 8 cases vides. |
+| 11 | **Algorithme greedy** | Remplissait lundi→vendredi, bloquait sur les derniers créneaux (prof en conflit). Nouvel algo : **5 stratégies de tri** + **swap simple** + **swap prof**. |
+| 12 | **api_generer() manquante** | Point d'entrée API pour la génération absent. |
+
+**Jours** : samedi supprimé (soft-delete, `actif=0`). Seuls 5 jours actifs : lundi→vendredi. Grille = 5 jours × 8 créneaux = **40 slots/classe**.
+
+**Résultat** (données réelles de la base) :
+
+| Métrique | Valeur |
+|---|---|
+| Sessions totales | **240/240 (100%)** |
+| Cases vides | **0** |
+| Conflits prof | **0** |
+| Conflits classe | **0** |
+| Créneaux remplis | **100%** (30/30 classes × 8 créneaux) |
+
+**Fichiers modifiés** :
+- `application/modules/Horaires/controllers/Horaires.php` : reconstruit (index, CRUD, generer, api_generer, soft-delete, FK, réponse API)
+- `application/modules/Horaires/models/Horaires_model.php` : reconstruit (compute_creneaux, get_generation_payload, list_horaires, get_creneaux_cours/mardi, filtre jours)
+- `application/modules/Horaires/libraries/HorairesGenerator.php` : reconstruit (mapMC2Ens, multi-stratégies, swap simple, swap prof)
+
+### Session horaires — placement consécutif multi-heures (sept. 2026)
+
+**Objectif** : quand un cours a plusieurs heures par semaine (ex: FRA TECH = 3h), placer ses sessions sur le même jour avec des créneaux consécutifs (C4→C5→C6) pour faciliter l'emploi du temps. Ceci est une **préférence** — pas une obligation — et n'est **pas appliqué** lors des swaps.
+
+**Nouvel algorithme** :
+
+| Étape | Description |
+|---|---|
+| **Groupement** | Sessions regroupées par (classe, matière) |
+| **Placement groupé consécutif** | Pour chaque groupe : place toutes les sessions sur le même jour avec créneaux consécutifs (longest consecutive run). Si le jour est plein → jour suivant. Si des sessions restent → placement libre individuel. |
+| **Swap** | Swap classique (déplacement direct + déplacement prof), sans contrainte de succession |
+| **Optimisation post-placement** | Max 200 itérations : tente de réorganiser les sessions d'une même matière sur un jour pour les rendre consécutives (swap multi-étapes) |
+| **Retry** | Si les ordres déterministes ne donnent pas 100%, jusqu'à 100 tentatives aléatoires |
+
+**3 ordonnancements de groupes testés** :
+1. Plus de sessions d'abord (matières à forte charge)
+2. Plus contraints d'abord (ratio sessions / flexibilité prof)
+3. Ordre original
+
+**Résultat** :
+
+| Métrique | Avant | Après |
+|---|---|---|
+| Placement | 240/240 | 240/240 |
+| Taux consécutif | 16% | **95.1%** |
+| Groupes scatter | 31/37 | **4/82** |
+
+**Fichier modifié** : `application/modules/Horaires/libraries/HorairesGenerator.php` — réécrit avec `placeGroupConsecutive()`, `longestConsecutiveRun()`, `optimizeConsecutive()`, 3 ordonnancements de groupes, 100 retries aléatoires.
+
+---
+
+## 13. Audit Notes/Bulletins/Fiches/Paramètres (2026-09-04)
+
+### Corrections appliquées
+
+| # | Sévérité | Fichier | Correction |
+|---|----------|---------|------------|
+| 1 | Haute | `print_fiches_v2.php` | Mode A (examen seul) géré : `ex_active` détecté, `fcells()` inclut `ex`, maxima incluent `ex` |
+| 2 | Haute | `evaluations.php`, `fiches.php`, `index.php` | Double inclusion `Footer.php` supprimée (HTML dupliqué) |
+| 3 | Moyenne | `fiches.php` | Ordre colonnes corrigé : TJ/COMP/RESS/TOT (cohérent avec bulletins) ; `cumMax`/`midMax` incluent `ex` |
+| 4 | Moyenne | `Parametres.php` | `regle_admis_moy` et `regle_ajourne_moy` ajoutés à la whitelist |
+| 5 | Moyenne | `Notes_model.php` | Seuils 12/10 hardcodés remplacés par `get_setting()` dynamiques |
+| 6 | Basse | `Notes_model.php` | Code mort supprimé (~150 lignes : `get_all`, `get_by_id`, `create_record`, `create_batch`, `update_record`, `delete_record`, `get_bulletins`, `get_grille_notes`) |
+| 7 | Basse | `print_fiches.php` | Fichier obsolète supprimé |
+| 8 | Doc | `fonctionnement.md` | TJ = `note_max_matiere` (pas heures × facteur) ; `facteur_points_heure` marqué obsolète |

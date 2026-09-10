@@ -509,4 +509,3 @@ async function saveNewEval(){
   },50);
 })();
 </script>
-<?php include VIEWPATH.'includes/Footer.php'; ?>

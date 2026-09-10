@@ -68,7 +68,9 @@ class Enseignants extends MY_Controller {
         $data['teacher'] = $e;
         $data['jours'] = $this->Model->read('jours_semaine', ['actif' => 1], 'ordre');
         $this->load->model('Horaires/Horaires_model');
-        $data['creneaux'] = $this->Horaires_model->get_creneaux_cours();
+        $horairesData = $this->Horaires_model->get_horaires_by_enseignant($e['id_enseignant']);
+        $data['horaires'] = $horairesData['horaires'];
+        $data['by_jour'] = $horairesData['by_jour'];
         $this->load->view('timetable', $data);
     }
 

@@ -26,7 +26,7 @@ class Parametres extends MY_Controller {
         }
         $allowed = [
             'adresse_ecole', 'annee_active',
-            'duree_cours', 'duree_pause', 'duree_vigie', 'heure_debut_journee', 'nb_creneaux_jour',
+            'duree_cours', 'duree_pause', 'duree_vigie', 'duree_culte', 'heure_debut_journee', 'nb_creneaux_jour', 'jour_special', 'jour_special_actif',
             'devise', 'echelle_notes', 'email_ecole', 'email_protocol', 'email_sendmail_path', 'email_smtp_crypto',
             'email_smtp_host', 'email_smtp_pass', 'email_smtp_port', 'email_smtp_user', 'favicon_ecole', 'logo_ecole',
             'mention_assez_bien', 'mention_assez_bien_libelle', 'mention_bien', 'mention_bien_libelle',
@@ -36,7 +36,8 @@ class Parametres extends MY_Controller {
             'telephone_ecole', 'login_img',
             // Paramètres de notation dynamique
             'seuil_moyenne', 'seuil_matiere', 'max_repechage',
-            'facteur_points_heure', 'pourcentage_ressources_examen', 'pourcentage_competences_examen'
+            'facteur_points_heure', 'pourcentage_ressources_examen', 'pourcentage_competences_examen',
+            'regle_admis_moy', 'regle_ajourne_moy'
         ];
         foreach ($data as $key => $value) {
             if (in_array($key, $allowed, true)) {

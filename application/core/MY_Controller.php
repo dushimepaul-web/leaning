@@ -157,11 +157,9 @@ class MY_Controller extends MX_Controller
         if ($class === 'Admin' && in_array($method, $public_admin_methods, true)) {
             return;
         }
-        // Erreurs 404 / routes système
         if ($class === 'MY_Controller' || $class === 'MX_Controller') {
             return;
         }
-
         if ($this->session->userdata('logged_in') !== TRUE) {
             if ($this->input->is_ajax_request() || $this->uri->segment(1) === 'api') {
                 $this->json_response(array('success' => false, 'message' => 'Non authentifié. Veuillez vous connecter.'), 401);
@@ -243,9 +241,19 @@ class MY_Controller extends MX_Controller
         $parts = explode('\\', $class);
         $class = end($parts);
         $model_name = $class . '_model';
+
+        $current_module = property_exists($this, 'module') ? $this->module : '';
+        if ($current_module) {
+            $model_in_current = APPPATH . 'modules/' . $current_module . '/models/' . $model_name . '.php';
+            if (file_exists($model_in_current)) {
+                $this->load->model($model_name);
+                return;
+            }
+        }
+
         $model_file = APPPATH . 'modules/' . $class . '/models/' . $model_name . '.php';
         if (file_exists($model_file)) {
-            $this->load->model($model_name);
+            $this->load->model($class . '/' . $model_name);
         }
     }
 

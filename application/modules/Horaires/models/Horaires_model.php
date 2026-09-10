@@ -1,241 +1,367 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Horaires_model extends Model
-{
-    public function __construct() { parent::__construct(); }
+class Horaires_model extends CI_Model {
 
-    public function get_all($filters = [])
-    {
-        $this->db->where('h.deleted_at', null);
-        $this->db->select('h.*, j.libelle as jour, cl.libelle as classe, e.fullname as enseignant, m.libelle as matiere, m.code as matiere_code');
-        $this->db->from('horaires h');
-        $this->db->join('jours_semaine j', 'h.id_jour = j.id_jour', 'left');
-        $this->db->join('classes cl', 'h.id_classe = cl.id_classe', 'left');
-        $this->db->join('enseignants e', 'h.id_enseignant = e.id_enseignant', 'left');
-        $this->db->join('enseignements en', 'h.id_enseignement = en.id_enseignement', 'left');
-        $this->db->join('matieres_classes mc', 'en.id_matiere_classe = mc.id_matiere_classe', 'left');
-        $this->db->join('matieres m', 'mc.id_matiere = m.id_matiere', 'left');
-        if (!empty($filters['id_classe'])) $this->db->where('h.id_classe', $filters['id_classe']);
-        if (!empty($filters['id_generation'])) $this->db->where('h.id_generation', $filters['id_generation']);
-        $this->db->order_by('h.id_jour, h.id_creneau');
-        $q = $this->db->get();
-        if ($q === false) return array();
-        $rows = $q->result_array();
+    public function __construct() {
+        parent::__construct();
+    }
 
-        // Injecter dynamiquement les heures de début et fin du créneau généré
-        $creneaux = $this->get_creneaux_cours();
-        $creneauxMap = [];
-        foreach ($creneaux as $cr) {
-            $creneauxMap[$cr['id_creneau']] = $cr;
-        }
+    public function get_generation_payload() {
+        $classes = $this->db->where('deleted_at IS NULL')->get('classes')->result_array();
+        $matieres_classes = $this->db->where('deleted_at IS NULL')->get('matieres_classes')->result_array();
+        $enseignements = $this->db->where('deleted_at IS NULL')->get('enseignements')->result_array();
+        $jours = $this->db->where('deleted_at IS NULL')->order_by('id_jour', 'ASC')->get('jours_semaine')->result_array();
 
-        foreach ($rows as &$r) {
-            $cid = $r['id_creneau'];
-            if (isset($creneauxMap[$cid])) {
-                $r['creneau'] = $creneauxMap[$cid]['libelle'];
-                $r['heure_debut'] = $creneauxMap[$cid]['heure_debut'];
-                $r['heure_fin'] = $creneauxMap[$cid]['heure_fin'];
-            } else {
-                $r['creneau'] = 'Cours ' . $cid;
-                $r['heure_debut'] = '';
-                $r['heure_fin'] = '';
+        $parametres = $this->get_parametres_map();
+        $allCreneaux = $this->compute_creneaux($parametres);
+        $creneauxGenerateur = array_values(array_filter($allCreneaux, function($c) {
+            return $c['type'] === 'cours';
+        }));
+
+        $indispoRows = $this->db->where('deleted_at IS NULL')->get('disponibilites_enseignants')->result_array();
+        $indisponibilites = [];
+        $disponibilites = [];
+        $teachersWithWhitelist = [];
+        foreach ($indispoRows as $row) {
+            if (isset($row['type']) && $row['type'] === 'indisponible') {
+                $indisponibilites[(int)$row['id_enseignant']][(int)$row['id_jour']][(int)$row['id_creneau']] = true;
+            } elseif (isset($row['type']) && $row['type'] === 'disponible') {
+                // Dès qu'un enseignant possède une disponibilité explicite, la grille
+                // devient une liste blanche : tous les autres créneaux sont fermés.
+                $idEns = (int)$row['id_enseignant'];
+                $teachersWithWhitelist[$idEns] = true;
+                $disponibilites[$idEns][(int)$row['id_jour']][(int)$row['id_creneau']] = true;
             }
         }
-        return $rows;
-    }
 
-    public function get_jours_actifs()
-    {
-        $q = $this->db->where('actif', 1)->order_by('ordre')->get('jours_semaine');
-        return $q !== false ? $q->result_array() : [];
-    }
-
-    public function get_creneaux_cours()
-    {
-        /**
-         * 1. Simplifier et automatiser la génération des Horaires (via les Paramètres)
-         * - Action : Calcule automatiquement les tranches de cours de la journée en utilisant
-         *   les valeurs configurées dans les Paramètres (heure_debut_journee, duree_cours, 
-         *   duree_pause, duree_vigie, nb_creneaux_jour) au lieu de dépendre d'une saisie 
-         *   manuelle dans une table de créneaux.
-         * 
-         * Logique horaire :
-         * - Le vigile / rassemblement matinal se place au tout début avant les cours.
-         * - Les cours s'enchaînent selon le nombre de créneaux définis.
-         * - La pause (récréation) intervient exactement après la moitié de ces créneaux.
-         */
-        $heure_debut = get_setting('heure_debut_journee', '07:30');
-        $duree_cours = (int)get_setting('duree_cours', 45);
-        $duree_pause = (int)get_setting('duree_pause', 20);
-        $duree_vigie = (int)get_setting('duree_vigie', 10);
-        $nb_creneaux = (int)get_setting('nb_creneaux_jour', 8);
-
-        // Convertir l'heure de début en minutes
-        list($h, $m) = explode(':', $heure_debut);
-        $current_minutes = (int)$h * 60 + (int)$m;
-
-        $creneaux = [];
-
-        // 1. Vigile / Rassemblement matinal (en tout premier)
-        if ($duree_vigie > 0) {
-            $vigie_start = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
-            $current_minutes += $duree_vigie;
-            $vigie_end = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
-            
-            $creneaux[] = [
-                'id_creneau' => 'vigile',
-                'libelle' => 'SALUT DU DRAPEAU ET VIGILE MATINAL',
-                'heure_debut' => $vigie_start,
-                'heure_fin' => $vigie_end,
-                'type_creneau' => 'vigile',
-                'ordre' => 0
-            ];
+        // Convertit les listes blanches en indisponibilités, afin que tout le moteur
+        // applique une unique règle : un créneau présent ici est interdit.
+        foreach (array_keys($teachersWithWhitelist) as $idEns) {
+            foreach ($jours as $jour) {
+                foreach ($creneauxGenerateur as $creneau) {
+                    $idJour = (int)$jour['id_jour'];
+                    $idCreneau = (int)$creneau['id_creneau'];
+                    if (empty($disponibilites[$idEns][$idJour][$idCreneau])) {
+                        $indisponibilites[$idEns][$idJour][$idCreneau] = true;
+                    }
+                }
+            }
         }
 
-        $milieu = ceil($nb_creneaux / 2); // Point de la grande pause (ex: après 4 cours sur 8)
+        return [
+            'classes' => $classes,
+            'matieres_classes' => $matieres_classes,
+            'enseignements' => $enseignements,
+            'jours' => $jours,
+            'creneaux' => $creneauxGenerateur,
+            'indisponibilites' => $indisponibilites,
+            'creneaux_exclus' => [],
+            'enseignants_liste_blanche' => array_keys($teachersWithWhitelist),
+            'parametres' => $parametres
+        ];
+    }
 
-        for ($i = 1; $i <= $nb_creneaux; $i++) {
-            $start_h = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
-            $current_minutes += $duree_cours;
-            $end_h = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
+    /** Valide une séance fixe avant son enregistrement. */
+    public function validate_fixe($data, $idAnnee) {
+        $idClasse = (int)$data['id_classe'];
+        $idMc = (int)$data['id_matiere_classe'];
+        $idEns = (int)$data['id_enseignant'];
+        $idJour = (int)$data['id_jour'];
+        $idCreneau = (int)$data['id_creneau'];
+
+        $mc = $this->db->where('id_matiere_classe', $idMc)->where('deleted_at IS NULL', null, false)->get('matieres_classes')->row_array();
+        if (!$mc || (int)$mc['id_classe'] !== $idClasse) return ['success' => false, 'message' => 'La matière choisie ne correspond pas à cette classe.'];
+
+        $enseignement = $this->db->where('id_matiere_classe', $idMc)->where('id_enseignant', $idEns)
+            ->where('deleted_at IS NULL', null, false)->get('enseignements')->row_array();
+        if (!$enseignement) return ['success' => false, 'message' => 'Cet enseignant n\'est pas affecté à cette matière dans cette classe.'];
+
+        $payload = $this->get_generation_payload();
+        if (isset($payload['indisponibilites'][$idEns][$idJour][$idCreneau])) {
+            return ['success' => false, 'message' => 'L\'enseignant est indisponible pour ce créneau fixe.'];
+        }
+
+        $conflict = $this->db->group_start()
+            ->where('id_classe', $idClasse)
+            ->or_where('id_enseignant', $idEns)
+            ->group_end()->where('id_jour', $idJour)->where('id_creneau', $idCreneau)
+            ->where('deleted_at IS NULL', null, false)->get('horaires_fixes')->row_array();
+        if ($conflict) return ['success' => false, 'message' => 'Ce créneau fixe est déjà occupé par la classe ou l\'enseignant.'];
+
+        $maxJour = (int)$mc['nb_heures_par_jour'];
+        if ($maxJour < 1) return ['success' => false, 'message' => 'Le maximum d\'heures par jour doit être supérieur à zéro.'];
+        $sameCourse = $this->db->where('id_annee', $idAnnee)->where('id_matiere_classe', $idMc)
+            ->where('id_jour', $idJour)->where('deleted_at IS NULL', null, false)->count_all_results('horaires_fixes');
+        if ($sameCourse >= $maxJour) return ['success' => false, 'message' => 'Le maximum quotidien de cette matière est déjà atteint.'];
+
+        return ['success' => true, 'enseignement' => $enseignement];
+    }
+
+    public function get_parametres_map() {
+        $rows = $this->db->get('parametres')->result_array();
+        $map = [];
+        foreach ($rows as $r) {
+            $key = $r['clef'] ?? $r['key'] ?? '';
+            $val = $r['valeur'] ?? $r['value'] ?? '';
+            if ($key) $map[$key] = $val;
+        }
+        return $map;
+    }
+
+    public function compute_creneaux($params) {
+        $nbCreneaux = isset($params['nb_creneaux_jour']) ? (int)$params['nb_creneaux_jour'] : 8;
+        $heureDebut = $params['heure_debut_journee'] ?? '07:30';
+        $dureeCours = (int)($params['duree_cours'] ?? 45);
+        $dureePause = (int)($params['duree_pause'] ?? 20);
+        $dureeVigie = (int)($params['duree_vigie'] ?? 10);
+
+        $creneaux = [];
+        $currentHour = (int)substr($heureDebut, 0, 2);
+        $currentMin = (int)substr($heureDebut, 3, 2);
+
+        $hasVigie = ($dureeVigie > 0);
+        $pauseAfter = (int)floor($nbCreneaux / 2);
+
+        for ($i = 1; $i <= $nbCreneaux; $i++) {
+            if ($hasVigie && $i === 1) {
+                $debut = sprintf('%02d:%02d', $currentHour, $currentMin);
+                $totalMin = $currentMin + $dureeVigie;
+                $currentHour += (int)floor($totalMin / 60);
+                $currentMin = $totalMin % 60;
+                $fin = sprintf('%02d:%02d', $currentHour, $currentMin);
+                $creneaux[] = [
+                    'id_creneau' => 'vigile',
+                    'type' => 'vigile',
+                    'type_creneau' => 'vigile',
+                    'heure_debut' => $debut,
+                    'heure_fin' => $fin,
+                    'libelle' => 'Salut du drapeau',
+                    'ordre' => count($creneaux) + 1
+                ];
+            }
+
+            $debut = sprintf('%02d:%02d', $currentHour, $currentMin);
+            $totalMin = $currentMin + $dureeCours;
+            $currentHour += (int)floor($totalMin / 60);
+            $currentMin = $totalMin % 60;
+            $fin = sprintf('%02d:%02d', $currentHour, $currentMin);
 
             $creneaux[] = [
                 'id_creneau' => $i,
-                'libelle' => 'Cours ' . $i,
-                'heure_debut' => $start_h,
-                'heure_fin' => $end_h,
+                'type' => 'cours',
                 'type_creneau' => 'cours',
-                'ordre' => $i
+                'heure_debut' => $debut,
+                'heure_fin' => $fin,
+                'libelle' => 'Cours ' . $i,
+                'ordre' => count($creneaux) + 1
             ];
 
-            // La pause intervient exactement après la moitié des cours définis
-            if ($i == $milieu && $i < $nb_creneaux) {
-                $pause_start = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
-                $current_minutes += $duree_pause;
-                $pause_end = sprintf('%02d:%02d', floor($current_minutes / 60), $current_minutes % 60);
+            if ($i === $pauseAfter && $i < $nbCreneaux) {
+                $debut = sprintf('%02d:%02d', $currentHour, $currentMin);
+                $totalMin = $currentMin + $dureePause;
+                $currentHour += (int)floor($totalMin / 60);
+                $currentMin = $totalMin % 60;
+                $fin = sprintf('%02d:%02d', $currentHour, $currentMin);
                 $creneaux[] = [
                     'id_creneau' => 'pause' . $i,
-                    'libelle' => 'PAUSE / RÉCRÉATION',
-                    'heure_debut' => $pause_start,
-                    'heure_fin' => $pause_end,
+                    'type' => 'pause',
                     'type_creneau' => 'pause',
-                    'ordre' => $i + 0.5
+                    'heure_debut' => $debut,
+                    'heure_fin' => $fin,
+                    'libelle' => 'Pause',
+                    'ordre' => count($creneaux) + 1
                 ];
             }
         }
+
         return $creneaux;
     }
 
-    public function get_matieres_classes_a_planifier()
-    {
-        $this->db->select('mc.*, m.code as matiere_code, m.libelle as matiere_libelle')
-            ->from('matieres_classes mc')
-            ->join('matieres m', 'mc.id_matiere = m.id_matiere')
-            ->where('mc.deleted_at', null)
-            ->where('mc.nb_heures_par_semaine >', 0)
-            ->where('mc.id_enseignant IS NOT NULL')
-            ->order_by('mc.nb_heures_par_semaine DESC');
-        $q = $this->db->get();
-        return $q !== false ? $q->result_array() : [];
-    }
+    public function compute_creneaux_mardi($params) {
+        $nbCreneaux = isset($params['nb_creneaux_jour']) ? (int)$params['nb_creneaux_jour'] : 8;
+        $heureDebut = $params['heure_debut_journee'] ?? '07:30';
+        $dureeCours = (int)($params['duree_cours'] ?? 45);
+        $dureeCulte = (int)($params['duree_culte'] ?? 35);
+        $dureeVigie = (int)($params['duree_vigie'] ?? 10);
 
-    public function get_disponibilites_enseignants()
-    {
-        $q = $this->db->where('type', 'indisponible')->where('deleted_at', null)->get('disponibilites_enseignants');
-        return $q !== false ? $q->result_array() : [];
-    }
+        $creneaux = [];
+        $currentHour = (int)substr($heureDebut, 0, 2);
+        $currentMin = (int)substr($heureDebut, 3, 2);
 
-    public function get_contraintes_horaires($id_annee)
-    {
-        $q = $this->db->where('id_annee', $id_annee)->where('deleted_at', null)->get('contraintes_horaires');
-        return $q !== false ? $q->result_array() : [];
-    }
+        $hasVigie = ($dureeVigie > 0);
+        $pauseAfter = (int)floor($nbCreneaux / 2);
 
-    public function get_or_create_enseignement($id_matiere_classe, $id_enseignant, $id_matiere, $id_classe)
-    {
-        $ens = $this->db->where('id_matiere_classe', $id_matiere_classe)
-            ->where('deleted_at', null)
-            ->get('enseignements')
-            ->row_array();
-        if ($ens) return $ens['id_enseignement'];
+        for ($i = 1; $i <= $nbCreneaux; $i++) {
+            if ($hasVigie && $i === 1) {
+                $debut = sprintf('%02d:%02d', $currentHour, $currentMin);
+                $totalMin = $currentMin + $dureeVigie;
+                $currentHour += (int)floor($totalMin / 60);
+                $currentMin = $totalMin % 60;
+                $fin = sprintf('%02d:%02d', $currentHour, $currentMin);
+                $creneaux[] = [
+                    'id_creneau' => 'vigile',
+                    'type' => 'vigile',
+                    'type_creneau' => 'vigile',
+                    'heure_debut' => $debut,
+                    'heure_fin' => $fin,
+                    'libelle' => 'Salut du drapeau',
+                    'ordre' => count($creneaux) + 1
+                ];
+            }
 
-        $this->load->helper('uuid');
-        $eid = $this->db->insert('enseignements', [
-            'uuid' => generate_uuid(),
-            'id_enseignant' => $id_enseignant,
-            'id_matiere' => $id_matiere,
-            'id_classe' => $id_classe,
-            'id_matiere_classe' => $id_matiere_classe,
-        ]);
-        if (!$eid) return 0;
-        $ens = $this->db->where('id_enseignement', $this->db->insert_id())
-            ->get('enseignements')
-            ->row_array();
-        return $ens ? $ens['id_enseignement'] : 0;
-    }
+            $debut = sprintf('%02d:%02d', $currentHour, $currentMin);
+            $totalMin = $currentMin + $dureeCours;
+            $currentHour += (int)floor($totalMin / 60);
+            $currentMin = $totalMin % 60;
+            $fin = sprintf('%02d:%02d', $currentHour, $currentMin);
 
-    public function insert_horaires_batch($id_generation, $grille)
-    {
-        $this->db->trans_begin();
-        $this->db->where('id_generation', $id_generation)->delete('horaires');
+            $creneaux[] = [
+                'id_creneau' => $i,
+                'type' => 'cours',
+                'type_creneau' => 'cours',
+                'heure_debut' => $debut,
+                'heure_fin' => $fin,
+                'libelle' => 'Cours ' . $i,
+                'ordre' => count($creneaux) + 1
+            ];
 
-        if (!empty($grille)) {
-            // OPTIMISATION SQL: Insertion par chunks de 500 lignes pour éviter la surcharge mémoire et les timeouts
-            $chunks = array_chunk($grille, 500);
-            foreach ($chunks as $chunk) {
-                $batch = [];
-                foreach ($chunk as $g) {
-                    $batch[] = [
-                        'uuid' => sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)),
-                        'id_generation' => $id_generation,
-                        'id_enseignement' => $g['id_enseignement'],
-                        'id_matiere' => $g['id_matiere'],
-                        'id_enseignant' => $g['id_enseignant'],
-                        'id_classe' => $g['id_classe'],
-                        'id_creneau' => $g['id_creneau'],
-                        'id_jour' => $g['id_jour'],
-                    ];
-                }
-                $this->db->insert_batch('horaires', $batch);
+            if ($i === $pauseAfter && $i < $nbCreneaux) {
+                $debut = sprintf('%02d:%02d', $currentHour, $currentMin);
+                $totalMin = $currentMin + $dureeCulte;
+                $currentHour += (int)floor($totalMin / 60);
+                $currentMin = $totalMin % 60;
+                $fin = sprintf('%02d:%02d', $currentHour, $currentMin);
+                $creneaux[] = [
+                    'id_creneau' => 'culte',
+                    'type' => 'culte',
+                    'type_creneau' => 'culte',
+                    'heure_debut' => $debut,
+                    'heure_fin' => $fin,
+                    'libelle' => 'Culte',
+                    'ordre' => count($creneaux) + 1
+                ];
             }
         }
 
-        $this->db->where('id_generation', $id_generation)->update('horaires_generations', ['statut' => 'brouillon']);
+        return $creneaux;
+    }
 
-        if ($this->db->trans_status() === false) {
-            $this->db->trans_rollback();
-            return false;
+    public function get_creneaux_cours() {
+        $parametres = $this->get_parametres_map();
+        return $this->compute_creneaux($parametres);
+    }
+
+    public function get_creneaux_mardi() {
+        $parametres = $this->get_parametres_map();
+        return $this->compute_creneaux_mardi($parametres);
+    }
+
+    public function create_generation_record($data) {
+        $data['cree_le'] = date('Y-m-d H:i:s');
+        $this->db->insert('horaires_generations', $data);
+        return $this->db->insert_id();
+    }
+
+    public function insert_horaires_batch($batch) {
+        if (!empty($batch)) {
+            $this->db->insert_batch('horaires', $batch);
         }
-        $this->db->trans_commit();
-        return true;
     }
 
-    public function get_matieres_by_classe($id_classe)
-    {
-        $this->db->select('m.id_matiere, m.libelle, m.code');
-        $this->db->from('matieres m');
-        $this->db->join('matieres_classes mc', 'm.id_matiere = mc.id_matiere AND mc.deleted_at IS NULL', 'inner');
-        $this->db->where('mc.id_classe', $id_classe);
-        $this->db->where('m.deleted_at', null);
-        $this->db->order_by('m.libelle');
-        $q = $this->db->get();
-        if ($q === false) return array();
-        return $q->result_array();
+    public function get_latest_generation() {
+        return $this->db->order_by('id_generation', 'DESC')->limit(1)->get('horaires_generations')->row_array();
     }
 
-    public function get_enseignant_by_classe_matiere($id_classe, $id_matiere)
-    {
-        $this->db->select('e.id_enseignant, e.fullname, e.matricule');
-        $this->db->from('enseignements en');
-        $this->db->join('matieres_classes mc', 'en.id_matiere_classe = mc.id_matiere_classe', 'inner');
-        $this->db->join('enseignants e', 'en.id_enseignant = e.id_enseignant');
-        $this->db->where('mc.id_classe', $id_classe);
-        $this->db->where('mc.id_matiere', $id_matiere);
-        $this->db->where('en.deleted_at', null);
-        $this->db->where('e.deleted_at', null);
+    public function get_horaires_by_enseignant($id_enseignant) {
+        $this->db->select('h.*, m.libelle as matiere_libelle, m.code as matiere_code, c.libelle as classe_libelle, j.libelle as jour_libelle, j.code as jour_code, j.ordre as jour_ordre');
+        $this->db->from('horaires h');
+        $this->db->join('matieres m', 'h.id_matiere = m.id_matiere', 'left');
+        $this->db->join('classes c', 'h.id_classe = c.id_classe', 'left');
+        $this->db->join('jours_semaine j', 'h.id_jour = j.id_jour', 'left');
+        $this->db->where('h.id_enseignant', $id_enseignant);
+        $this->db->where('h.deleted_at IS NULL', null, false);
+        $this->db->order_by('j.ordre', 'ASC');
+        $this->db->order_by('h.id_creneau', 'ASC');
+        $rows = $this->db->get()->result_array();
+
+        $parametres = $this->get_parametres_map();
+        $allCreneaux = $this->compute_creneaux($parametres);
+        $creneauxMap = [];
+        foreach ($allCreneaux as $cr) {
+            if ($cr['type'] === 'cours') {
+                $creneauxMap[$cr['id_creneau']] = $cr;
+            }
+        }
+
+        $by_jour = [];
+        foreach ($rows as &$h) {
+            $c = $creneauxMap[$h['id_creneau']] ?? null;
+            $h['heure_debut'] = $c ? $c['heure_debut'] : '';
+            $h['heure_fin'] = $c ? $c['heure_fin'] : '';
+            $h['creneau_libelle'] = $c ? $c['libelle'] : "Cours {$h['id_creneau']}";
+            $jid = $h['id_jour'];
+            $by_jour[$jid][] = $h;
+        }
+        unset($h);
+
+        return ['horaires' => $rows, 'by_jour' => $by_jour];
+    }
+
+    public function list_horaires() {
+        $this->db->select('h.*, e.fullname as enseignant, m.code as matiere_code, m.libelle as matiere_libelle, c.libelle as classe_libelle, j.libelle as jour_libelle, j.code as jour_code');
+        $this->db->from('horaires h');
+        $this->db->join('enseignants e', 'h.id_enseignant = e.id_enseignant', 'left');
+        $this->db->join('matieres m', 'h.id_matiere = m.id_matiere', 'left');
+        $this->db->join('classes c', 'h.id_classe = c.id_classe', 'left');
+        $this->db->join('jours_semaine j', 'h.id_jour = j.id_jour', 'left');
+        $this->db->where('h.deleted_at', null);
+        $this->db->order_by('c.libelle', 'ASC');
+        $this->db->order_by('j.ordre', 'ASC');
+        $this->db->order_by('h.id_creneau', 'ASC');
         $q = $this->db->get();
-        if ($q === false) return null;
-        return $q->row_array();
+        return $q !== false ? $q->result_array() : [];
+    }
+
+    public function get_fixes($id_annee) {
+        $this->db->select('f.*, e.fullname as enseignant, m.code as matiere_code, m.libelle as matiere_libelle, c.libelle as classe_libelle, j.libelle as jour_libelle');
+        $this->db->from('horaires_fixes f');
+        $this->db->join('enseignants e', 'f.id_enseignant = e.id_enseignant', 'left');
+        $this->db->join('matieres_classes mc', 'f.id_matiere_classe = mc.id_matiere_classe', 'left');
+        $this->db->join('matieres m', 'mc.id_matiere = m.id_matiere', 'left');
+        $this->db->join('classes c', 'f.id_classe = c.id_classe', 'left');
+        $this->db->join('jours_semaine j', 'f.id_jour = j.id_jour', 'left');
+        $this->db->where('f.id_annee', $id_annee);
+        $this->db->where('f.deleted_at IS NULL', null, false);
+        $this->db->order_by('c.libelle', 'ASC');
+        $this->db->order_by('j.ordre', 'ASC');
+        $this->db->order_by('f.id_creneau', 'ASC');
+        $q = $this->db->get();
+        return $q !== false ? $q->result_array() : [];
+    }
+
+    public function get_fixes_by_annee($id_annee) {
+        $this->db->select('f.*, mc.id_matiere');
+        $this->db->from('horaires_fixes f');
+        $this->db->join('matieres_classes mc', 'f.id_matiere_classe = mc.id_matiere_classe', 'left');
+        $this->db->where('f.id_annee', $id_annee);
+        $this->db->where('f.deleted_at IS NULL', null, false);
+        $q = $this->db->get();
+        return $q !== false ? $q->result_array() : [];
+    }
+
+    public function add_fixe($data) {
+        $this->db->insert('horaires_fixes', $data);
+        return $this->db->insert_id();
+    }
+
+    public function remove_fixe($uuid) {
+        $this->db->where('uuid', $uuid);
+        return $this->db->update('horaires_fixes', ['deleted_at' => date('Y-m-d H:i:s')]);
+    }
+
+    public function clear_fixes($id_annee) {
+        $this->db->where('id_annee', $id_annee);
+        $this->db->update('horaires_fixes', ['deleted_at' => date('Y-m-d H:i:s')]);
     }
 }

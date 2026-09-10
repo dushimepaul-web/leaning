@@ -27,9 +27,10 @@ class Matieres extends MY_Controller {
         if (empty($data['code']) || empty($data['libelle'])) {
             $this->json_error('Code et libellé obligatoires'); return;
         }
-        $allowed = ['code', 'libelle', 'est_general'];
+        $allowed = ['code', 'libelle', 'est_general', 'est_actif'];
         $insert = array_intersect_key($data, array_flip($allowed));
         $insert['est_general'] = isset($data['est_general']) ? (int)$data['est_general'] : 0;
+        $insert['est_actif'] = isset($data['est_actif']) ? (int)$data['est_actif'] : 1;
         $id = $this->Model->createLastId('matieres', $insert);
         if ($id) $this->json_success(null, 'Matière créée');
         else $this->json_error('Erreur');
@@ -40,10 +41,13 @@ class Matieres extends MY_Controller {
         if (!$this->Model->readOne('matieres', ['uuid' => $id])) {
             $this->json_error('Matière non trouvée', 404); return;
         }
-        $allowed = ['code', 'libelle', 'est_general'];
+        $allowed = ['code', 'libelle', 'est_general', 'est_actif'];
         $update = array_intersect_key($data, array_flip($allowed));
         if (isset($data['est_general'])) {
             $update['est_general'] = (int)$data['est_general'];
+        }
+        if (isset($data['est_actif'])) {
+            $update['est_actif'] = (int)$data['est_actif'];
         }
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
         if ($this->Model->update('matieres', ['uuid' => $id], $update))
