@@ -43,6 +43,7 @@ class MY_Controller extends MX_Controller
         'Roles' => 'utilisateurs',
         'Audit' => 'audit',
         'Horaires' => 'horaires',
+        'horaires' => 'horaires',
         // 'Creneaux' => 'horaires_creneaux',
         'Disponibilites' => 'horaires_dispos',
         'Jours' => 'horaires',
@@ -157,6 +158,7 @@ class MY_Controller extends MX_Controller
         if ($class === 'Admin' && in_array($method, $public_admin_methods, true)) {
             return;
         }
+
         if ($class === 'MY_Controller' || $class === 'MX_Controller') {
             return;
         }

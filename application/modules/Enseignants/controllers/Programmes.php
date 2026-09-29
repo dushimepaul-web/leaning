@@ -26,6 +26,150 @@ class Programmes extends MY_Controller {
         $this->json_success($q !== false ? $q->result_array() : array());
     }
 
+    public function capacite() {
+        $data['title'] = 'Capacite des enseignants';
+        $this->load->view('capacite', $data);
+    }
+
+    public function api_teacher_capacity() {
+        $annee = $this->Model->readOne('annees_scolaires', ['est_en_cours' => 1]);
+        $idAnnee = $annee ? $annee['id_annee'] : null;
+
+        if (!$idAnnee) {
+            $this->json_error('Aucune annee scolaire active trouvee');
+            return;
+        }
+
+        $this->db->select("mc.*, m.libelle AS matiere_libelle, cl.libelle AS classe_libelle");
+        $this->db->from('matieres_classes mc');
+        $this->db->join('matieres m', 'mc.id_matiere = m.id_matiere');
+        $this->db->join('classes cl', 'mc.id_classe = cl.id_classe');
+        $this->db->where('mc.deleted_at', null);
+        $matieresClasses = $this->db->get()->result_array();
+
+        $this->db->select("ens.*, e.fullname AS enseignant_fullname");
+        $this->db->from('enseignements ens');
+        $this->db->join('enseignants e', 'ens.id_enseignant = e.id_enseignant', 'left');
+        $this->db->where('ens.deleted_at', null);
+        $enseignements = $this->db->get()->result_array();
+
+        $this->db->where('deleted_at', null);
+        $jours = $this->db->order_by('ordre', 'ASC')->get('jours_semaine')->result_array();
+
+        $this->load->model('Horaires/Horaires_model');
+        $allCreneaux = $this->Horaires_model->get_creneaux_cours();
+        $creneaux = array_filter($allCreneaux, function($c) { return ($c['type'] ?? '') === 'cours'; });
+
+        $this->db->where('deleted_at', null);
+        $indisposRaw = $this->db->get('disponibilites_enseignants')->result_array();
+
+        $indisponibilites = [];
+        foreach ($indisposRaw as $ind) {
+            $idEns = (int)$ind['id_enseignant'];
+            $idJour = (int)$ind['id_jour'];
+            $idCre = (int)$ind['id_creneau'];
+            $type = $ind['type'] ?? 'indisponible';
+            if ($type === 'indisponible') {
+                $indisponibilites[$idEns][$idJour][$idCre] = true;
+            }
+        }
+
+        $mapMC2Ens = [];
+        foreach ($enseignements as $ens) {
+            $mapMC2Ens[(int)$ens['id_matiere_classe']] = (int)$ens['id_enseignant'];
+        }
+
+        $teacherSessions = [];
+        $teacherDetails = [];
+        foreach ($matieresClasses as $mc) {
+            $weekly = (int)$mc['nb_heures_par_semaine'];
+            if ($weekly <= 0) continue;
+            $mcId = (int)$mc['id_matiere_classe'];
+            $teacherId = $mapMC2Ens[$mcId] ?? null;
+            if (!$teacherId) continue;
+
+            $teacherSessions[$teacherId] = ($teacherSessions[$teacherId] ?? 0) + $weekly;
+            $teacherDetails[$teacherId][] = [
+                'matiere' => $mc['matiere_libelle'] ?? "MC#$mcId",
+                'classe' => $mc['classe_libelle'] ?? '',
+                'heures' => $weekly,
+            ];
+        }
+
+        $teacherNames = [];
+        foreach ($enseignements as $ens) {
+            $eid = (int)$ens['id_enseignant'];
+            if (!isset($teacherNames[$eid])) {
+                $teacherNames[$eid] = $ens['enseignant_fullname'] ?? "Enseignant#$eid";
+            }
+        }
+
+        $table = [];
+        foreach ($teacherSessions as $teacherId => $totalSessions) {
+            $capacity = 0;
+            $availableDays = [];
+            foreach ($jours as $jour) {
+                $daySlots = 0;
+                foreach ($creneaux as $creneau) {
+                    $jid = (int)$jour['id_jour'];
+                    $cid = (int)$creneau['id_creneau'];
+                    if (!isset($indisponibilites[$teacherId][$jid][$cid])) {
+                        $daySlots++;
+                    }
+                }
+                if ($daySlots > 0) {
+                    $availableDays[] = [
+                        'jour' => $jour['libelle'] ?? "Jour#{$jour['id_jour']}",
+                        'slots' => $daySlots,
+                    ];
+                    $capacity += $daySlots;
+                }
+            }
+
+            $marge = $capacity - $totalSessions;
+            $status = 'ok';
+            $statusLabel = 'OK';
+            $statusColor = '#198754';
+            if ($marge < 0) {
+                $status = 'impossible';
+                $statusLabel = 'IMPOSSIBLE';
+                $statusColor = '#dc3545';
+            } elseif ($marge === 0) {
+                $status = 'marge_zero';
+                $statusLabel = 'Marge zero';
+                $statusColor = '#ffc107';
+            } elseif ($marge <= 2) {
+                $status = 'serré';
+                $statusLabel = 'Tendu';
+                $statusColor = '#fd7e14';
+            }
+
+            $table[] = [
+                'id' => $teacherId,
+                'nom' => $teacherNames[$teacherId] ?? "Enseignant#$teacherId",
+                'sessions_semaine' => $totalSessions,
+                'jours_dispo' => array_column($availableDays, 'jour'),
+                'nb_jours' => count($availableDays),
+                'creneaux_dispo' => $capacity,
+                'marge' => $marge,
+                'status' => $status,
+                'status_label' => $statusLabel,
+                'status_color' => $statusColor,
+                'details' => $teacherDetails[$teacherId] ?? [],
+            ];
+        }
+
+        usort($table, function($a, $b) {
+            $order = ['impossible' => 0, 'marge_zero' => 1, 'serré' => 2, 'ok' => 3];
+            $oa = $order[$a['status']] ?? 4;
+            $ob = $order[$b['status']] ?? 4;
+            if ($oa !== $ob) return $oa - $ob;
+            return $a['marge'] - $b['marge'];
+        });
+
+        $this->json_success($table);
+    }
+
     public function api_get($id) {
         $this->db->select("mc.*, m.libelle AS matiere_libelle, cl.libelle AS classe_libelle, e.fullname AS enseignant_fullname");
         $this->db->from('matieres_classes mc');

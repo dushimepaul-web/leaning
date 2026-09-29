@@ -9,10 +9,15 @@
         <span class="text-secondary-light"> / Programmes</span>
       </div>
     </div>
-    <button type="button" class="btn btn-primary-600 d-flex align-items-center gap-6" onclick="openAddSidebar()">
-      <span class="d-flex text-md"><i class="ri-add-large-line"></i></span>
-      Ajouter un programme
-    </button>
+    <div class="d-flex gap-10">
+      <a href="<?= base_url('Enseignants/Programmes/capacite') ?>" class="btn btn-warning d-flex align-items-center gap-6">
+        <span><i class="ri-user-settings-line"></i></span> Capacite Enseignants
+      </a>
+      <button type="button" class="btn btn-primary-600 d-flex align-items-center gap-6" onclick="openAddSidebar()">
+        <span class="d-flex text-md"><i class="ri-add-large-line"></i></span>
+        Ajouter un programme
+      </button>
+    </div>
   </div>
 
   <div class="mt-24">

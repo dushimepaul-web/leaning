@@ -235,13 +235,20 @@ La table `parametres` contient désormais **41 paramètres** (audit : tous utili
 
 ```
 modules/Horaires/
-├── controllers/Horaires.php   (287 lignes — index + CRUD + api_generer + generer)
-├── models/Horaires_model.php  (332 lignes — requêtes + compute_creneaux + list_horaires)
-├── libraries/HorairesGenerator.php (réécrit — préflight + pré-placement tight + générateur groupé + swap + brute force)
-└── views/index.php            (491 lignes — grille + exports A4/Excel)
+├── controllers/Horaires.php      (index + CRUD + generer + api_diagnostiquer + run_python_solver)
+├── models/Horaires_model.php     (payload JSON + compute_creneaux + list_horaires)
+├── libraries/HorairesGenerator.php (preflight uniquement — validation avant génération)
+└── views/index.php               (grille + exports A4/Excel + diagnostic)
+
+python/
+├── generate_horaires.py          (solveur CP-SAT OR-Tools — moteur unique)
+├── test_horaires.py              (tests unitaires)
+└── test_real_data.py             (test intégration données réelles)
 ```
 
 **Principe fondamental** : chaque génération effectue un `TRUNCATE` de la table `horaires` puis réécrit toutes les sessions. Pas de soft delete sur les anciennes sessions d'une génération.
+
+**Moteur de génération** : le solveur Python OR-Tools CP-SAT (`python/generate_horaires.py`) est le **seul moteur**. Le PHP orchestre l'appel (fichiers temporaires) et valide les résultats. Si Python échoue, une erreur est retournée — pas de fallback PHP.
 
 **Routes API** (`config/routes.php:164-173`) :
 
@@ -316,6 +323,9 @@ Les créneaux sont **calculés dynamiquement** depuis les paramètres (pas de ta
 Le générateur utilise un **verrou MySQL** (`GET_LOCK`) pour éviter les exécutions concurrentes.
 
 **Entrées** : classes, matieres_classes, enseignements, jours (filtrés `deleted_at IS NULL`), créneaux (cours uniquement — vigile/pause/culte = affichage), indisponibilités.
+
+**Méthode principale** : solveur Python OR-Tools CP-SAT (voir section 11).
+**Si Python échoue** : erreur retournée à l'utilisateur (pas de fallback PHP).
 
 ##### Preflight — Validation avant écriture
 
@@ -605,6 +615,209 @@ Seuils en % de la note de référence (`moyenne / sur × 100`) + libellés perso
 | Groupes scatter | 31/37 | **4/82** |
 
 **Fichier modifié** : `application/modules/Horaires/libraries/HorairesGenerator.php` — réécrit avec `placeGroupConsecutive()`, `longestConsecutiveRun()`, `optimizeConsecutive()`, 3 ordonnancements de groupes, 100 retries aléatoires.
+
+---
+
+## 11. Solveur Python OR-Tools (sept. 2026)
+
+### 11.1. Architecture
+
+```
+python/
+├── generate_horaires.py    # Solveur CP-SAT (570 lignes)
+└── test_real_data.py       # Test d'intégration avec données réelles
+
+modules/Horaires/
+├── controllers/Horaires.php    # Appel PHP → Python (fichier temporaire)
+├── models/Horaires_model.php   # Payload JSON pour le solveur
+└── views/index.php             # Affichage + diagnostic
+```
+
+### 11.2. Principe de fonctionnement
+
+Le module Horaires utilise un **solveur CP-SAT** (Constraint Programming - SAT) basé sur Google OR-Tools pour générer automatiquement l'emploi du temps. Le PHP orchestre l'exécution, le Python résout le problème d'optimisation.
+
+**Flux d'exécution** :
+
+```
+Utilisateur clique "Regenerer"
+    ↓
+PHP: Horaires::generer()
+    ↓
+PHP: preflight() — validation préalable
+    ↓
+PHP: run_python_solver()
+    ├─ Construit le payload JSON
+    ├─ Écrit input.json (temporaire)
+    ├─ Appelle: python generate_horaires.py < input.json > output.json
+    ├─ Lit output.json
+    └─ Retourne le résultat
+    ↓
+PHP: TRUNCATE horaires + INSERT batch
+    ↓
+Utilisateur voit le résultat
+```
+
+### 11.3. Contraintes du solveur
+
+Le solveur gère deux niveaux de contraintes :
+
+#### Niveau 1 : CONTRAINTES DURES (obligatoires)
+
+| Contrainte | Description |
+|---|---|
+| **Chaque session = 1 fois** | `AddExactlyOne` — chaque session est placée exactement une fois |
+| **Pas de conflit classe** | Une classe = 1 cours/créneau/jour |
+| **Pas de conflit enseignant** | Un enseignant = 1 cours/créneau/jour |
+| **Indisponibilités** | Respecte `disponibilites_enseignants` (jours/creneaux interdits) |
+| **Limites quotidiennes** | `nb_heures_par_jour` — max de séances d'une matière par jour |
+| **Créneaux fixes** | Les sessions fixes ne sont pas déplaçables |
+
+#### Niveau 2 : OBJECTIFS SOFT (optimisation)
+
+| Objectif | Poids | Description |
+|---|---|---|
+| **Pénalité trou** | -10 × priorité | Trou entre deux sessions = mauvais |
+| **Bonus consécutif** | +5 × priorité | Deux sessions côte à côte = bien |
+| **Bonus marge 0** | +1 à +8 | Priorité aux créneaux précoces pour enseignants marge=0 |
+
+### 11.4. Priorité par marge enseignant (système intelligent)
+
+**Concept** : la **marge** = créneaux disponibles − sessions à placer. Plus la marge est faible, plus l'enseignant est contraint.
+
+| Marge | Statut | Priorité | Poids objectif |
+|---|---|---|---|
+| ≤ 0 | IMPOSSIBLE | **×5** | Gap = -50, Pair = +25 |
+| 1 | Marge zéro | **×3** | Gap = -30, Pair = +15 |
+| 2 | Tendu | **×2** | Gap = -20, Pair = +10 |
+| ≥ 3 | Normal | **×1** | Gap = -10, Pair = +5 |
+
+**Logique** : les enseignants les plus contraints (marge 0) doivent être placés en premier dans les meilleurs créneaux. Le solveur trie les sessions par marge croissante et donne plus de poids aux objectifs de grouping pour ces enseignants.
+
+**Exemple** :
+- NKURUNZIZA Eloi : 24h, 3 jours, marge=0 → priorité ×5
+- NZIBUKA Joselyne : 15h, 2 jours, marge=1 → priorité ×3
+- TEACHER A : 8h, 2 jours, marge=8 → priorité ×1
+
+### 11.5. Exécution sur Windows
+
+**Problème** : `stream_select()` ne fonctionne pas avec les flux pipe sur Windows.
+
+**Solution** : approche basée sur fichiers temporaires :
+
+```php
+// 1. Écrit le payload dans un fichier temporaire
+$input = tempnam(sys_get_temp_dir(), 'horaires_');
+file_put_contents($input, json_encode($payload));
+
+// 2. Appel bloquant avec redirection
+$cmd = "python python\\generate_horaires.py < $input > $output 2>&1";
+exec($cmd, $outputLines, $returnCode);
+
+// 3. Lit le résultat
+$result = json_decode(file_get_contents($output), true);
+```
+
+**Timeout** : 180 secondes pour le solveur Python, 240 secondes pour PHP.
+
+### 11.6. Page Capacité des enseignants
+
+**URL** : `http://localhost/leaning/Enseignants/Programmes/capacite`
+
+**Fonctionnalités** :
+
+| Section | Description |
+|---|---|
+| **Tableau principal** | Enseignant, Heures/Sem, Jours Disponibles, Créneaux, Marge, Statut |
+| **Section SURCHARGE** | Enseignants avec marge < 0 (IMPOSSIBLE) + solutions |
+| **Section Marge étroite** | Enseignants avec marge 0-2 + conseils |
+| **Détails cours** | Matière/classe/heures pour chaque enseignant |
+
+**Couleurs** :
+- Rouge = IMPOSSIBLE (marge < 0)
+- Orange = Tendu (marge 1-2)
+- Jaune = Marge zéro (marge = 0)
+- Verte = OK (marge ≥ 3)
+
+### 11.7. Diagnostic intelligent
+
+**Bouton "Diagnostiquer"** : affiche un popup avec :
+
+1. **Tableau de capacité** — même affichage que la page Capacité
+2. **Problèmes bloquants** — erreurs empêchant la génération
+3. **Avertissements** — cas limites (marge 0)
+4. **Solutions proposées** — liens directs vers Disponibilités ou Fixes
+
+**Cas de diagnostic** :
+
+| Type | Bloquant ? | Exemple |
+|---|---|---|
+| `capacite_enseignant` | Oui | Charge > capacité (manque N créneaux) |
+| `marge_zero` | Non | Tous les créneaux occupés |
+| `fixe_indisponible` | Oui | Créneau fixe sur créneau indisponible |
+| `conflit_fixe` | Oui | Deux fixes même créneau |
+
+### 11.8. Résultat typique
+
+| Métrique | Valeur |
+|---|---|
+| Sessions placées | **240/240 (100%)** |
+| Conflits prof | **0** |
+| Conflits classe | **0** |
+| Taux regroupement | **82.9%** |
+| Objectif 80% | **Atteint** |
+| Temps résolution | **~60 secondes** |
+
+### 11.9. Plus de fallback PHP
+
+Le solveur Python est le **seul moteur de génération**. Si Python échoue (erreur, timeout, fichier manquant), une erreur est retournée à l'utilisateur avec le détail du problème. Le code PHP de génération (`HorairesGenerator.php`) a été supprimé — il ne reste que la fonction `preflight()` de validation préalable.
+
+---
+
+## 12. Capacité des enseignants (sept. 2026)
+
+### 12.1. Tableau de capacité
+
+La page Capacité (`Enseignants/Programmes/capacite`) affiche pour chaque enseignant :
+
+| Colonne | Calcul |
+|---|---|
+| **Heures/Sem** | Somme `nb_heures_par_semaine` de tous les cours |
+| **Jours Disponibles** | Jours sans indisponibilité |
+| **Créneaux** | Nombre total de créneaux cours disponibles |
+| **Marge** | Créneaux − Heures (négatif = impossible) |
+| **Statut** | OK / Tendu / Marge zéro / IMPOSSIBLE |
+
+### 12.2. Statuts et actions
+
+| Statut | Condition | Action recommandée |
+|---|---|---|
+| **OK** | Marge ≥ 3 | Aucune action |
+| **Tendu** | Marge = 1-2 | Ajouter 1+ jour disponible |
+| **Marge zéro** | Marge = 0 | Ajouter au moins 1 jour |
+| **IMPOSSIBLE** | Marge < 0 | Ajouter N jours (N = |marge|) |
+
+### 12.3. Données réelles (FUTURE VIP SCHOOL)
+
+| Enseignant | Heures | Jours | Marge | Statut |
+|---|---|---|---|---|
+| NIYIMBESHAHO Ismail | 12h | Mar/Jeu/Ven | 12 | OK |
+| NKURUNZIZA Eloi | 24h | Mar/Mer/Ven | **0** | Marge zéro |
+| KARORERO Charles | 14h | Mer/Jeu | 2 | Tendu |
+| TEACHER A | 8h | Lun/Mer | 8 | OK |
+| TEACHER B | 20h | Mer/Jeu/Ven | 4 | OK |
+| NDAYISENGA Angeolave | 16h | Lun/Mar/Mer/Jeu | 16 | OK |
+| SIBOMANA JUSTIN | 16h | Lun/Jeu | **0** | Marge zéro |
+| HIMBAZIMANA Ancilla | 15h | Lun/Mar/Mer | 9 | OK |
+| KWIZERA Emery | 14h | Lun/Mar | 2 | Tendu |
+| IRAMBONA Patrick | 11h | Jeu/Ven | 5 | OK |
+| ARAKAZA Arcade | 8h | Jeu/Ven | 8 | OK |
+| IRAKOZE Naasson | 14h | Mar/Ven | 2 | Tendu |
+| NSABIMANA Cyriaque | 15h | Lun→Ven | 25 | OK |
+| NZIBUKA Joselyne | 15h | Jeu/Ven | 1 | Tendu |
+| PS Claver | 6h | Mar/Mer/Jeu | 18 | OK |
+
+---
 
 ---
 

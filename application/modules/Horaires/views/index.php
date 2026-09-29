@@ -200,25 +200,16 @@ async function diagnostiquer() {
       var v = r.data;
       var diagnostics = v.diagnostics || [];
       var warnings = diagnostics.filter(function(d) { return !d.blocking; });
+      var teacherTable = v.teacher_table || [];
 
       if (warnings.length > 0) {
-        var html = '<div style="text-align:left;font-size:13px;">';
-        html += '<p style="color:#198754;font-weight:700;margin-bottom:8px;">&#x2705; Aucun problème bloquant</p>';
-        html += '<p style="color:#856404;font-weight:700;margin-bottom:6px;">&#x26A0; Avertissements (' + warnings.length + ')</p>';
-        html += '<ul style="padding-left:16px;margin-bottom:12px;">';
-        warnings.forEach(function(d) {
-          html += '<li style="margin:4px 0;color:#856404;">' + d.message + '</li>';
-        });
-        html += '</ul>';
-        html += '</div>';
-        Swal.fire({ icon: 'warning', title: 'Diagnostic : avertissements', html: html, confirmButtonText: 'Générer quand même', showDenyButton: true, denyButtonText: 'Fermer', width: 550 }).then(function(res) {
+        var html = buildDiagnosticHtml(teacherTable, warnings, [], false);
+        Swal.fire({ icon: 'warning', title: 'Diagnostic : avertissements', html: html, confirmButtonText: 'Generer quand meme', showDenyButton: true, denyButtonText: 'Fermer', width: 750 }).then(function(res) {
           if (res.isConfirmed) regenerer();
         });
       } else {
-        var html = '<div style="text-align:left;font-size:14px;">';
-        html += '<p style="color:#198754;font-weight:700;margin-bottom:8px;">&#x2705; Aucun problème détecté</p>';
-        html += '</div>';
-        Swal.fire({ icon: 'success', title: 'Diagnostic OK', html: html, confirmButtonText: 'Générer maintenant', showDenyButton: true, denyButtonText: 'Fermer' }).then(function(res) {
+        var html = buildDiagnosticHtml(teacherTable, [], [], false);
+        Swal.fire({ icon: 'success', title: 'Diagnostic OK', html: html, confirmButtonText: 'Generer maintenant', showDenyButton: true, denyButtonText: 'Fermer', width: 750 }).then(function(res) {
           if (res.isConfirmed) regenerer();
         });
       }
@@ -226,58 +217,131 @@ async function diagnostiquer() {
       var diagnostics = (r.data && r.data.diagnostics) ? r.data.diagnostics : [];
       var blocking = diagnostics.filter(function(d) { return d.blocking; });
       var warnings = diagnostics.filter(function(d) { return !d.blocking; });
+      var teacherTable = (r.data && r.data.teacher_table) ? r.data.teacher_table : [];
 
-      var html = '<div style="text-align:left;font-size:13px;">';
-
-      if (blocking.length > 0) {
-        html += '<p style="color:#dc3545;font-weight:700;margin-bottom:6px;">&#x274C; Problèmes bloquants (' + blocking.length + ')</p>';
-        html += '<ul style="padding-left:16px;margin-bottom:12px;">';
-        blocking.forEach(function(d) {
-          html += '<li style="margin:4px 0;color:#dc3545;">' + d.message + '</li>';
-        });
-        html += '</ul>';
-      }
-
-      if (warnings.length > 0) {
-        html += '<p style="color:#ffc107;font-weight:700;margin-bottom:6px;">&#x26A0; Avertissements (' + warnings.length + ')</p>';
-        html += '<ul style="padding-left:16px;margin-bottom:12px;">';
-        warnings.forEach(function(d) {
-          html += '<li style="margin:4px 0;color:#856404;">' + d.message + '</li>';
-        });
-        html += '</ul>';
-      }
-
-      if (blocking.length > 0) {
-        html += '<p style="font-size:12px;color:#666;margin-top:8px;"><strong>Que souhaitez-vous faire ?</strong></p>';
-      }
-
-      html += '</div>';
+      var html = buildDiagnosticHtml(teacherTable, warnings, blocking, true);
 
       if (blocking.length > 0) {
         Swal.fire({
           icon: 'error',
-          title: 'Diagnostic : problèmes détectés',
+          title: 'Diagnostic : problemes detectes',
           html: html,
           showDenyButton: true,
           showCancelButton: true,
-          confirmButtonText: 'Modifier les disponibilités',
+          confirmButtonText: 'Modifier les disponibilites',
           denyButtonText: 'Modifier les fixes',
           cancelButtonText: 'Fermer',
           confirmButtonColor: '#0d6efd',
           denyButtonColor: '#6c757d',
-          width: 550
+          width: 750
         }).then(function(result) {
           if (result.isConfirmed) window.location.href = '<?= base_url("Disponibilites") ?>';
           else if (result.isDenied) window.location.href = '<?= base_url("Horaires/fixes") ?>';
         });
       } else {
-        Swal.fire({ icon: 'warning', title: 'Diagnostic : avertissements', html: html, confirmButtonText: 'Compris', width: 500 });
+        Swal.fire({ icon: 'warning', title: 'Diagnostic : avertissements', html: html, confirmButtonText: 'Compris', width: 750 });
       }
     }
   } catch (e) {
     Swal.close();
     Swal.fire({ icon: 'error', title: 'Erreur', text: 'Erreur de connexion au serveur.' });
   }
+}
+
+function buildDiagnosticHtml(teacherTable, warnings, blocking, showSolutions) {
+  var html = '<div style="text-align:left;font-size:13px;">';
+
+  // Teacher capacity table
+  if (teacherTable.length > 0) {
+    html += '<div style="margin-bottom:16px;">';
+    html += '<p style="font-weight:700;margin-bottom:8px;color:#333;font-size:14px;">Capacite des enseignants :</p>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+    html += '<thead><tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;">';
+    html += '<th style="padding:6px 8px;text-align:left;">Enseignant</th>';
+    html += '<th style="padding:6px 8px;text-align:center;">Heures</th>';
+    html += '<th style="padding:6px 8px;text-align:center;">Jours</th>';
+    html += '<th style="padding:6px 8px;text-align:center;">Creneaux</th>';
+    html += '<th style="padding:6px 8px;text-align:center;">Marge</th>';
+    html += '<th style="padding:6px 8px;text-align:center;">Statut</th>';
+    html += '</tr></thead><tbody>';
+
+    teacherTable.forEach(function(t) {
+      var bgColor = '';
+      if (t.status === 'impossible') bgColor = '#fff5f5';
+      else if (t.status === 'marge_zero') bgColor = '#fff8e1';
+      else if (t.status === 'serré') bgColor = '#fff3e0';
+
+      html += '<tr style="border-bottom:1px solid #eee;background:' + bgColor + ';">';
+      html += '<td style="padding:5px 8px;font-weight:600;">' + escapeDiagHtml(t.nom) + '</td>';
+      html += '<td style="padding:5px 8px;text-align:center;">' + t.sessions_semaine + 'h</td>';
+      html += '<td style="padding:5px 8px;text-align:center;">' + escapeDiagHtml(t.jours_dispo.join(', ')) + '</td>';
+      html += '<td style="padding:5px 8px;text-align:center;">' + t.creneaux_dispo + '</td>';
+      html += '<td style="padding:5px 8px;text-align:center;font-weight:700;color:' + t.status_color + ';">' + t.marge + '</td>';
+      html += '<td style="padding:5px 8px;text-align:center;"><span style="background:' + t.status_color + ';color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">' + escapeDiagHtml(t.status_label) + '</span></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    // Show tight teachers suggestions
+    var tightTeachers = teacherTable.filter(function(t) { return t.status === 'marge_zero' || t.status === 'serré'; });
+    var impossibleTeachers = teacherTable.filter(function(t) { return t.status === 'impossible'; });
+
+    if (impossibleTeachers.length > 0) {
+      html += '<div style="margin-top:10px;padding:10px;background:#fff5f5;border:1px solid #dc3545;border-radius:6px;">';
+      html += '<p style="margin:0 0 6px 0;font-weight:700;color:#dc3545;">Enseignants en SURCHARGE :</p>';
+      impossibleTeachers.forEach(function(t) {
+        html += '<div style="margin:4px 0;font-size:12px;color:#666;">- <strong>' + escapeDiagHtml(t.nom) + '</strong> : ' + t.sessions_semaine + 'h/semaine mais seulement ' + t.creneaux_dispo + ' creneaux disponibles (manque ' + Math.abs(t.marge) + 'h). <span style="color:#dc3545;">Ajoutez au moins ' + Math.abs(t.marge) + ' jour(s) disponible(s).</span></div>';
+      });
+      html += '</div>';
+    }
+
+    if (tightTeachers.length > 0 && showSolutions) {
+      html += '<div style="margin-top:10px;padding:10px;background:#fff8e1;border:1px solid #ffc107;border-radius:6px;">';
+      html += '<p style="margin:0 0 6px 0;font-weight:700;color:#856404;">Enseignants a marge etroite :</p>';
+      tightTeachers.forEach(function(t) {
+        var sug = t.marge === 0 ? 'Ajoutez au moins 1 jour disponible pour faciliter le placement.' : 'Ajoutez 1 jour pour plus de flexibilite.';
+        html += '<div style="margin:4px 0;font-size:12px;color:#666;">- <strong>' + escapeDiagHtml(t.nom) + '</strong> : ' + t.sessions_semaine + 'h, ' + t.jours_dispo.length + ' jour(s), marge=' + t.marge + '. <span style="color:#0d6efd;">' + sug + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  // Blocking issues
+  if (blocking && blocking.length > 0) {
+    html += '<div style="margin-bottom:12px;">';
+    html += '<p style="color:#dc3545;font-weight:700;margin-bottom:6px;">Problemes bloquants (' + blocking.length + ')</p>';
+    html += '<ul style="padding-left:16px;margin-bottom:12px;">';
+    blocking.forEach(function(d) {
+      html += '<li style="margin:4px 0;color:#dc3545;">' + escapeDiagHtml(d.message) + '</li>';
+    });
+    html += '</ul></div>';
+  }
+
+  // Warnings
+  if (warnings && warnings.length > 0) {
+    html += '<div style="margin-bottom:12px;">';
+    html += '<p style="color:#856404;font-weight:700;margin-bottom:6px;">Avertissements (' + warnings.length + ')</p>';
+    html += '<ul style="padding-left:16px;margin-bottom:12px;">';
+    warnings.forEach(function(d) {
+      html += '<li style="margin:4px 0;color:#856404;">' + escapeDiagHtml(d.message) + '</li>';
+    });
+    html += '</ul></div>';
+  }
+
+  if (blocking && blocking.length > 0) {
+    html += '<p style="font-size:12px;color:#666;margin-top:8px;"><strong>Que souhaitez-vous faire ?</strong></p>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function escapeDiagHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, function(char) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char];
+  });
 }
 
 async function regenerer() {
@@ -341,7 +405,7 @@ async function regenerer() {
         });
         rapportHtml += '</div>';
       }
-      rapportHtml += '<p style="margin-top:12px;font-size:13px;">' + r.data.message + '</p>';
+      rapportHtml += '<p style="margin-top:12px;font-size:13px;">' + (r.message || '') + '</p>';
       rapportHtml += '</div>';
       document.getElementById('reportBody').innerHTML = rapportHtml;
       document.getElementById('reportTitle').textContent = 'Rapport de g\u00E9n\u00E9ration';
@@ -349,35 +413,49 @@ async function regenerer() {
       loadTimetable();
     } else {
       var errText = r.message || 'Une erreur est survenue.';
-      if (r.messages && r.messages.length) {
-        var escapeHtml = function(value) {
-          return String(value || '').replace(/[&<>'"]/g, function(char) {
-            return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char];
-          });
-        };
-        var reasons = r.messages.map(function(m) {
-          return '<li style="margin:4px 0;text-align:left;font-size:13px;">' + escapeHtml(m) + '</li>';
-        }).join('');
-
+      var errData = r.data || {};
+      var errMessages = errData.messages || [];
+      var errSolutions = errData.solutions || [];
+      var teacherTable = errData.teacher_table || [];
+      if (errMessages.length) {
         var html = '<div style="text-align:left;">';
-        html += '<p style="margin-bottom:8px;">La génération a échoué en raison des conflits suivants :</p>';
-        html += '<ul style="padding-left:18px;margin-bottom:12px;">' + reasons + '</ul>';
+
+        if (teacherTable.length > 0) {
+          html += buildDiagnosticHtml(teacherTable, [], [], true);
+        }
+
+        html += '<p style="margin-bottom:8px;">La generation a echoue en raison des conflits suivants :</p>';
+        html += '<ul style="padding-left:18px;margin-bottom:12px;">';
+        errMessages.forEach(function(m) {
+          html += '<li style="margin:4px 0;font-size:13px;">' + escapeDiagHtml(m) + '</li>';
+        });
+        html += '</ul>';
+
+        if (errSolutions.length) {
+          html += '<p style="margin-bottom:6px;font-weight:700;color:#0d6efd;font-size:13px;">Solutions proposees :</p>';
+          html += '<ul style="padding-left:18px;margin-bottom:12px;">';
+          errSolutions.forEach(function(s) {
+            html += '<li style="margin:4px 0;font-size:13px;color:#0d6efd;">' + escapeDiagHtml(s) + '</li>';
+          });
+          html += '</ul>';
+        }
+
         html += '<p style="font-size:13px;color:#666;margin-bottom:4px;"><strong>Que souhaitez-vous faire ?</strong></p>';
         html += '</div>';
 
         Swal.fire({
           icon: 'error',
-          title: 'Conflits détectés',
+          title: 'Conflits detectes',
           html: html,
           showDenyButton: true,
           showCancelButton: true,
-          confirmButtonText: '<i class="ri-calendar-line"></i> Modifier les disponibilités',
-          denyButtonText: '<i class="ri-lock-line"></i> Modifier les fixes',
-          cancelButtonText: 'Relancer la génération',
+          confirmButtonText: 'Modifier les disponibilites',
+          denyButtonText: 'Modifier les fixes',
+          cancelButtonText: 'Relancer la generation',
           confirmButtonColor: '#0d6efd',
           denyButtonColor: '#6c757d',
           cancelButtonColor: '#198754',
-          width: 550
+          width: 750
         }).then(function(result) {
           if (result.isConfirmed) {
             window.location.href = '<?= base_url('Disponibilites') ?>';
@@ -388,19 +466,38 @@ async function regenerer() {
           }
         });
       } else if (r.diagnostics && r.diagnostics.length) {
-        var escapeHtml = function(value) {
-          return String(value || '').replace(/[&<>'"]/g, function(char) {
-            return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char];
+        var teacherTable = r.teacher_table || [];
+        var blocking = r.diagnostics.filter(function(d) { return d.blocking; });
+        var warnings = r.diagnostics.filter(function(d) { return !d.blocking; });
+        var html = '<div style="text-align:left;">';
+
+        if (teacherTable.length > 0) {
+          html += buildDiagnosticHtml(teacherTable, warnings, blocking, true);
+        } else {
+          html += '<p>Le planning actuel n\'a pas ete modifie. Corrigez les elements suivants :</p>';
+          html += '<ul style="padding-left:20px;">';
+          r.diagnostics.forEach(function(d) {
+            html += '<li style="margin:6px 0;font-size:13px;">' + escapeDiagHtml(d.message || d.type) + '</li>';
           });
-        };
-        var reasons = r.diagnostics.map(function(d) {
-          return '<li style="margin:6px 0;text-align:left;">' + escapeHtml(d.message || d.type) + '</li>';
-        }).join('');
+          html += '</ul>';
+        }
+
+        html += '</div>';
         Swal.fire({
           icon: 'warning',
-          title: 'Génération non effectuée',
-          html: '<p>Le planning actuel n\'a pas été modifié. Corrigez les éléments suivants :</p><ul style="padding-left:20px;">' + reasons + '</ul>',
-          confirmButtonText: 'Compris'
+          title: 'Generation non effectuee',
+          html: html,
+          showDenyButton: true,
+          showCancelButton: true,
+          confirmButtonText: 'Modifier les disponibilites',
+          denyButtonText: 'Modifier les fixes',
+          cancelButtonText: 'Fermer',
+          confirmButtonColor: '#0d6efd',
+          denyButtonColor: '#6c757d',
+          width: 750
+        }).then(function(result) {
+          if (result.isConfirmed) window.location.href = '<?= base_url("Disponibilites") ?>';
+          else if (result.isDenied) window.location.href = '<?= base_url("Horaires/fixes") ?>';
         });
       } else {
         Swal.fire({ icon: 'error', title: 'Erreur de génération', text: errText });
@@ -571,7 +668,7 @@ function doExportExcel() {
     jours.forEach(function(j) { headers.push(j.libelle.toUpperCase()); });
     rows.push(headers);
 
-    var creneauxToUse = JOUR_SPECIAL_ACTIF ? allCreneaux : allCreneaux;
+    var creneauxToUse = allCreneaux;
     creneauxToUse.forEach(function(cr) {
       var tl = cr.heure_debut.substring(0,5) + '-' + cr.heure_fin.substring(0,5);
       if (cr.type_creneau === 'vigile') {

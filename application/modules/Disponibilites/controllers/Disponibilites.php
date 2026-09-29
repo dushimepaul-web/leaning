@@ -132,24 +132,32 @@ class Disponibilites extends MY_Controller {
         $idJour = (int)$data['id_jour'];
 
         $existingQuery = $this->db->query(
-            "SELECT id_creneau, type FROM disponibilites_enseignants WHERE id_enseignant = ? AND id_jour = ? AND deleted_at IS NULL",
+            "SELECT id_creneau, type, deleted_at FROM disponibilites_enseignants WHERE id_enseignant = ? AND id_jour = ?",
             [$idEns, $idJour]
         );
         $existingMap = [];
+        $existingDeleted = [];
         if ($existingQuery && $existingQuery->num_rows() > 0) {
             foreach ($existingQuery->result_array() as $row) {
-                $existingMap[(int)$row['id_creneau']] = $row['type'];
+                $cid = (int)$row['id_creneau'];
+                $existingMap[$cid] = $row['type'];
+                if (!empty($row['deleted_at'])) {
+                    $existingDeleted[$cid] = true;
+                }
             }
         }
 
         $toInsert = [];
         $toUpdate = [];
+        $toRestore = [];
         $skipped = 0;
         $created = 0;
 
         foreach ($creneauIds as $crId) {
             if (isset($existingMap[$crId])) {
-                if ($existingMap[$crId] !== $type) {
+                if (isset($existingDeleted[$crId])) {
+                    $toRestore[] = $crId;
+                } elseif ($existingMap[$crId] !== $type) {
                     $toUpdate[] = $crId;
                 } else {
                     $skipped++;
@@ -168,6 +176,12 @@ class Disponibilites extends MY_Controller {
         if (!empty($toInsert)) {
             $this->db->insert_batch('disponibilites_enseignants', $toInsert);
             $created += count($toInsert);
+        }
+
+        foreach ($toRestore as $crId) {
+            $this->db->where('id_enseignant', $idEns)->where('id_creneau', $crId)->where('id_jour', $idJour)->where('deleted_at IS NOT NULL', null, false);
+            $this->db->update('disponibilites_enseignants', ['type' => $type, 'deleted_at' => null]);
+            $created++;
         }
 
         foreach ($toUpdate as $crId) {
@@ -209,24 +223,32 @@ class Disponibilites extends MY_Controller {
         $idJour = (int)$data['id_jour'];
 
         $existingQuery = $this->db->query(
-            "SELECT id_creneau, type FROM disponibilites_enseignants WHERE id_enseignant = ? AND id_jour = ? AND deleted_at IS NULL",
+            "SELECT id_creneau, type, deleted_at FROM disponibilites_enseignants WHERE id_enseignant = ? AND id_jour = ?",
             [$idEns, $idJour]
         );
         $existingMap = [];
+        $existingDeleted = [];
         if ($existingQuery && $existingQuery->num_rows() > 0) {
             foreach ($existingQuery->result_array() as $row) {
-                $existingMap[(int)$row['id_creneau']] = $row['type'];
+                $cid = (int)$row['id_creneau'];
+                $existingMap[$cid] = $row['type'];
+                if (!empty($row['deleted_at'])) {
+                    $existingDeleted[$cid] = true;
+                }
             }
         }
 
         $toInsert = [];
         $toUpdate = [];
+        $toRestore = [];
         $skipped = 0;
         $created = 0;
 
         for ($crId = $debut; $crId <= $fin; $crId++) {
             if (isset($existingMap[$crId])) {
-                if ($existingMap[$crId] !== $type) {
+                if (isset($existingDeleted[$crId])) {
+                    $toRestore[] = $crId;
+                } elseif ($existingMap[$crId] !== $type) {
                     $toUpdate[] = $crId;
                 } else {
                     $skipped++;
@@ -245,6 +267,12 @@ class Disponibilites extends MY_Controller {
         if (!empty($toInsert)) {
             $this->db->insert_batch('disponibilites_enseignants', $toInsert);
             $created += count($toInsert);
+        }
+
+        foreach ($toRestore as $crId) {
+            $this->db->where('id_enseignant', $idEns)->where('id_creneau', $crId)->where('id_jour', $idJour)->where('deleted_at IS NOT NULL', null, false);
+            $this->db->update('disponibilites_enseignants', ['type' => $type, 'deleted_at' => null]);
+            $created++;
         }
 
         foreach ($toUpdate as $crId) {
