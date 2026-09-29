@@ -236,27 +236,154 @@ class MY_Controller extends MX_Controller
         $this->form_validation->CI =& $this;
     }
 
+    /**
+     * Charge automatiquement le modèle appartenant au module du contrôleur.
+     *
+     * La recherche tolère les variations de casse (systèmes de fichiers sensibles
+     * à la casse sous Linux) : nom du modèle (Nom_model, nom_model,
+     * ucfirst(strtolower(...))) et nom du dossier du module. Si aucun fichier
+     * n'est trouvé, un message clair est journalisé au lieu de lever une
+     * exception fatale (le modèle est facultatif).
+     */
     private function _load_module_model()
     {
         $class = get_class($this);
         if ($class === 'MY_Controller' || $class === 'MX_Controller') return;
         $parts = explode('\\', $class);
         $class = end($parts);
-        $model_name = $class . '_model';
 
-        $current_module = property_exists($this, 'module') ? $this->module : '';
-        if ($current_module) {
-            $model_in_current = APPPATH . 'modules/' . $current_module . '/models/' . $model_name . '.php';
-            if (file_exists($model_in_current)) {
-                $this->load->model($model_name);
-                return;
+        $module = $this->_current_module_name($class);
+        $searched = array();
+
+        foreach ($this->_model_file_candidates($class) as $candidate) {
+            list($module_name, $model_file) = $candidate;
+
+            $module_dir = ($module_name === null)
+                ? null
+                : $this->_dir_name_exists(APPPATH . 'modules/', $module_name);
+            $dir = ($module_name === null)
+                ? (is_dir(APPPATH . 'models/') ? APPPATH . 'models/' : null)
+                : (($module_dir !== null && is_dir($module_dir . 'models/')) ? $module_dir . 'models/' : null);
+
+            if ($dir === null) {
+                $searched[] = ($module_name === null ? APPPATH . 'models/' : APPPATH . 'modules/' . $module_name . '/models/') . $model_file;
+                continue;
+            }
+
+            $exact = $this->_resolve_file($dir, $model_file);
+            if ($exact === null) {
+                $searched[] = $dir . $model_file;
+                continue;
+            }
+
+            // MX ne sait résoudre un modèle que depuis le module courant :
+            // on expose donc explicitement le dossier du module trouvé.
+            if ($module_dir !== null && method_exists($this->load, '_add_module_paths')) {
+                $this->load->_add_module_paths(basename(rtrim($module_dir, '/')));
+            }
+            $this->load->model(pathinfo($exact, PATHINFO_FILENAME));
+            return;
+        }
+
+        if ($module === null) {
+            log_message('debug', 'MY_Controller : aucun module pour "' . $class . '", aucun modèle à charger.');
+        } else {
+            $module_dir = $this->_dir_name_exists(APPPATH . 'modules/', $module);
+            $expects_model = ($module === $class && $module_dir !== null && is_dir($module_dir . 'models/'));
+            log_message($expects_model ? 'error' : 'debug',
+                'MY_Controller : modèle "' . $class . '_model" '
+                . ($expects_model ? 'introuvable' : 'facultatif absent (module "' . $module . '")')
+                . '. Chemins testés : ' . implode(' | ', $searched));
+        }
+    }
+
+    /**
+     * Nom du module en cours (null si le contrôleur n'appartient pas à un module).
+     */
+    private function _current_module_name($class)
+    {
+        if (property_exists($this, 'module') && is_string($this->module) && $this->module !== '') {
+            return $this->module;
+        }
+        // MX expose les propriétés manquantes via __get() : isset() ne le
+        // déclenche pas, on lit donc directement la propriété.
+        $router = $this->router;
+        if (is_object($router) && method_exists($router, 'fetch_module')) {
+            $fetched = $router->fetch_module();
+            if (is_string($fetched) && $fetched !== '') {
+                return $fetched;
+            }
+        }
+        return $this->_dir_name_exists(APPPATH . 'modules/', $class) !== null ? $class : null;
+    }
+
+    /**
+     * Candidats [module (null = application/models), fichier modèle] à tester,
+     * par ordre de priorité.
+     *
+     * @return array<int,array{0:?string,1:string}>
+     */
+    private function _model_file_candidates($class)
+    {
+        $base = $class . '_model';
+        $variants = array_unique(array(
+            $base,
+            ucfirst(strtolower($base)),
+            strtolower($base),
+            $class . '_Model',
+            strtolower($class) . '_model',
+        ));
+
+        $module_names = array();
+        foreach (array($this->_current_module_name($class), $class, strtolower($class)) as $name) {
+            if (is_string($name) && $name !== '' && !in_array($name, $module_names, true)) {
+                $module_names[] = $name;
             }
         }
 
-        $model_file = APPPATH . 'modules/' . $class . '/models/' . $model_name . '.php';
-        if (file_exists($model_file)) {
-            $this->load->model($class . '/' . $model_name);
+        $candidates = array();
+        foreach ($module_names as $module_name) {
+            foreach ($variants as $variant) {
+                $candidates[] = array($module_name, $variant . '.php');
+            }
         }
+        foreach ($variants as $variant) {
+            $candidates[] = array(null, $variant . '.php');
+        }
+        return $candidates;
+    }
+
+    /**
+     * Nom réel (casse exacte) d'un dossier situé dans $parent, ou null.
+     */
+    private function _dir_name_exists($parent, $name)
+    {
+        if (!is_dir($parent)) return null;
+        $entries = @scandir($parent);
+        if (!is_array($entries)) return null;
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') continue;
+            if (strcasecmp($entry, $name) === 0 && is_dir($parent . $entry)) {
+                return $parent . $entry . '/';
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Nom de fichier réel (casse exacte) présent dans $dir, ou null.
+     */
+    private function _resolve_file($dir, $file)
+    {
+        if ($dir === null || !is_dir($dir)) return null;
+        $entries = @scandir($dir);
+        if (!is_array($entries)) return null;
+        foreach ($entries as $entry) {
+            if (strcasecmp($entry, $file) === 0 && is_file($dir . $entry)) {
+                return $entry;
+            }
+        }
+        return null;
     }
 
     public function render_view($view, $data = array())
@@ -350,7 +477,7 @@ class MY_Controller extends MX_Controller
     {
         if (empty($id_etudiant) || empty($id_annee)) return 0;
         if (!isset($this->ConduiteModel)) {
-            $this->load->model('conduite/Conduite_model', 'ConduiteModel');
+            $this->load->model('Conduite/Conduite_model', 'ConduiteModel');
         }
         return $this->ConduiteModel->ensure_inscription_points($id_etudiant, $id_annee, $points_initial);
     }

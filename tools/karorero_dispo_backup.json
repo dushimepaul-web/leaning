@@ -1,0 +1,24 @@
+[
+    {
+        "id_disponibilite": "121",
+        "uuid": "3b328ba3-67d3-41b0-aba1-59d5d70fe8f0",
+        "id_enseignant": "48",
+        "id_creneau": "1",
+        "id_jour": "1",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 12:07:43",
+        "modifie_le": "2026-09-11 12:07:43"
+    },
+    {
+        "id_disponibilite": "122",
+        "uuid": "7673e558-8e77-429b-a013-2c6cbc08a752",
+        "id_enseignant": "48",
+        "id_creneau": "2",
+        "id_jour": "1",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 12:07:43",
+        "modifie_le": "2026-09-11 12:07:43"
+    }
+]

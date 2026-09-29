@@ -48,6 +48,9 @@ spl_autoload_register('Modules::autoload');
 class Modules
 {
 	public static $routes, $registry, $locations;
+
+	/** Cache des résolutions de casse (nom écrit => nom réel sur le disque) */
+	public static $resolved = array();
 	
 	/**
 	* Run a module controller method
@@ -175,6 +178,10 @@ class Modules
 	* Scans for files located within modules directories.
 	* Also scans application directories for models, plugins and views.
 	* Generates fatal error if file not found.
+	*
+	* Les noms de dossiers et de fichiers sont résolus indépendamment de la
+	* casse : sous Linux (système de fichiers sensible à la casse) une référence
+	* du type "Horaires/Horaires_model" doit trouver le dossier réel "Horaires".
 	**/
 	public static function find($file, $module, $base) 
 	{
@@ -195,19 +202,85 @@ class Modules
 		{					
 			foreach($modules as $module => $subpath) 
 			{			
-				$fullpath = $location.$module.'/'.$base.$subpath;
-				
+				$module_dir = self::resolve_entry($location, $module);
+				if ($module_dir === NULL) continue;
+
+				$dir = $location.$module_dir.'/'.$base;
+				$dir .= self::resolve_subpath($dir, $subpath);
+				if ($dir === FALSE) continue;
+
 				if ($base == 'libraries/' OR $base == 'models/')
 				{
-					if(is_file($fullpath.ucfirst($file_ext))) return array($fullpath, ucfirst($file));
+					$found = self::resolve_entry($dir, ucfirst($file_ext));
 				}
 				else
 				/* load non-class files */
-				if (is_file($fullpath.$file_ext)) return array($fullpath, $file);
+				{
+					$found = self::resolve_entry($dir, $file_ext);
+				}
+
+				if ($found !== NULL)
+				{
+					$name = (pathinfo($file, PATHINFO_EXTENSION)) ? $found : substr($found, 0, -strlen(EXT));
+					return array($dir, $name);
+				}
 			}
 		}
 		
 		return array(FALSE, $file);	
+	}
+
+	/**
+	* Résout le nom réel (casse exacte) d'un dossier ou d'un fichier situé
+	* directement dans $dir. Retourne NULL si l'entrée est absente.
+	**/
+	public static function resolve_entry($dir, $entry)
+	{
+		if ($entry === '' || !is_dir($dir)) return NULL;
+
+		$cache_key = $dir."\0".$entry;
+		if (array_key_exists($cache_key, self::$resolved)) return self::$resolved[$cache_key];
+
+		$result = NULL;
+		$entries = @scandir($dir);
+		if (is_array($entries))
+		{
+			foreach ($entries as $candidate)
+			{
+				if ($candidate === '.' || $candidate === '..') continue;
+				if ($candidate === $entry) { $result = $candidate; break; }
+			}
+			if ($result === NULL)
+			{
+				foreach ($entries as $candidate)
+				{
+					if ($candidate === '.' || $candidate === '..') continue;
+					if (strcasecmp($candidate, $entry) === 0) { $result = $candidate; break; }
+				}
+			}
+		}
+
+		return self::$resolved[$cache_key] = $result;
+	}
+
+	/**
+	* Résout, segment par segment, un sous-chemin relatif ("sous/dossier/").
+	* Retourne FALSE si un segment n'existe pas (même en ignorant la casse).
+	**/
+	public static function resolve_subpath($dir, $subpath)
+	{
+		if ($subpath === '') return '';
+
+		$resolved = '';
+		$current = $dir;
+		foreach (explode('/', trim($subpath, '/')) as $segment)
+		{
+			$entry = self::resolve_entry($current, $segment);
+			if ($entry === NULL) return FALSE;
+			$resolved .= $entry.'/';
+			$current .= $entry.'/';
+		}
+		return $resolved;
 	}
 	
 	/** Parse module routes **/

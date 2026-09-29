@@ -1,106 +1,25 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+require_once APPPATH . 'libraries/Horaires_solver.php';
+
 class Horaires_model extends Model
 {
     public function __construct() { parent::__construct(); }
 
     public function get_creneaux_cours()
     {
-        $params = $this->_get_params();
-        return $this->_compute_creneaux($params);
+        return Horaires_solver::creneaux($this->_get_params());
     }
 
     public function get_creneaux_mardi()
     {
-        $params = $this->_get_params();
-        return $this->_compute_creneaux_mardi($params);
+        return $this->_compute_creneaux_mardi($this->_get_params());
     }
 
     private function _get_params()
     {
-        $rows = $this->db->select('clef, valeur')
-            ->where('deleted_at', null)
-            ->get('parametres')
-            ->result_array();
-        $map = [];
-        foreach ($rows as $r) {
-            if (!empty($r['clef'])) {
-                $map[$r['clef']] = $r['valeur'];
-            }
-        }
-        return $map;
-    }
-
-    private function _compute_creneaux($params)
-    {
-        $nb = intval($params['nb_creneaux_jour'] ?? 8);
-        $heure_debut = $params['heure_debut_journee'] ?? '07:30';
-        $duree_cours = intval($params['duree_cours'] ?? 45);
-        $duree_pause = intval($params['duree_pause'] ?? 20);
-        $duree_vigie = intval($params['duree_vigie'] ?? 10);
-
-        $h = intval(substr($heure_debut, 0, 2));
-        $m = intval(substr($heure_debut, 3, 2));
-        $pause_after = intdiv($nb, 2);
-        $ordre = 0;
-        $creneaux = [];
-
-        for ($i = 1; $i <= $nb; $i++) {
-            if ($duree_vigie > 0 && $i === 1) {
-                $debut = sprintf('%02d:%02d', $h, $m);
-                $m += $duree_vigie;
-                $h += intdiv($m, 60);
-                $m = $m % 60;
-                $fin = sprintf('%02d:%02d', $h, $m);
-                $ordre++;
-                $creneaux[] = [
-                    'id_creneau' => 'vigile',
-                    'type' => 'vigile',
-                    'type_creneau' => 'vigile',
-                    'heure_debut' => $debut,
-                    'heure_fin' => $fin,
-                    'libelle' => 'Salut du drapeau',
-                    'ordre' => $ordre,
-                ];
-            }
-
-            $debut = sprintf('%02d:%02d', $h, $m);
-            $m += $duree_cours;
-            $h += intdiv($m, 60);
-            $m = $m % 60;
-            $fin = sprintf('%02d:%02d', $h, $m);
-            $ordre++;
-            $creneaux[] = [
-                'id_creneau' => $i,
-                'type' => 'cours',
-                'type_creneau' => 'cours',
-                'heure_debut' => $debut,
-                'heure_fin' => $fin,
-                'libelle' => "Cours $i",
-                'ordre' => $ordre,
-            ];
-
-            if ($i === $pause_after && $i < $nb) {
-                $debut = sprintf('%02d:%02d', $h, $m);
-                $m += $duree_pause;
-                $h += intdiv($m, 60);
-                $m = $m % 60;
-                $fin = sprintf('%02d:%02d', $h, $m);
-                $ordre++;
-                $creneaux[] = [
-                    'id_creneau' => "pause$i",
-                    'type' => 'pause',
-                    'type_creneau' => 'pause',
-                    'heure_debut' => $debut,
-                    'heure_fin' => $fin,
-                    'libelle' => 'Pause',
-                    'ordre' => $ordre,
-                ];
-            }
-        }
-
-        return $creneaux;
+        return Horaires_solver::params($this->db);
     }
 
     public function get_horaires_by_enseignant($id_enseignant)

@@ -24,10 +24,18 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 $host = $_SERVER['HTTP_HOST'] ?? '';
-if ($host === 'localhost' || $host === '127.0.0.1') {
+$host_name = strtolower((string) preg_replace('/:\d+$/', '', $host));
+$is_local = ($host_name === '' || $host_name === 'localhost'
+    || $host_name === '127.0.0.1' || $host_name === '::1');
+if ($is_local) {
+    // Installation locale : l'application est servie dans un sous-dossier.
     $config['base_url'] = 'http://localhost/leaning/';
 } else {
-    $config['base_url'] = 'https://vipschool.abe.bi/';
+    // Production (ou poste en LAN) : on reconstruit l'URL depuis l'hôte réel
+    // au lieu de figer un domaine, pour rester valable si le domaine change.
+    $https = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+        || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
+    $config['base_url'] = ($https ? 'https' : 'http') . '://' . $host . '/';
 }
 
 /*

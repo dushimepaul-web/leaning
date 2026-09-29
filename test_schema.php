@@ -3,44 +3,53 @@ define('BASEPATH', 'true');
 $mysqli = new mysqli('localhost', 'root', '', 'vip_school');
 if ($mysqli->connect_error) { die($mysqli->connect_error); }
 
-$r = $mysqli->query("SELECT MAX(id_generation) g FROM horaires");
-$g = $r->fetch_assoc()['g'];
-echo "generation active: $g\n";
-
-$r = $mysqli->query("SELECT type, COUNT(*) c FROM horaires WHERE deleted_at IS NULL AND id_generation=$g GROUP BY type");
-while ($row = $r->fetch_assoc()) echo " type {$row['type']}: {$row['c']}\n";
-
-$r = $mysqli->query("SELECT COUNT(*) c FROM horaires WHERE deleted_at IS NULL");
-echo "total actifs: " . $r->fetch_assoc()['c'] . "\n";
-
-// Heures attendues vs placées par classe
-$r = $mysqli->query("SELECT c.libelle, COALESCE(h.placed,0) placed, COALESCE(s.total,0) attendu
- FROM classes c
- LEFT JOIN (SELECT id_classe, COUNT(*) placed FROM horaires WHERE deleted_at IS NULL AND id_generation=$g GROUP BY id_classe) h ON h.id_classe=c.id_classe
- LEFT JOIN (SELECT id_classe, SUM(nb_heures_par_semaine) total FROM matieres_classes WHERE deleted_at IS NULL GROUP BY id_classe) s ON s.id_classe=c.id_classe
- WHERE c.deleted_at IS NULL ORDER BY c.ordre");
+echo "=== 1. Limites journalieres vs heures/semaine ===\n";
+$r = $mysqli->query("SELECT mc.id_matiere_classe, c.libelle classe, m.code, mc.nb_heures_par_semaine w, mc.nb_heures_par_jour d
+ FROM matieres_classes mc JOIN classes c ON c.id_classe=mc.id_classe JOIN matieres m ON m.id_matiere=mc.id_matiere
+ WHERE mc.deleted_at IS NULL AND mc.nb_heures_par_semaine > 0");
+$bad = 0;
 while ($row = $r->fetch_assoc()) {
-    printf(" %-12s place=%-4s attendu=%-6s %s\n", $row['libelle'], $row['placed'], $row['attendu'],
-        ((int)$row['placed'] === (int)$row['attendu']) ? 'OK' : 'ECART');
+    $w = (int)$row['w']; $d = (int)$row['d'];
+    $max = 5 * $d;
+    if ($w > $max) { echo "  INFEASIBLE: {$row['classe']} {$row['code']} {$w}h/semaine > 5 x {$d} = {$max}\n"; $bad++; }
 }
+if (!$bad) echo "  OK - toutes les matieres tiennent dans la semaine avec leur limite journaliere\n";
 
-// Conflits DB (integrite)
-echo "\n=== verifications integrite ===\n";
-$checks = [
- 'classe double-booked' => "SELECT COUNT(*) c FROM (SELECT id_classe, id_jour, id_creneau, COUNT(*) n FROM horaires WHERE deleted_at IS NULL AND id_generation=$g GROUP BY 1,2,3 HAVING n>1) t",
- 'prof double-booked' => "SELECT COUNT(*) c FROM (SELECT id_enseignant, id_jour, id_creneau, COUNT(*) n FROM horaires WHERE deleted_at IS NULL AND id_generation=$g GROUP BY 1,2,3 HAVING n>1) t",
- 'prof indispo violee' => "SELECT COUNT(*) c FROM horaires h JOIN disponibilites_enseignants d ON d.id_enseignant=h.id_enseignant AND d.id_jour=h.id_jour AND d.id_creneau=h.id_creneau AND d.type='indisponible' AND d.deleted_at IS NULL WHERE h.deleted_at IS NULL AND h.id_generation=$g",
- 'cours le week-end/creneau invalide' => "SELECT COUNT(*) c FROM horaires h LEFT JOIN jours_semaine j ON j.id_jour=h.id_jour AND j.deleted_at IS NULL AND j.actif=1 WHERE h.deleted_at IS NULL AND h.id_generation=$g AND j.id_jour IS NULL",
-];
-foreach ($checks as $label => $sql) {
-    $r = $mysqli->query($sql);
-    $row = $r ? $r->fetch_assoc() : null;
-    printf(" - %-40s : %s\n", $label, $row ? $row['c'] : 'ERR');
+echo "\n=== 2. Marges enseignants (capacite - charge) ===\n";
+$r = $mysqli->query("SELECT e.id_enseignant, e.fullname,
+  COALESCE((SELECT SUM(nb_heures_par_semaine) FROM matieres_classes mc WHERE mc.id_enseignant=e.id_enseignant AND mc.deleted_at IS NULL),0) charge
+ FROM enseignants e WHERE e.deleted_at IS NULL");
+$teachers = [];
+while ($row = $r->fetch_assoc()) $teachers[] = $row;
+
+$r = $mysqli->query("SELECT id_enseignant, id_jour, id_creneau FROM disponibilites_enseignants WHERE type='indisponible' AND deleted_at IS NULL");
+$indispo = [];
+while ($row = $r->fetch_assoc()) $indispo[(int)$row['id_enseignant']][(int)$row['id_jour']][(int)$row['id_creneau']] = true;
+
+$jours = [1,2,3,4,5]; $creneaux = [1,2,3,4,5,6,7,8];
+$tight = 0;
+foreach ($teachers as $t) {
+    $charge = (int)$t['charge'];
+    if ($charge <= 0) continue;
+    $cap = 0;
+    foreach ($jours as $j) foreach ($creneaux as $c) if (!isset($indispo[(int)$t['id_enseignant']][$j][$c])) $cap++;
+    $marge = $cap - $charge;
+    $flag = $marge < 0 ? 'INFEASIBLE' : ($marge === 0 ? 'SERRURE' : '');
+    if ($marge <= 2) { printf("  %-28s charge=%-3d cap=%-3d marge=%-3d %s\n", $t['fullname'], $charge, $cap, $marge, $flag); $tight++; }
 }
+echo "  (enseignants avec marge <=2 : $tight)\n";
 
-// Max heures meme matiere par jour
-$r = $mysqli->query("SELECT MAX(n) m FROM (SELECT id_classe, id_matiere, id_jour, COUNT(*) n FROM horaires WHERE deleted_at IS NULL AND id_generation=$g GROUP BY 1,2,3) t");
-echo " - max memes cours/jour/classe : " . $r->fetch_assoc()['m'] . "\n";
+echo "\n=== 3. Charge des classes vs creneaux ===\n";
+$r = $mysqli->query("SELECT c.libelle, SUM(mc.nb_heures_par_semaine) h, COUNT(DISTINCT mc.id_matiere) nmat
+ FROM classes c JOIN matieres_classes mc ON mc.id_classe=c.id_classe AND mc.deleted_at IS NULL
+ WHERE c.deleted_at IS NULL GROUP BY c.id_classe ORDER BY c.ordre");
+while ($row = $r->fetch_assoc()) printf("  %-12s %sh (matieres: %d) / 40 creneaux %s\n", $row['libelle'], $row['h'], $row['nmat'], ((int)$row['h'] <= 40) ? '' : 'DEPASSE');
+
+echo "\n=== 4. Enseignants presents sur combien de jours ===\n";
+$r = $mysqli->query("SELECT e.fullname, COUNT(DISTINCT d.id_jour) jours
+ FROM disponibilites_enseignants d JOIN enseignants e ON e.id_enseignant=d.id_enseignant
+ WHERE d.type='indisponible' AND d.deleted_at IS NULL GROUP BY d.id_enseignant HAVING jours>0");
+while ($row = $r->fetch_assoc()) printf("  %-28s indispo sur %d/5 jours\n", $row['fullname'], 5 - $row['jours'] > 0 ? $row['jours'] : $row['jours']);
 
 $mysqli->close();
 ?>

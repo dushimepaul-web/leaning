@@ -1,0 +1,178 @@
+[
+    {
+        "id_disponibilite": "1",
+        "uuid": "b556f74b-f76b-4548-9ad5-780fc378b569",
+        "id_enseignant": "46",
+        "id_creneau": "1",
+        "id_jour": "1",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 11:26:24",
+        "modifie_le": "2026-09-11 11:26:24"
+    },
+    {
+        "id_disponibilite": "376",
+        "uuid": "af50fd2a-af5f-11f1-adc9-9c7bef735b1f",
+        "id_enseignant": "46",
+        "id_creneau": "1",
+        "id_jour": "5",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-13 12:41:32",
+        "modifie_le": "2026-09-13 12:41:32"
+    },
+    {
+        "id_disponibilite": "17",
+        "uuid": "bf95a825-d052-43e3-9fa2-37709308ec9f",
+        "id_enseignant": "53",
+        "id_creneau": "1",
+        "id_jour": "2",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 11:29:00",
+        "modifie_le": "2026-09-11 11:29:00"
+    },
+    {
+        "id_disponibilite": "25",
+        "uuid": "515ca992-2e18-472a-b702-ce183753cdc8",
+        "id_enseignant": "53",
+        "id_creneau": "1",
+        "id_jour": "3",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 11:29:19",
+        "modifie_le": "2026-09-11 11:29:19"
+    },
+    {
+        "id_disponibilite": "440",
+        "uuid": "2f66a7e2-49dd-4012-8cc3-e6dafa8476ef",
+        "id_enseignant": "59",
+        "id_creneau": "1",
+        "id_jour": "2",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-13 13:07:03",
+        "modifie_le": "2026-09-13 13:07:03"
+    },
+    {
+        "id_disponibilite": "448",
+        "uuid": "81326b37-962f-487c-8d59-204fc5f2c75c",
+        "id_enseignant": "59",
+        "id_creneau": "1",
+        "id_jour": "4",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-13 13:07:20",
+        "modifie_le": "2026-09-13 13:07:20"
+    },
+    {
+        "id_disponibilite": "273",
+        "uuid": "d750471b-b911-401b-9ee4-5793adc90a91",
+        "id_enseignant": "61",
+        "id_creneau": "1",
+        "id_jour": "2",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 12:23:37",
+        "modifie_le": "2026-09-11 12:23:37"
+    },
+    {
+        "id_disponibilite": "281",
+        "uuid": "18f61178-9792-42f8-b2dd-a7da9a67b4e0",
+        "id_enseignant": "61",
+        "id_creneau": "1",
+        "id_jour": "3",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 12:23:47",
+        "modifie_le": "2026-09-11 12:23:47"
+    },
+    {
+        "id_disponibilite": "408",
+        "uuid": "d91bb5cc-84f0-48a6-962f-3f0e72f35eea",
+        "id_enseignant": "54",
+        "id_creneau": "1",
+        "id_jour": "2",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-13 13:04:23",
+        "modifie_le": "2026-09-13 13:04:23"
+    },
+    {
+        "id_disponibilite": "416",
+        "uuid": "7a60ab48-3f76-4947-83e3-bdc38286ed9a",
+        "id_enseignant": "54",
+        "id_creneau": "1",
+        "id_jour": "3",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-13 13:04:42",
+        "modifie_le": "2026-09-13 13:04:42"
+    },
+    {
+        "id_disponibilite": "193",
+        "uuid": "02310091-cc80-4161-9540-effa5d484e9f",
+        "id_enseignant": "64",
+        "id_creneau": "1",
+        "id_jour": "2",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 12:10:45",
+        "modifie_le": "2026-09-11 12:10:45"
+    },
+    {
+        "id_disponibilite": "201",
+        "uuid": "7cfa9ffd-719e-44b9-b0ee-8b609ec4a38e",
+        "id_enseignant": "64",
+        "id_creneau": "1",
+        "id_jour": "3",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 12:10:56",
+        "modifie_le": "2026-09-11 12:10:56"
+    },
+    {
+        "id_disponibilite": "97",
+        "uuid": "66827cac-e37e-4897-8420-6205af6fca09",
+        "id_enseignant": "56",
+        "id_creneau": "1",
+        "id_jour": "3",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 11:32:31",
+        "modifie_le": "2026-09-11 11:32:31"
+    },
+    {
+        "id_disponibilite": "105",
+        "uuid": "01fc4391-e3f5-4904-9052-f5c834cb83ff",
+        "id_enseignant": "56",
+        "id_creneau": "1",
+        "id_jour": "4",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 11:32:53",
+        "modifie_le": "2026-09-11 11:32:53"
+    },
+    {
+        "id_disponibilite": "41",
+        "uuid": "045ee352-1f35-4200-8dd7-b7a15de8361e",
+        "id_enseignant": "62",
+        "id_creneau": "1",
+        "id_jour": "1",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 11:30:10",
+        "modifie_le": "2026-09-11 11:30:10"
+    },
+    {
+        "id_disponibilite": "49",
+        "uuid": "d13605f2-2477-4630-9989-e3390bd8ad51",
+        "id_enseignant": "62",
+        "id_creneau": "1",
+        "id_jour": "3",
+        "type": "indisponible",
+        "deleted_at": null,
+        "cree_le": "2026-09-11 11:30:24",
+        "modifie_le": "2026-09-11 11:30:24"
+    }
+]

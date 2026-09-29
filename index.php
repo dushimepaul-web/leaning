@@ -64,31 +64,33 @@
  * Different environments will require different levels of error reporting.
  * By default development will show errors but testing and live will hide them.
  */
-switch (ENVIRONMENT)
-{
-	case 'development':
-		error_reporting(-1);
-		ini_set('display_errors', 1);
-	break;
+	switch (ENVIRONMENT)
+	{
+		case 'development':
+			// Affichage complet : les dépréciations doivent être corrigées.
+			error_reporting(-1);
+			ini_set('display_errors', 1);
+		break;
 
-	case 'testing':
-	case 'production':
-		ini_set('display_errors', 0);
-		if (version_compare(PHP_VERSION, '5.3', '>='))
-		{
-			error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
-		}
-		else
-		{
-			error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
-		}
-	break;
+		case 'testing':
+			error_reporting(E_ALL);
+			ini_set('display_errors', 0);
+		break;
 
-	default:
-		header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-		echo 'The application environment is not set correctly.';
-		exit(1); // EXIT_ERROR
-}
+		case 'production':
+			// Les dépréciations ne sont pas affichées à l'utilisateur.
+			// Outils : php tools/check_php_compat.php (scan statique) et
+			// error_reporting(E_ALL) en environnement development.
+			error_reporting(E_ALL & ~E_DEPRECATED);
+			ini_set('display_errors', 0);
+			ini_set('log_errors', 1);
+		break;
+
+		default:
+			header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+			echo 'The application environment is not set correctly.';
+			exit(1); // EXIT_ERROR
+	}
 
 /*
  *---------------------------------------------------------------

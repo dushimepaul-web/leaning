@@ -203,12 +203,12 @@ async function diagnostiquer() {
       var teacherTable = v.teacher_table || [];
 
       if (warnings.length > 0) {
-        var html = buildDiagnosticHtml(teacherTable, warnings, [], false);
+        var html = buildDiagnosticHtml(teacherTable, warnings, []);
         Swal.fire({ icon: 'warning', title: 'Diagnostic : avertissements', html: html, confirmButtonText: 'Generer quand meme', showDenyButton: true, denyButtonText: 'Fermer', width: 750 }).then(function(res) {
           if (res.isConfirmed) regenerer();
         });
       } else {
-        var html = buildDiagnosticHtml(teacherTable, [], [], false);
+        var html = buildDiagnosticHtml(teacherTable, [], []);
         Swal.fire({ icon: 'success', title: 'Diagnostic OK', html: html, confirmButtonText: 'Generer maintenant', showDenyButton: true, denyButtonText: 'Fermer', width: 750 }).then(function(res) {
           if (res.isConfirmed) regenerer();
         });
@@ -219,7 +219,7 @@ async function diagnostiquer() {
       var warnings = diagnostics.filter(function(d) { return !d.blocking; });
       var teacherTable = (r.data && r.data.teacher_table) ? r.data.teacher_table : [];
 
-      var html = buildDiagnosticHtml(teacherTable, warnings, blocking, true);
+      var html = buildDiagnosticHtml(teacherTable, warnings, blocking);
 
       if (blocking.length > 0) {
         Swal.fire({
@@ -248,8 +248,17 @@ async function diagnostiquer() {
   }
 }
 
-function buildDiagnosticHtml(teacherTable, warnings, blocking, showSolutions) {
+function buildDiagnosticHtml(teacherTable, warnings, blocking) {
   var html = '<div style="text-align:left;font-size:13px;">';
+
+  // Règle de placement — affichée dans toutes les fenêtres de diagnostic
+  html += '<div style="margin-bottom:14px;padding:10px 12px;background:#e7f1ff;border:1px solid #0d6efd;border-radius:6px;">'
+       + '<p style="margin:0 0 4px 0;font-weight:700;color:#0d6efd;font-size:13px;">Règle de placement</p>'
+       + '<p style="margin:0;font-size:12px;color:#333;line-height:1.5;">'
+       + 'Chaque enseignant doit avoir une <strong>marge minimum de 2 créneaux</strong> '
+       + '(créneaux disponibles &minus; heures hebdomadaires). '
+       + '<strong style="color:#dc3545;">La marge 0 n\'est pas permis.</strong>'
+       + '</p></div>';
 
   // Teacher capacity table
   if (teacherTable.length > 0) {
@@ -267,8 +276,8 @@ function buildDiagnosticHtml(teacherTable, warnings, blocking, showSolutions) {
 
     teacherTable.forEach(function(t) {
       var bgColor = '';
-      if (t.status === 'impossible') bgColor = '#fff5f5';
-      else if (t.status === 'marge_zero') bgColor = '#fff8e1';
+      if (t.status === 'impossible' || t.status === 'marge_zero') bgColor = '#fff5f5';
+      else if (t.status === 'marge_insuffisant') bgColor = '#fff0e6';
       else if (t.status === 'serré') bgColor = '#fff3e0';
 
       html += '<tr style="border-bottom:1px solid #eee;background:' + bgColor + ';">';
@@ -283,7 +292,7 @@ function buildDiagnosticHtml(teacherTable, warnings, blocking, showSolutions) {
     html += '</tbody></table>';
 
     // Show tight teachers suggestions
-    var tightTeachers = teacherTable.filter(function(t) { return t.status === 'marge_zero' || t.status === 'serré'; });
+    var tightTeachers = teacherTable.filter(function(t) { return t.status === 'marge_zero' || t.status === 'marge_insuffisant' || t.status === 'serré'; });
     var impossibleTeachers = teacherTable.filter(function(t) { return t.status === 'impossible'; });
 
     if (impossibleTeachers.length > 0) {
@@ -295,12 +304,19 @@ function buildDiagnosticHtml(teacherTable, warnings, blocking, showSolutions) {
       html += '</div>';
     }
 
-    if (tightTeachers.length > 0 && showSolutions) {
+    if (tightTeachers.length > 0) {
       html += '<div style="margin-top:10px;padding:10px;background:#fff8e1;border:1px solid #ffc107;border-radius:6px;">';
-      html += '<p style="margin:0 0 6px 0;font-weight:700;color:#856404;">Enseignants a marge etroite :</p>';
+      html += '<p style="margin:0 0 6px 0;font-weight:700;color:#856404;">Sous la marge minimale (2) / marge étroite :</p>';
       tightTeachers.forEach(function(t) {
-        var sug = t.marge === 0 ? 'Ajoutez au moins 1 jour disponible pour faciliter le placement.' : 'Ajoutez 1 jour pour plus de flexibilite.';
-        html += '<div style="margin:4px 0;font-size:12px;color:#666;">- <strong>' + escapeDiagHtml(t.nom) + '</strong> : ' + t.sessions_semaine + 'h, ' + t.jours_dispo.length + ' jour(s), marge=' + t.marge + '. <span style="color:#0d6efd;">' + sug + '</span></div>';
+        var sug;
+        if (t.marge < 0) {
+          sug = 'Ajoutez au moins ' + Math.abs(t.marge) + ' créneau(x) disponible(s).';
+        } else if (t.marge < 2) {
+          sug = '<span style="color:#dc3545;font-weight:700;">Marge ' + t.marge + ' interdite : minimum requis 2 — libérez au moins ' + (2 - t.marge) + ' créneau(x).</span>';
+        } else {
+          sug = 'Ajoutez 1 jour pour plus de flexibilité.';
+        }
+        html += '<div style="margin:4px 0;font-size:12px;color:#666;">- <strong>' + escapeDiagHtml(t.nom) + '</strong> : ' + t.sessions_semaine + 'h, ' + t.jours_dispo.length + ' jour(s), marge=' + t.marge + '. ' + sug + '</div>';
       });
       html += '</div>';
     }
@@ -421,7 +437,7 @@ async function regenerer() {
         var html = '<div style="text-align:left;">';
 
         if (teacherTable.length > 0) {
-          html += buildDiagnosticHtml(teacherTable, [], [], true);
+          html += buildDiagnosticHtml(teacherTable, [], []);
         }
 
         html += '<p style="margin-bottom:8px;">La generation a echoue en raison des conflits suivants :</p>';
@@ -472,7 +488,7 @@ async function regenerer() {
         var html = '<div style="text-align:left;">';
 
         if (teacherTable.length > 0) {
-          html += buildDiagnosticHtml(teacherTable, warnings, blocking, true);
+          html += buildDiagnosticHtml(teacherTable, warnings, blocking);
         } else {
           html += '<p>Le planning actuel n\'a pas ete modifie. Corrigez les elements suivants :</p>';
           html += '<ul style="padding-left:20px;">';
