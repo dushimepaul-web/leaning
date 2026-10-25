@@ -212,6 +212,7 @@ class Enseignants extends MY_Controller {
 
         $allowed = ['matricule', 'fullname', 'sexe', 'date_naissance', 'telephone', 'email', 'adresse', 'specialite', 'qualification', 'experience', 'date_embauche', 'actif', 'photo'];
         $teacher_data = array_intersect_key($data, array_flip($allowed));
+        if (empty($teacher_data) && $enseignements === null) { $this->json_error('Aucune donnée à modifier'); return; }
 
         $this->db->trans_begin();
         $this->Model->update('enseignants', ['uuid' => $id], $teacher_data);

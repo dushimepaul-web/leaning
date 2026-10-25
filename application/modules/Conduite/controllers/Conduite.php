@@ -10,12 +10,31 @@ class Conduite extends MY_Controller {
     public function index() {
         $data['title'] = 'Points de conduite';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null], 'libelle', 'ASC');
+        if ($this->est_enseignant) {
+            $teacher_classes = $this->_teacher_classes();
+            $data['classes'] = empty($teacher_classes) ? array() : $this->db
+                ->where_in('id_classe', $teacher_classes)
+                ->where('deleted_at', null)
+                ->order_by('libelle', 'ASC')
+                ->get('classes')->result_array();
+        }
         $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null, 'id_annee' => $this->id_annee_active], 'id_periode', 'ASC');
         $data['annees'] = $this->Model->read('annees_scolaires', ['deleted_at' => null], 'id_annee', 'DESC');
         $data['id_annee_active'] = $this->id_annee_active;
         $data['id_periode_active'] = $this->id_periode_active;
         $data['points_defaut_ecole'] = $this->ConduiteModel->get_points_initial_defaut(60);
         $this->load->view('index', $data);
+    }
+
+    private function _point_classe($point)
+    {
+        if (empty($point['id_etudiant']) || empty($point['id_annee'])) return null;
+        $inscription = $this->Model->readOne('inscriptions', [
+            'id_etudiant' => $point['id_etudiant'],
+            'id_annee' => $point['id_annee'],
+            'deleted_at' => null
+        ]);
+        return $inscription ? (int)$inscription['id_classe'] : null;
     }
 
     public function api_list() {
@@ -25,6 +44,9 @@ class Conduite extends MY_Controller {
         $id_periode = $this->input->get('periode');
         if ($id_periode === null) $id_periode = $this->id_periode_active;
         if (!$id_classe) { $this->json_error('Classe requise'); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($id_classe)) {
+            $this->_teacher_deny(); return;
+        }
         $this->json_success($this->ConduiteModel->get_eleves_conduite($id_classe, $id_annee, $id_periode));
     }
 
@@ -32,6 +54,9 @@ class Conduite extends MY_Controller {
         $data = $this->get_json_input();
         if (empty($data['id_classe']) || empty($data['id_annee']) || empty($data['id_periode'])) {
             $this->json_error('Classe, année et période obligatoires'); return;
+        }
+        if ($this->est_enseignant && !$this->_teacher_can_access($data['id_classe'], null, true)) {
+            $this->_teacher_deny(); return;
         }
         $points_initial = (isset($data['points_initial']) && $data['points_initial'] !== null && $data['points_initial'] !== '') ? floatval($data['points_initial']) : null;
         if ($points_initial !== null && $points_initial <= 0) { $this->json_error('Points initiaux invalides'); return; }
@@ -43,6 +68,11 @@ class Conduite extends MY_Controller {
     public function api_update() {
         $data = $this->get_json_input();
         if (empty($data['id_point_conduite'])) { $this->json_error('Point de conduite requis'); return; }
+        $point = $this->ConduiteModel->get_point_conduite($data['id_point_conduite']);
+        if (!$point) { $this->json_error('Point de conduite introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($this->_point_classe($point), null, true)) {
+            $this->_teacher_deny(); return;
+        }
         $allowed = ['points_initial', 'observation'];
         $update = array_intersect_key($data, array_flip($allowed));
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
@@ -62,15 +92,30 @@ class Conduite extends MY_Controller {
         if (!$id_point_conduite) {
             $id_etudiant = $this->input->get('id_etudiant');
             $id_annee = $this->input->get('annee');
+            if (empty($id_annee)) $id_annee = $this->id_annee_active;
             $id_periode = $this->input->get('periode');
+            if (empty($id_periode) || !ctype_digit((string)$id_periode)) $id_periode = $this->id_periode_active;
             if (!$id_etudiant || !$id_annee || !$id_periode) {
                 $this->json_error('Point de conduite requis'); return;
+            }
+            if ($this->est_enseignant) {
+                $inscription = $this->Model->readOne('inscriptions', [
+                    'id_etudiant' => $id_etudiant,
+                    'id_annee' => $id_annee,
+                    'deleted_at' => null
+                ]);
+                if (!$inscription || !$this->_teacher_can_access($inscription['id_classe'], null, true)) {
+                    $this->_teacher_deny(); return;
+                }
             }
             $id_point_conduite = $this->_ensure_point($id_etudiant, $id_annee, $id_periode);
             if (!$id_point_conduite) { $this->json_error('Élève introuvable'); return; }
         }
         $point = $this->ConduiteModel->get_point_conduite($id_point_conduite);
         if (!$point) { $this->json_error('Point de conduite introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($this->_point_classe($point), null, true)) {
+            $this->_teacher_deny(); return;
+        }
         $point['points_initial'] = $this->ConduiteModel->get_points_initial_defaut();
         $this->json_success([
             'point' => $point,
@@ -109,6 +154,9 @@ class Conduite extends MY_Controller {
         }
         $point = $this->ConduiteModel->get_point_conduite($data['id_point_conduite']);
         if (!$point) { $this->json_error('Point de conduite introuvable'); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($this->_point_classe($point), null, true)) {
+            $this->_teacher_deny(); return;
+        }
 
         $points_retires = floatval($data['points_retires']);
         if ($points_retires <= 0 || $points_retires > 1000) { $this->json_error('Points à retirer invalides (doit être > 0)'); return; }
@@ -132,6 +180,12 @@ class Conduite extends MY_Controller {
         $this->load->helper('uuid');
         $sanction = $this->Model->readOne('sanctions_conduite', ['uuid' => $uuid]);
         if (!$sanction) { $this->json_error('Sanction introuvable', 404); return; }
+        if ($this->est_enseignant) {
+            $point = $this->ConduiteModel->get_point_conduite($sanction['id_point_conduite']);
+            if (!$point || !$this->_teacher_can_access($this->_point_classe($point), null, true)) {
+                $this->_teacher_deny(); return;
+            }
+        }
         if ($this->db->where('uuid', $uuid)->delete('sanctions_conduite')) {
             $this->ConduiteModel->recalc_points($sanction['id_point_conduite']);
             $this->json_success(null, 'Sanction supprimée');

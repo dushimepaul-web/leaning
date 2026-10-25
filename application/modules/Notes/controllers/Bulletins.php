@@ -7,6 +7,14 @@ class Bulletins extends MY_Controller {
     public function index() {
         $data['title'] = 'Bulletins & Fiches de points';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
+        if ($this->est_enseignant) {
+            $teacher_classes = $this->_teacher_classes();
+            $data['classes'] = empty($teacher_classes) ? array() : $this->db
+                ->where_in('id_classe', $teacher_classes)
+                ->where('deleted_at', null)
+                ->order_by('libelle')
+                ->get('classes')->result_array();
+        }
         $data['periodes'] = $this->Model->read('periodes', ['id_annee' => $this->id_annee_active, 'deleted_at' => null]);
         $data['annees'] = $this->Model->read('annees_scolaires', ['deleted_at' => null]);
         $data['id_annee_active'] = $this->id_annee_active;
@@ -36,10 +44,15 @@ class Bulletins extends MY_Controller {
         $q = $this->db->get();
         $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Bulletin introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($d['id_classe'])) {
+            $this->_teacher_deny(); return;
+        }
         $this->json_success($d);
     }
 
     public function api_list() {
+        $teacher_classes = $this->est_enseignant ? $this->_teacher_classes() : null;
+        if ($teacher_classes !== null && empty($teacher_classes)) { $this->json_success(array()); return; }
         $this->db->where('b.deleted_at', null);
         $this->db->select("b.*, e.fullname AS nom, '' AS prenom, e.matricule, c.libelle as classe, p.libelle as periode, a.libelle as annee");
         $this->db->from('bulletins b');
@@ -47,6 +60,9 @@ class Bulletins extends MY_Controller {
         $this->db->join('classes c', 'b.id_classe = c.id_classe', 'left');
         $this->db->join('periodes p', 'b.id_periode = p.id_periode', 'left');
         $this->db->join('annees_scolaires a', 'b.id_annee = a.id_annee', 'left');
+        if ($teacher_classes !== null) {
+            $this->db->where_in('b.id_classe', $teacher_classes);
+        }
         $this->db->order_by('b.date_edition', 'DESC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());
@@ -56,6 +72,9 @@ class Bulletins extends MY_Controller {
         $data = $this->get_json_input();
         if (empty($data['id_etudiant']) || empty($data['id_classe']) || empty($data['id_periode']) || empty($data['id_annee'])) {
             $this->json_error('Étudiant, classe, période et année obligatoires'); return;
+        }
+        if ($this->est_enseignant && !$this->_teacher_can_access($data['id_classe'], null, true)) {
+            $this->_teacher_deny(); return;
         }
         if (!$this->Model->readOne('etudiants', ['id_etudiant' => $data['id_etudiant'], 'deleted_at' => null])) {
             $this->json_error('Étudiant introuvable'); return;
@@ -113,6 +132,11 @@ class Bulletins extends MY_Controller {
 
     public function api_update($id) {
         $data = $this->get_json_input();
+        $existing = $this->Model->readOne('bulletins', ['uuid' => $id, 'deleted_at' => null]);
+        if (!$existing) { $this->json_error('Bulletin introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($existing['id_classe'], null, true)) {
+            $this->_teacher_deny(); return;
+        }
         $allowed = ['moyenne', 'rang', 'decision', 'date_edition'];
         $update = array_intersect_key($data, array_flip($allowed));
         if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
@@ -133,6 +157,11 @@ class Bulletins extends MY_Controller {
     }
 
     public function api_delete($id) {
+        $existing = $this->Model->readOne('bulletins', ['uuid' => $id, 'deleted_at' => null]);
+        if (!$existing) { $this->json_error('Bulletin introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($existing['id_classe'], null, true)) {
+            $this->_teacher_deny(); return;
+        }
         if ($this->Model->update('bulletins', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')]))
             $this->json_success(null, 'Bulletin supprimé');
         else $this->json_error('Erreur');
@@ -141,6 +170,9 @@ class Bulletins extends MY_Controller {
     public function api_detail($id) {
         $b = $this->Model->readOne('bulletins', ['uuid' => $id, 'deleted_at' => null]);
         if (!$b) { $this->json_error('Bulletin introuvable'); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($b['id_classe'])) {
+            $this->_teacher_deny(); return;
+        }
         $etudiant = $this->Model->readOne('etudiants', ['id_etudiant' => $b['id_etudiant']]);
         $classe = $this->Model->readOne('classes', ['id_classe' => $b['id_classe']]);
         $periode = $this->Model->readOne('periodes', ['id_periode' => $b['id_periode']]);
@@ -180,7 +212,16 @@ class Bulletins extends MY_Controller {
         $data = $this->get_json_input();
         $id_classe = !empty($data['id_classe']) ? $data['id_classe'] : null;
         $id_periode = !empty($data['id_periode']) ? $data['id_periode'] : $this->id_periode_active;
-        $id_annee = $this->id_annee_active;
+        $id_annee = !empty($data['id_annee']) ? (int)$data['id_annee'] : $this->id_annee_active;
+
+        $teacher_classes = null;
+        if ($this->est_enseignant) {
+            $teacher_classes = $this->_teacher_classes(true);
+            if (empty($teacher_classes)) { $this->json_error('Aucune classe ne vous est attribuée'); return; }
+            if ($id_classe && !in_array((int)$id_classe, $teacher_classes, true)) {
+                $this->_teacher_deny(); return;
+            }
+        }
 
         if (!$id_periode) { $this->json_error('Aucune période active définie'); return; }
 
@@ -188,6 +229,7 @@ class Bulletins extends MY_Controller {
         $this->db->where('i.deleted_at', null);
         $this->db->where('e.deleted_at', null);
         if ($id_classe) $this->db->where('i.id_classe', $id_classe);
+        elseif ($teacher_classes !== null) $this->db->where_in('i.id_classe', $teacher_classes);
         $this->db->select("i.id_etudiant, i.id_classe, e.fullname AS nom, '' AS prenom");
         $this->db->from('inscriptions i');
         $this->db->join('etudiants e', 'i.id_etudiant = e.id_etudiant');
@@ -199,6 +241,7 @@ class Bulletins extends MY_Controller {
         $this->db->where('ev.id_periode', $id_periode);
         $this->db->where('ev.deleted_at', null);
         if ($id_classe) $this->db->where('ev.id_classe', $id_classe);
+        elseif ($teacher_classes !== null) $this->db->where_in('ev.id_classe', $teacher_classes);
         $evaluations = $this->db->get('evaluations ev')->result_array();
 
         if (empty($evaluations)) { $this->json_error('Aucune évaluation trouvée pour cette période'); return; }
@@ -207,6 +250,7 @@ class Bulletins extends MY_Controller {
 
         $mc_query = $this->db->select('id_matiere, note_max_matiere')->from('matieres_classes')->where('deleted_at', null);
         if ($id_classe) $this->db->where('id_classe', $id_classe);
+        elseif ($teacher_classes !== null) $this->db->where_in('id_classe', $teacher_classes);
         $mc_rows = $mc_query->get()->result_array();
         $coeff_map = [];
         foreach ($mc_rows as $mc) { $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1); }
@@ -278,11 +322,11 @@ class Bulletins extends MY_Controller {
             }
         }
 
-        $all_bulletins = $this->Model->read('bulletins', [
-            'id_periode' => $id_periode,
-            'id_annee' => $id_annee,
-            'deleted_at' => null
-        ]);
+        $this->db->where('id_periode', $id_periode);
+        $this->db->where('id_annee', $id_annee);
+        $this->db->where('deleted_at', null);
+        if ($teacher_classes !== null) $this->db->where_in('id_classe', $teacher_classes);
+        $all_bulletins = $this->db->get('bulletins')->result_array();
         $bulletin_map = [];
         foreach ($all_bulletins as $b) {
             $bulletin_map[$b['id_etudiant']] = $b['id_bulletin'];
@@ -328,6 +372,9 @@ class Bulletins extends MY_Controller {
         $cumul = $this->input->get('cumul') === '1';
 
         if (!$id_classe) { $this->json_error('Classe requise'); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($id_classe)) {
+            $this->_teacher_deny(); return;
+        }
 
         $data = $this->BulletinsModel->get_bulletin_complet($id_classe, $id_annee, $id_periode, $cumul);
 
@@ -403,6 +450,10 @@ class Bulletins extends MY_Controller {
 
     public function export_bulletins_classe($class_id)
     {
+        if ($this->est_enseignant && !$this->_teacher_can_access($class_id)) {
+            show_error('Accès refusé : cette classe ne vous est pas attribuée.', 403);
+            return;
+        }
         $annee_id = $this->id_annee_active;
 
         $eleves_db = $this->Model->readQuery("

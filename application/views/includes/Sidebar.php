@@ -41,21 +41,30 @@
           <span>Classes</span>
         </a>
         <ul class="sidebar-submenu">
-
+          <li>
+            <a href="<?=base_url('Classes/Annees')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Années scolaires
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Classes/Periodes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Périodes
+            </a>
+          </li>
           <li>
             <a href="<?=base_url('Classes/Sections')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Sections
             </a>
           </li>
-          
           <li>
             <a href="<?=base_url('Classes')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Classes / Salles
+              Classes et salles
             </a>
           </li>
-          
           <li>
             <a href="<?=base_url('Classes/Matieres')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
@@ -68,26 +77,6 @@
               Programmes
             </a>
           </li>
-
-          <li>
-            <a href="<?=base_url('Classes/Periodes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Périodes
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Classes/Annees')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Années scolaires
-            </a>
-          </li>
-          
-          <!-- <li>
-            <a href="<?=base_url('Creneaux')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Créneaux horaires
-            </a>
-          </li> -->
           <li>
             <a href="<?=base_url('Jours')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
@@ -110,85 +99,20 @@
       </li>
       <li class="dropdown">
         <a href="javascript:void(0)">
-          <i class="ri-money-dollar-circle-line"></i>
-          <span>Minervales</span>
-        </a>
-        <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Types_frais')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Types de frais
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Paiements')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Paiements
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="javascript:void(0)">
-          <i class="ri-stack-line"></i>
-          <span>Stocks</span>
-        </a>
-        <ul class="sidebar-submenu">
-          <li>
-            <a href="<?=base_url('Stock_Categories')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Catégories
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Produits')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Produits
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Librairie')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Librairie
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Commandes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Commandes
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Stock_Mouvements')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Historique
-            </a>
-          </li>
-          <li>
-            <a href="<?=base_url('Rapports')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Rapports
-            </a>
-          </li>
-        </ul>
-      </li>
-
-      <li class="dropdown">
-        <a href="javascript:void(0)">
           <i class="ri-file-edit-line"></i>
           <span>Notes</span>
         </a>
         <ul class="sidebar-submenu">
           <li>
-            <a href="<?=base_url('Notes')?>">
-              <i class="ri-circle-fill circle-icon w-auto"></i>
-              Saisie notes
-            </a>
-          </li>
-          <li>
             <a href="<?=base_url('Evaluations')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
               Évaluations
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Notes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Saisie notes
             </a>
           </li>
           <li>
@@ -211,6 +135,149 @@
           </li>
         </ul>
       </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-money-dollar-circle-line"></i>
+          <span>Minervales</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Types_frais')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Types de frais
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Frais')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Frais scolaires
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Echeance')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Échéances
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Minervale/Dettes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Dettes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Minervale/Exonerations')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Exonérations
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Minervale/Paiements')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Encaissements
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Minervale/Remboursements')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Remboursements
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Minervale/Soldes')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Soldes et impayés
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Recus')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Reçus
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="javascript:void(0)">
+          <i class="ri-book-open-line"></i>
+          <span>Librairie</span>
+        </a>
+        <ul class="sidebar-submenu">
+          <li>
+            <a href="<?=base_url('Library')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Tableau de bord
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Stock_Categories?add=1')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Types de produits
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Produits?add=1')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Ajouter un produit
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_suppliers')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Fournisseurs
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_purchases')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Approvisionnements
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_stock')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Stock Librairie
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_sales')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Ventes
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_payments')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Paiements
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_returns')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Retours
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_expenses')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Charges
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_price_history')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Historique des prix
+            </a>
+          </li>
+          <li>
+            <a href="<?=base_url('Library_reports')?>">
+              <i class="ri-circle-fill circle-icon w-auto"></i>
+              Rapports
+            </a>
+          </li>
+        </ul>
+      </li>
+
       <li>
         <a href="<?=base_url('Evenements')?>">
           <i class="ri-calendar-check-line"></i>
@@ -225,9 +292,9 @@
         </a>
         <ul class="sidebar-submenu">
           <li>
-            <a href="<?=base_url('Utilisateurs')?>">
+            <a href="<?=base_url('Parametres')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Utilisateurs
+              Paramètres
             </a>
           </li>
           <li>
@@ -243,15 +310,15 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Parametres')?>">
+            <a href="<?=base_url('Utilisateurs')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Paramètres
+              Utilisateurs
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Administration/Sauvegardes')?>">
+            <a href="<?=base_url('Notifications')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Sauvegardes
+              Notifications
             </a>
           </li>
           <li>
@@ -261,9 +328,9 @@
             </a>
           </li>
           <li>
-            <a href="<?=base_url('Notifications')?>">
+            <a href="<?=base_url('Administration/Sauvegardes')?>">
               <i class="ri-circle-fill circle-icon w-auto"></i>
-              Notifications
+              Sauvegardes
             </a>
           </li>
           <li>

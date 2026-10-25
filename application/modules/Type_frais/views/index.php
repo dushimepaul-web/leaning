@@ -37,7 +37,6 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Code</th>
             <th>Libellé</th>
             <th>Description</th>
             <th>Actions</th>
@@ -56,10 +55,6 @@
     <button type="button" class="btn-close" onclick="closeSidebar()"></button>
   </div>
   <form id="typeForm" class="d-flex flex-column p-20">
-    <div class="mb-3">
-      <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Code *</label>
-      <input type="text" class="form-control" id="typeCode" placeholder="Ex: MINERVAL">
-    </div>
     <div class="mb-3">
       <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label>
       <input type="text" class="form-control" id="typeLibelle" placeholder="Ex: Minerval">
@@ -85,12 +80,11 @@ let editUuid = null;
 
 async function loadData() {
   const r = await API.types_frais.list();
-  if (!r.success) { $('#typesBody').html('<tr><td colspan="5" class="text-center text-danger">Erreur</td></tr>'); return; }
+  if (!r.success) { $('#typesBody').html('<tr><td colspan="4" class="text-center text-danger">Erreur</td></tr>'); return; }
   let rows = '';
   r.data.forEach((d, i) => {
     rows += `<tr>
       <td>${i + 1}</td>
-      <td>${d.code || '-'}</td>
       <td class="fw-semibold">${d.libelle}</td>
       <td>${d.description || '-'}</td>
       <td>
@@ -101,8 +95,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#typesBody').html(rows);
   if ($.fn.DataTable.isDataTable('#typesTable')) $('#typesTable').DataTable().destroy();
+  $('#typesBody').html(rows);
   $('#typesTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
@@ -129,7 +123,6 @@ async function editData(uuid) {
   if (!r.success) { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); return; }
   editUuid = uuid;
   document.getElementById('formTitle').textContent = 'Modifier le type de frais';
-  document.getElementById('typeCode').value = r.data.code || '';
   document.getElementById('typeLibelle').value = r.data.libelle || '';
   document.getElementById('typeDescription').value = r.data.description || '';
   document.getElementById('formOverlay').classList.remove('visibility-hidden', 'opacity-0');
@@ -147,7 +140,6 @@ async function deleteData(uuid) {
 document.getElementById('typeForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const data = {
-    code: document.getElementById('typeCode').value,
     libelle: document.getElementById('typeLibelle').value,
     description: document.getElementById('typeDescription').value
   };

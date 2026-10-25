@@ -7,7 +7,6 @@ class Paiement_recu_model extends Model
 
     public function get_all($filters = [])
     {
-        $this->db->where('deleted_at', null);
         return $this->db->get('paiements_recus')->result_array();
     }
 

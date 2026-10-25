@@ -49,12 +49,13 @@ class Dashboard extends MY_Controller {
             $frais = ($fraisRow && $fraisRow->total) ? floatval($fraisRow->total) : 1;
             $data['taux_recouvrement'] = min(100, round(($encaisse / $frais) * 100, 1));
 
-            $data['paiements_mois'] = $this->db->select("DATE_FORMAT(date_paiement, '%Y-%m') as mois, SUM(montant) as total")
+            $paiements_mois = $this->db->select("DATE_FORMAT(date_paiement, '%Y-%m') as mois, SUM(montant) as total")
                 ->from('paiements')
                 ->where('id_annee', $id_annee_sel)
                 ->where('deleted_at IS NULL')
                 ->group_by("DATE_FORMAT(date_paiement, '%Y-%m')")
-                ->order_by('mois', 'ASC')->limit(12)->get()->result_array();
+                ->order_by('mois', 'DESC')->limit(12)->get()->result_array();
+            $data['paiements_mois'] = array_reverse($paiements_mois);
 
             $data['eleves_classe'] = $this->db->select("c.libelle as classe, COUNT(i.id_etudiant) as total")
                 ->from('classes c')

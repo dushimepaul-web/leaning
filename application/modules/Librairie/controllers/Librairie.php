@@ -60,34 +60,45 @@ class Librairie extends MY_Controller {
         if (empty($data['id_categorie']) || !$this->Model->readOne('categories_produits', ['id_categorie' => $data['id_categorie'], 'deleted_at' => null])) {
             $this->json_error('Catégorie invalide'); return;
         }
-        $this->load->helper('uuid');
-        $insert = [
-            'uuid' => generate_uuid(),
-            'id_categorie' => $data['id_categorie'] ?? null,
+        $prix_achat = (isset($data['prix_achat']) && $data['prix_achat'] !== '') ? floatval($data['prix_achat']) : 0;
+        $prix_unitaire = (isset($data['prix_unitaire']) && $data['prix_unitaire'] !== '') ? floatval($data['prix_unitaire']) : 0;
+        $stock_mini = (isset($data['stock_mini']) && $data['stock_mini'] !== '') ? intval($data['stock_mini']) : 0;
+        $stock_raw = isset($data['stock_actuel']) ? $data['stock_actuel'] : ($data['stock'] ?? 0);
+        $stock = ($stock_raw !== '' && $stock_raw !== null) ? intval($stock_raw) : 0;
+        if ($prix_achat < 0 || $prix_unitaire < 0) { $this->json_error('Les prix ne peuvent pas être négatifs'); return; }
+        if ($stock < 0 || $stock_mini < 0) { $this->json_error('Le stock ne peut pas être négatif'); return; }
+
+        $this->db->trans_begin();
+        $id = $this->Model->createLastId('produits', [
+            'id_categorie' => $data['id_categorie'],
             'libelle' => $data['libelle'],
             'description' => $data['description'] ?? null,
             'taille' => $data['taille'] ?? null,
             'editeur' => $data['editeur'] ?? null,
             'annee_edition' => $data['annee_edition'] ?? null,
-            'prix_achat' => $data['prix_achat'] ?? 0,
-            'prix_unitaire' => $data['prix_unitaire'] ?? 0,
-            'stock_mini' => $data['stock_mini'] ?? 0,
-            'stock_actuel' => $data['stock_actuel'] ?? $data['stock'] ?? 0,
+            'prix_achat' => $prix_achat,
+            'prix_unitaire' => $prix_unitaire,
+            'stock_mini' => $stock_mini,
+            'stock_actuel' => $stock,
             'unite' => $data['unite'] ?? 'pièce',
             'cree_le' => date('Y-m-d H:i:s'),
             'modifie_le' => date('Y-m-d H:i:s'),
-        ];
-        $id = $this->Model->createLastId('produits', $insert);
-        if ($id) {
-            $stock = intval($data['stock_actuel'] ?? $data['stock'] ?? 0);
-            if ($stock > 0) {
-                $this->Model->create('mouvements_stock', [
-                    'id_produit' => $id, 'type' => 'entree', 'quantite' => $stock,
-                    'motif' => 'Stock initial', 'date_mvt' => date('Y-m-d H:i:s'),
-                ]);
-            }
-            $this->json_success(['id_produit' => $id], 'Produit créé');
-        } else $this->json_error('Erreur de création');
+        ]);
+        if ($id && $stock > 0) {
+            $this->Model->create('mouvements_stock', [
+                'id_produit' => $id, 'type' => 'entree', 'quantite' => $stock,
+                'prix_unitaire' => $prix_achat ?: null,
+                'motif' => 'Stock initial', 'date_mvt' => date('Y-m-d H:i:s'),
+                'id_utilisateur' => $this->session->userdata('id_utilisateur'),
+            ]);
+        }
+        if (!$id || $this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+            $this->json_error('Erreur de création');
+            return;
+        }
+        $this->db->trans_commit();
+        $this->json_success(['id_produit' => $id], 'Produit créé');
     }
 
     public function api_update($id) {
@@ -102,6 +113,10 @@ class Librairie extends MY_Controller {
         $old_stock = intval($produit['stock_actuel']);
         $new_stock = isset($update['stock_actuel']) ? intval($update['stock_actuel']) : $old_stock;
         if ($new_stock < 0) { $this->json_error('Stock invalide'); return; }
+        foreach (array('prix_achat', 'prix_unitaire') as $pk) {
+            if (isset($update[$pk]) && $update[$pk] !== '' && floatval($update[$pk]) < 0) { $this->json_error('Les prix ne peuvent pas être négatifs'); return; }
+        }
+        if (isset($update['stock_mini']) && $update['stock_mini'] !== '' && intval($update['stock_mini']) < 0) { $this->json_error('Stock minimum invalide'); return; }
 
         $this->db->trans_begin();
         if ($new_stock != $old_stock) {
@@ -112,6 +127,7 @@ class Librairie extends MY_Controller {
                 'quantite' => abs($diff),
                 'prix_unitaire' => $update['prix_achat'] ?? $produit['prix_achat'],
                 'motif' => 'Ajustement manuel (Librairie)',
+                'date_mvt' => date('Y-m-d H:i:s'),
                 'id_utilisateur' => $this->session->userdata('id_utilisateur')
             ]);
         }
@@ -127,6 +143,16 @@ class Librairie extends MY_Controller {
     }
 
     public function api_delete($id) {
+        $p = $this->Model->readOne('produits', ['uuid' => (string)$id, 'deleted_at' => null]);
+        if (!$p) { $this->json_error('Produit introuvable', 404); return; }
+        $linked = $this->db->select('cd.id_commande')
+            ->from('commandes_details cd')
+            ->join('commandes c', 'c.id_commande = cd.id_commande')
+            ->where('cd.id_produit', $p['id_produit'])
+            ->where('c.statut !=', 'annulee')
+            ->where('c.deleted_at IS NULL', null, false)
+            ->limit(1)->get()->row_array();
+        if ($linked) { $this->json_error('Suppression impossible : ce produit est utilisé dans une commande active.'); return; }
         if ($this->Model->update('produits', ['uuid' => (string)$id], ['deleted_at' => date('Y-m-d H:i:s'), 'modifie_le' => date('Y-m-d H:i:s')]))
             $this->json_success(null, 'Produit supprimé');
         else $this->json_error('Erreur de suppression');

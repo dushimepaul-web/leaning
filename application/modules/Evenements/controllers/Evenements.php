@@ -35,7 +35,7 @@ class Evenements extends MY_Controller {
         }
         $allowed = ['titre', 'description', 'date_debut', 'date_fin', 'lieu', 'type', 'couleur', 'statut'];
         $insert = array_intersect_key($data, array_flip($allowed));
-        $insert['type'] = in_array($insert['type'] ?? '', ['scolaire', 'reunion', 'activite', 'examen', 'autre'], true) ? $insert['type'] : 'scolaire';
+        $insert['type'] = in_array($insert['type'] ?? '', ['scolaire', 'sportif', 'culturel', 'reunion', 'activite', 'examen', 'autre'], true) ? $insert['type'] : 'scolaire';
         $insert['statut'] = in_array($insert['statut'] ?? '', ['planifie', 'en_cours', 'termine', 'annule'], true) ? $insert['statut'] : 'planifie';
         $date_debut = $this->_normalize_date($insert['date_debut'] ?? '');
         if (!$date_debut || strtotime($date_debut) === false) { $this->json_error('Date début invalide'); return; }

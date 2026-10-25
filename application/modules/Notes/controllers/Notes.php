@@ -8,6 +8,20 @@ class Notes extends MY_Controller {
         $data['title'] = 'Gestion des notes';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
         $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null]);
+        if ($this->est_enseignant) {
+            $teacher_classes = $this->_teacher_classes();
+            $teacher_matieres = $this->_teacher_matieres();
+            $data['classes'] = empty($teacher_classes) ? array() : $this->db
+                ->where_in('id_classe', $teacher_classes)
+                ->where('deleted_at', null)
+                ->order_by('libelle')
+                ->get('classes')->result_array();
+            $data['matieres'] = empty($teacher_matieres) ? array() : $this->db
+                ->where_in('id_matiere', $teacher_matieres)
+                ->where('deleted_at', null)
+                ->order_by('libelle')
+                ->get('matieres')->result_array();
+        }
         $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null]);
         $data['annees'] = $this->Model->read('annees_scolaires');
         $data['id_periode_active'] = $this->id_periode_active;
@@ -18,7 +32,7 @@ class Notes extends MY_Controller {
     public function api_get($id) {
         $this->db->where('n.uuid', $id);
         $this->db->where('n.deleted_at', null);
-        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, m.libelle as matiere, ev.libelle as evaluation, ev.ponderee_sur");
+        $this->db->select("n.*, e.fullname AS nom, '' AS prenom, m.libelle as matiere, ev.libelle as evaluation, ev.ponderee_sur, ev.id_classe, ev.id_matiere");
         $this->db->from('notes n');
         $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
@@ -26,6 +40,9 @@ class Notes extends MY_Controller {
         $q = $this->db->get();
         $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Note introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($d['id_classe'], $d['id_matiere'])) {
+            $this->_teacher_deny(); return;
+        }
         $this->json_success($d);
     }
 
@@ -36,6 +53,13 @@ class Notes extends MY_Controller {
         $this->db->join('etudiants e', 'n.id_etudiant = e.id_etudiant', 'left');
         $this->db->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
+        if ($this->est_enseignant && !$this->_teacher_view_all()) {
+            if (!$this->id_enseignant) { $this->json_success(array()); return; }
+            $this->db->distinct();
+            $this->db->join('matieres_classes mc', 'mc.id_classe = ev.id_classe AND mc.id_matiere = ev.id_matiere', 'inner');
+            $this->db->where('mc.id_enseignant', $this->id_enseignant);
+            $this->db->where('mc.deleted_at', null);
+        }
 
         $classe = $this->input->get('classe');
         $evaluation = $this->input->get('evaluation');
@@ -61,8 +85,13 @@ class Notes extends MY_Controller {
         if (!empty($data['id_evaluation'])) {
             $eval = $this->Model->readOne('evaluations', ['id_evaluation' => $data['id_evaluation'], 'deleted_at' => null]);
             if (!$eval) { $this->json_error('Évaluation introuvable'); return; }
+            if ($this->est_enseignant && !$this->_teacher_can_access($eval['id_classe'], $eval['id_matiere'], true)) {
+                $this->_teacher_deny(); return;
+            }
             $max = floatval($eval['ponderee_sur'] ?: 20);
             if (floatval($data['note']) > $max) { $this->json_error('La note ne peut pas dépasser ' . $max); return; }
+        } elseif ($this->est_enseignant) {
+            $this->_teacher_deny(); return;
         }
         $allowed = ['id_etudiant', 'id_evaluation', 'note', 'appreciation'];
         $clean = array_intersect_key($data, array_flip($allowed));
@@ -82,6 +111,7 @@ class Notes extends MY_Controller {
             if (empty($note['id_etudiant']) || !isset($note['note']) || empty($note['id_evaluation'])) continue;
             $eval = $this->Model->readOne('evaluations', ['id_evaluation' => $note['id_evaluation'], 'deleted_at' => null]);
             if (!$eval) continue;
+            if ($this->est_enseignant && !$this->_teacher_can_access($eval['id_classe'], $eval['id_matiere'], true)) continue;
             $max = floatval($eval['ponderee_sur'] ?: 20);
             if (floatval($note['note']) > $max) continue;
             $existing = $this->Model->readOne('notes', [
@@ -109,6 +139,9 @@ class Notes extends MY_Controller {
     }
 
     public function api_students_by_classe($id_classe) {
+        if ($this->est_enseignant && !$this->_teacher_can_access($id_classe)) {
+            $this->_teacher_deny(); return;
+        }
         $this->db->where('i.id_classe', $id_classe);
         $this->db->where('i.id_annee', $this->id_annee_active);
         $this->db->where('i.deleted_at', null);
@@ -122,30 +155,47 @@ class Notes extends MY_Controller {
     }
 
     public function api_evaluations_by_classe($id_classe) {
+        if ($this->est_enseignant && !$this->_teacher_can_access($id_classe)) {
+            $this->_teacher_deny(); return;
+        }
         $this->db->where('ev.id_classe', $id_classe);
         $this->db->where('ev.deleted_at', null);
         $this->db->select('ev.*, m.libelle as matiere_libelle');
         $this->db->from('evaluations ev');
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
+        if ($this->est_enseignant && !$this->_teacher_view_all()) {
+            $this->db->distinct();
+            $this->db->join('matieres_classes mc', 'mc.id_classe = ev.id_classe AND mc.id_matiere = ev.id_matiere', 'inner');
+            $this->db->where('mc.id_enseignant', $this->id_enseignant);
+            $this->db->where('mc.deleted_at', null);
+        }
         $this->db->order_by('ev.date_eval', 'DESC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());
     }
 
     public function api_matieres_by_classe($id_classe) {
-        $matieres = $this->db
+        if ($this->est_enseignant && !$this->_teacher_can_access($id_classe)) {
+            $this->_teacher_deny(); return;
+        }
+        $this->db
             ->distinct()
             ->select('m.id_matiere, m.libelle, m.code')
             ->from('matieres_classes mc')
             ->join('matieres m', 'mc.id_matiere = m.id_matiere')
             ->where('mc.id_classe', $id_classe)
-            ->where('mc.deleted_at', null)
+            ->where('mc.deleted_at', null);
+        if ($this->est_enseignant && !$this->_teacher_view_all()) $this->db->where('mc.id_enseignant', $this->id_enseignant);
+        $matieres = $this->db
             ->order_by('m.libelle')
             ->get()->result_array();
         $this->json_success($matieres);
     }
 
     public function api_grille_notes($id_classe, $id_matiere) {
+        if ($this->est_enseignant && !$this->_teacher_can_access($id_classe, $id_matiere)) {
+            $this->_teacher_deny(); return;
+        }
         $id_periode = $this->input->get('periode');
         $id_annee = $this->input->get('annee');
         if ($id_annee) {
@@ -210,10 +260,15 @@ class Notes extends MY_Controller {
     }
 
     public function api_classes_summary() {
+        $teacher_classes = $this->est_enseignant ? $this->_teacher_classes() : null;
+        if ($teacher_classes !== null && empty($teacher_classes)) { $this->json_success(array()); return; }
         $this->db->select('c.id_classe, c.libelle as classe, s.libelle as section');
         $this->db->from('classes c');
         $this->db->join('sections s', 'c.id_section = s.id_section', 'left');
         $this->db->where('c.deleted_at', null);
+        if ($teacher_classes !== null) {
+            $this->db->where_in('c.id_classe', $teacher_classes);
+        }
         $this->db->order_by('c.libelle');
         $q_c = $this->db->get();
         $classes = $q_c !== false ? $q_c->result_array() : array();
@@ -225,15 +280,28 @@ class Notes extends MY_Controller {
                 ->where('i.deleted_at', null)
                 ->count_all_results('inscriptions i');
 
-            $cl['nb_matieres'] = $this->db
+            $this->db
                 ->where('mc.id_classe', $cl['id_classe'])
-                ->where('mc.deleted_at', null)
-                ->count_all_results('matieres_classes mc');
+                ->where('mc.deleted_at', null);
+            if ($this->est_enseignant && !$this->_teacher_view_all()) $this->db->where('mc.id_enseignant', $this->id_enseignant);
+            $cl['nb_matieres'] = $this->db->count_all_results('matieres_classes mc');
         }
         $this->json_success($classes);
     }
 
     public function api_delete($id) {
+        if ($this->est_enseignant) {
+            $note = $this->db
+                ->select('ev.id_classe, ev.id_matiere')
+                ->from('notes n')
+                ->join('evaluations ev', 'n.id_evaluation = ev.id_evaluation', 'left')
+                ->where('n.uuid', $id)
+                ->where('n.deleted_at', null)
+                ->get()->row_array();
+            if (!$note || !$this->_teacher_can_access($note['id_classe'], $note['id_matiere'], true)) {
+                $this->_teacher_deny(); return;
+            }
+        }
         if ($this->Model->update('notes', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')]))
             $this->json_success(null, 'Note supprimée');
         else $this->json_error('Erreur');

@@ -53,6 +53,8 @@ class Model extends CI_Model
 
     function update($table, $criteres, $data)
     {
+        if (!is_array($data) || empty($data)) return false;
+        if (!is_array($criteres) || empty($criteres)) return false;
         $this->db->where($criteres);
         $query = $this->db->update($table, $data);
         return ($query) ? true : false;
@@ -60,6 +62,7 @@ class Model extends CI_Model
 
     function updateReturnAffectedRow($table, $criteres, $data)
     {
+        if (!is_array($criteres) || empty($criteres)) return null;
         $this->db->where($criteres);
         $this->db->update($table, $data);
         $affected_rows = $this->db->affected_rows();
@@ -73,6 +76,7 @@ class Model extends CI_Model
 
     function delete($table, $criteres)
     {
+        if (!is_array($criteres) || empty($criteres)) return false;
         $this->db->where($criteres);
         $query = $this->db->delete($table);
         return ($query) ? true : false;
@@ -114,8 +118,10 @@ class Model extends CI_Model
             $this->load->helper('uuid');
             $data['uuid'] = generate_uuid();
         }
+        $prev_debug = $this->db->db_debug;
         $this->db->db_debug = false;
         $query = $this->db->insert($table, $data);
+        $this->db->db_debug = $prev_debug;
         if ($query) {
             return $this->db->insert_id();
         }
@@ -265,6 +271,38 @@ class Model extends CI_Model
             $data = array('valeur' => $value, 'clef' => $key, 'uuid' => generate_uuid());
             $this->db->insert('parametres', $data);
         }
+    }
+
+    /**
+     * Montant total exonéré pour un étudiant sur un frais donné (bourses, exonérations).
+     * Prend en compte les exonérations ciblant le frais ou globales (id_frais NULL).
+     * Retourne un montant borné par le montant du frais.
+     */
+    public function exoneration_totale($id_etudiant, $id_frais, $id_annee, $base_montant = null)
+    {
+        if (empty($id_etudiant) || empty($id_frais) || empty($id_annee)) return 0;
+        $this->db->where('id_etudiant', $id_etudiant);
+        $this->db->where('id_annee', $id_annee);
+        $this->db->where('deleted_at', null);
+        $this->db->where('statut', 'active');
+        $this->db->group_start();
+        $this->db->where('id_frais', $id_frais);
+        $this->db->or_where('id_frais IS NULL', null, false);
+        $this->db->group_end();
+        $exos = $this->db->get('exonerations')->result_array();
+        if (!$exos) return 0;
+        if ($base_montant !== null) {
+            $base = floatval($base_montant);
+        } else {
+            $frais = $this->readOne('frais', ['id_frais' => $id_frais]);
+            $base = $frais ? floatval($frais['montant']) : 0;
+        }
+        if ($base <= 0) return 0;
+        $total = 0;
+        foreach ($exos as $e) {
+            $total += ($e['mode'] === 'pourcentage') ? $base * floatval($e['valeur']) / 100 : floatval($e['valeur']);
+        }
+        return min($total, $base);
     }
 
     public function get_statistics()

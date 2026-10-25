@@ -41,7 +41,7 @@
         <form id="addForm">
           <div class="mb-3"><label class="form-label">Code</label><input type="text" name="code" class="form-control" required></div>
           <div class="mb-3"><label class="form-label">Libellé</label><input type="text" name="libelle" class="form-control" required></div>
-          <div class="mb-3"><label class="form-label">URL</label><input type="text" name="url" class="form-control"></div>
+          <div class="mb-3"><label class="form-label">URL</label><input type="text" name="route" class="form-control"></div>
           <div class="mb-3"><label class="form-label">Icône</label><input type="text" name="icon" class="form-control"></div>
           <div class="mb-3"><label class="form-label">Ordre</label><input type="number" name="ordre" class="form-control" value="0"></div>
           <div class="mb-3"><label class="form-label">Menu parent</label>
@@ -62,7 +62,9 @@ async function loadTable() {
   const res = await API.menus.list();
   if (!res.success) return;
   let html = '';
+  let options = '<option value="">Aucun (menu racine)</option>';
   (res.data || []).forEach((m, i) => {
+    options += `<option value="${m.id_menu}">${m.libelle}</option>`;
     html += `<tr>
       <td>${i+1}</td>
       <td>${m.code}</td>
@@ -74,6 +76,7 @@ async function loadTable() {
     </tr>`;
   });
   document.getElementById('dataBody').innerHTML = html;
+  document.querySelector('#addForm select[name="parent_id"]').innerHTML = options;
 }
 
 async function saveMenu() {

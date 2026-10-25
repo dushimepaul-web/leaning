@@ -40,6 +40,7 @@ class Sections extends MY_Controller {
         }
         $allowed = ['code', 'libelle'];
         $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
         if ($this->Model->update('sections', ['uuid' => $id], $update))
             $this->json_success(null, 'Section mise à jour');
         else $this->json_error('Erreur lors de la mise à jour');

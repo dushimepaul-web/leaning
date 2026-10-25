@@ -7,6 +7,14 @@ class Fiches extends MY_Controller {
     public function index() {
         $data['title'] = 'Fiches de points';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
+        if ($this->est_enseignant) {
+            $teacher_classes = $this->_teacher_classes();
+            $data['classes'] = empty($teacher_classes) ? array() : $this->db
+                ->where_in('id_classe', $teacher_classes)
+                ->where('deleted_at', null)
+                ->order_by('libelle')
+                ->get('classes')->result_array();
+        }
         $data['periodes'] = $this->Model->read('periodes', ['deleted_at' => null]);
         $data['annees'] = $this->Model->read('annees_scolaires', ['deleted_at' => null]);
         $this->load->view('fiches', $data);
@@ -19,6 +27,15 @@ class Fiches extends MY_Controller {
         $id_matiere = $this->input->get('matiere');
 
         if (!$id_classe || !$id_periode) { $this->json_error('Classe et période requis'); return; }
+
+        $teacher_matieres = null;
+        if ($this->est_enseignant) {
+            if (!$this->_teacher_can_access($id_classe)) { $this->_teacher_deny(); return; }
+            $teacher_matieres = $this->_teacher_matieres($id_classe);
+            if ($id_matiere && !in_array((int)$id_matiere, $teacher_matieres, true)) {
+                $this->_teacher_deny(); return;
+            }
+        }
 
         $students = $this->db
             ->select("e.id_etudiant, e.matricule, e.fullname AS nom, '' AS prenom, e.sexe, e.photo")
@@ -35,15 +52,20 @@ class Fiches extends MY_Controller {
         $this->db->where('ev.id_classe', $id_classe)->where('ev.deleted_at', null);
         $this->db->where('ev.id_annee', $id_annee);
         if ($id_matiere) $this->db->where('ev.id_matiere', $id_matiere);
+        elseif ($teacher_matieres !== null) {
+            if (empty($teacher_matieres)) { $this->json_success(array('students' => array(), 'evaluations' => array())); return; }
+            $this->db->where_in('ev.id_matiere', $teacher_matieres);
+        }
         $this->db->order_by('ev.id_periode')->order_by('ev.date_eval');
         $evaluations = $this->db->get()->result_array();
 
-        $mc_rows = $this->db
+        $this->db
             ->select('id_matiere, note_max_matiere')
             ->from('matieres_classes')
             ->where('id_classe', $id_classe)
-            ->where('deleted_at', null)
-            ->get()->result_array();
+            ->where('deleted_at', null);
+        if ($teacher_matieres !== null) $this->db->where_in('id_matiere', $teacher_matieres);
+        $mc_rows = $this->db->get()->result_array();
         $coeff_map = [];
         foreach ($mc_rows as $mc) { $coeff_map[$mc['id_matiere']] = floatval($mc['note_max_matiere'] ?: 1); }
         foreach ($evaluations as &$ev) { $ev['coefficient'] = $coeff_map[$ev['id_matiere']] ?? 1; }
@@ -126,6 +148,11 @@ class Fiches extends MY_Controller {
         $id_annee = $this->input->get('annee') ?: $this->id_annee_active;
 
         if (!$id_classe) { $this->json_error('Classe requise'); return; }
+        $teacher_matieres = null;
+        if ($this->est_enseignant) {
+            if (!$this->_teacher_can_access($id_classe)) { $this->_teacher_deny(); return; }
+            $teacher_matieres = $this->_teacher_matieres($id_classe);
+        }
 
         // Récupérer les élèves
         $students = $this->db
@@ -136,21 +163,36 @@ class Fiches extends MY_Controller {
             ->order_by('e.fullname ASC')->get()->result_array();
 
         // Récupérer les matières de la classe (single source: matieres_classes)
-        $matieres = $this->db->query(
-            "SELECT DISTINCT m.id_matiere, m.libelle, m.code FROM matieres_classes mc JOIN matieres m ON mc.id_matiere = m.id_matiere WHERE mc.id_classe = ? AND mc.deleted_at IS NULL ORDER BY m.libelle",
-            [$id_classe]
-        )->result_array();
+        if ($teacher_matieres !== null) {
+            if (empty($teacher_matieres)) { $this->json_success(array('eleves' => array(), 'periodes' => array())); return; }
+            $matieres = $this->db
+                ->distinct()
+                ->select('m.id_matiere, m.libelle, m.code')
+                ->from('matieres_classes mc')
+                ->join('matieres m', 'mc.id_matiere = m.id_matiere')
+                ->where('mc.id_classe', $id_classe)
+                ->where('mc.deleted_at', null)
+                ->where_in('mc.id_matiere', $teacher_matieres)
+                ->order_by('m.libelle')
+                ->get()->result_array();
+        } else {
+            $matieres = $this->db->query(
+                "SELECT DISTINCT m.id_matiere, m.libelle, m.code FROM matieres_classes mc JOIN matieres m ON mc.id_matiere = m.id_matiere WHERE mc.id_classe = ? AND mc.deleted_at IS NULL ORDER BY m.libelle",
+                [$id_classe]
+            )->result_array();
+        }
 
         // Max annuel possible : somme sur les matières du coefficient calculé (heures/semaine × facteur_points_heure) × nb périodes
         $facteur_points = floatval($this->Model->get_setting('facteur_points_heure', 15));
         $pct_comp = floatval($this->Model->get_setting('pourcentage_competences_examen', 40));
         $pct_ress = floatval($this->Model->get_setting('pourcentage_ressources_examen', 60));
-        $mc = $this->db
+        $this->db
             ->select('id_matiere, nb_heures_par_semaine')
             ->from('matieres_classes')
             ->where('id_classe', $id_classe)
-            ->where('deleted_at', null)
-            ->get()->result_array();
+            ->where('deleted_at', null);
+        if ($teacher_matieres !== null) $this->db->where_in('id_matiere', $teacher_matieres);
+        $mc = $this->db->get()->result_array();
         $max_par_matiere = [];
         foreach ($mc as $mm) {
             $max_par_matiere[$mm['id_matiere']] = floatval($mm['nb_heures_par_semaine'] ?: 0) * $facteur_points;
@@ -349,12 +391,34 @@ class Fiches extends MY_Controller {
         $id_matiere = $this->input->get('matiere') ?: null;
         $id_annee = $this->id_annee_active;
 
+        $teacher_matieres = null;
+        if ($this->est_enseignant) {
+            if (!$this->_teacher_can_access($class_id)) {
+                show_error('Accès refusé : cette classe ne vous est pas attribuée.', 403);
+                return;
+            }
+            $teacher_matieres = $this->_teacher_matieres($class_id);
+            if ($id_matiere && !in_array((int)$id_matiere, $teacher_matieres, true)) {
+                show_error('Accès refusé : ce cours ne vous est pas attribué.', 403);
+                return;
+            }
+            if (!$id_matiere && count($teacher_matieres) === 1) {
+                $id_matiere = $teacher_matieres[0];
+            }
+        }
+
         $this->load->model('Bulletins_model', 'BulletinsModel');
         $complet = $this->BulletinsModel->get_bulletin_complet($class_id, $id_annee, $id_periode, true);
 
         if ($complet === null) {
             echo "<h3 style='font-family:Arial; text-align:center; margin-top:50px;'>Aucune donnée trouvée pour cette classe.</h3>";
             return;
+        }
+
+        if ($teacher_matieres !== null && !$id_matiere && !empty($complet['matieres'])) {
+            $complet['matieres'] = array_values(array_filter($complet['matieres'], function ($m) use ($teacher_matieres) {
+                return in_array((int)$m['id_matiere'], $teacher_matieres, true);
+            }));
         }
 
         $classe_info = $this->Model->readOne('classes', ['id_classe' => $class_id]);

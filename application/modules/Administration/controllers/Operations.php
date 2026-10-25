@@ -2,7 +2,20 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Operations extends MY_Controller {
-    public function __construct() { parent::__construct(); }
+    public function __construct() {
+        parent::__construct();
+        $this->_require_superadmin();
+    }
+
+    private function _require_superadmin() {
+        if ((int)$this->session->userdata('id_role') !== 1) {
+            if ($this->input->is_ajax_request() || $this->uri->segment(1) === 'api') {
+                $this->json_response(array('success' => false, 'message' => 'Accès refusé : réservé au super-administrateur.'), 403);
+            } else {
+                redirect(base_url('Dashboard'));
+            }
+        }
+    }
 
     public function index() {
         $data['title'] = 'Opérations groupées';
@@ -15,7 +28,7 @@ class Operations extends MY_Controller {
 
     private function _allowed_tables() {
         $tables = $this->db->list_tables();
-        $exclude = ['audit_logs', 'roles_menus', 'ci_sessions', 'parametres', 'utilisateurs', 'recus', 'paiements_recus'];
+        $exclude = ['audit_logs', 'roles_menus', 'ci_sessions', 'parametres', 'utilisateurs', 'recus', 'paiements_recus', 'password_resets', 'email_logs'];
         $result = [];
         foreach ($tables as $t) {
             if (in_array($t, $exclude)) continue;
@@ -41,6 +54,11 @@ class Operations extends MY_Controller {
     }
 
     public function api_export($table) {
+        $this->load->helper('permission');
+        if (!can_export('parametres')) {
+            $this->json_error('Accès refusé : permission d\'export insuffisante.', 403);
+            return;
+        }
         if (!$this->_validate_table($table)) {
             $this->json_error('Table non autorisée'); return;
         }
@@ -122,8 +140,8 @@ class Operations extends MY_Controller {
         $headers = fgetcsv($handle);
         $safeColumns = $this->_safe_columns($table);
         $colMap = [];
-        foreach ($headers as $h) {
-            if (in_array($h, $safeColumns) && !in_array($h, $colMap)) $colMap[] = $h;
+        foreach ($headers as $i => $h) {
+            if (in_array($h, $safeColumns, true) && !isset($colMap[$h])) $colMap[$h] = $i;
         }
 
         $count = 0;
@@ -131,7 +149,7 @@ class Operations extends MY_Controller {
         $this->db->trans_start();
         while (($row = fgetcsv($handle)) !== false) {
             $data = [];
-            foreach ($colMap as $i => $col) {
+            foreach ($colMap as $col => $i) {
                 if (isset($row[$i]) && $row[$i] !== '') $data[$col] = $row[$i];
             }
             if (!empty($data)) {

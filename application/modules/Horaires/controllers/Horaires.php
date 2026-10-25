@@ -82,8 +82,10 @@ class Horaires extends MY_Controller {
             ->join('jours_semaine j', 'h.id_jour = j.id_jour', 'left')
             ->join('enseignants e', 'h.id_enseignant = e.id_enseignant', 'left')
             ->where('h.deleted_at', null)
+            ->group_start()
             ->where('h.id_horaire', $id)
             ->or_where('h.uuid', $id)
+            ->group_end()
             ->get()
             ->row_array();
         if (!$row) {
@@ -128,12 +130,13 @@ class Horaires extends MY_Controller {
         if (!$data) {
             $this->json_error('Aucune donnée à mettre à jour', 422);
         }
-        $this->db->where('id_horaire', $id)->or_where('uuid', $id)->update('horaires', $data);
+        $this->db->group_start()->where('id_horaire', $id)->or_where('uuid', $id)->group_end()
+            ->update('horaires', $data);
         $this->json_success(null, 'Horaire mis à jour');
     }
 
     public function api_delete($id) {
-        $this->db->where('id_horaire', $id)->or_where('uuid', $id)
+        $this->db->group_start()->where('id_horaire', $id)->or_where('uuid', $id)->group_end()
             ->update('horaires', ['deleted_at' => date('Y-m-d H:i:s')]);
         $this->json_success(null, 'Horaire supprimé');
     }
@@ -194,11 +197,12 @@ class Horaires extends MY_Controller {
             $this->json_error('Matière/classe introuvable', 404);
         }
         if ((int)$mc['id_classe'] !== $id_classe) {
-            $this->json_error('Cette matière n\\appartient pas à cette classe.', 422);
+            $this->json_error('Cette matière n\'appartient pas à cette classe.', 422);
         }
 
+        $uuid = generate_uuid();
         $this->db->insert('horaires_fixes', [
-            'uuid'             => generate_uuid(),
+            'uuid'             => $uuid,
             'id_annee'         => $this->id_annee_active,
             'id_classe'        => $id_classe,
             'id_matiere_classe' => (int)$in['id_matiere_classe'],
@@ -206,7 +210,7 @@ class Horaires extends MY_Controller {
             'id_jour'          => $id_jour,
             'id_creneau'       => $id_creneau,
         ]);
-        $this->json_success(['uuid' => $this->db->insert_id()], 'Session fixe créée');
+        $this->json_success(['uuid' => $uuid, 'id_horaire_fixe' => $this->db->insert_id()], 'Session fixe créée');
     }
 
     public function api_fixes_delete($uuid) {
@@ -296,9 +300,36 @@ class Horaires extends MY_Controller {
 
         $solution = $this->_solve($ctx);
 
+        // Ne rien écraser tant qu'aucune session n'a pu être planifiée.
+        if (empty($solution['rows'])) {
+            $unplaced = $solution['unplaced'];
+            $diagnostics = $this->_diagnostic($ctx);
+            $this->json_response([
+                'success' => false,
+                'message' => 'La génération a échoué : aucun cours n\'a pu être placé.',
+                'data'    => [
+                    'created'           => 0,
+                    'conflits_restants' => count($unplaced),
+                    'solutions'         => $this->_solutions($diagnostics),
+                    'teacher_table'     => $diagnostics['teacher_table'],
+                    'diagnostics'       => $diagnostics['diagnostics'],
+                ],
+            ], 422);
+            return;
+        }
+
         // ── Persistance ──────────────────────────────────────────
         $id_generation = $this->_create_generation();
 
+        // Ne remplacer que les horaires de l'année scolaire active.
+        $gen_ids = array_column(
+            $this->db->select('id_generation')->where('id_annee', $this->id_annee_active)
+                ->get('horaires_generations')->result_array(),
+            'id_generation'
+        );
+        if (!empty($gen_ids)) {
+            $this->db->where_in('id_generation', $gen_ids);
+        }
         $this->db->where('deleted_at', null)->update('horaires', ['deleted_at' => date('Y-m-d H:i:s')]);
 
         $now = date('Y-m-d H:i:s');

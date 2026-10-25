@@ -78,15 +78,14 @@ class Produits_model extends Model
     // Mouvements stock
     public function get_mouvements($filters = [])
     {
-        $this->db->where('m.deleted_at', null);
         $this->db->select('m.*, p.libelle as produit_libelle, u.nom_complet');
         $this->db->from('mouvements_stock m');
         $this->db->join('produits p', 'm.id_produit = p.id_produit', 'left');
         $this->db->join('utilisateurs u', 'm.id_utilisateur = u.id_utilisateur', 'left');
         if (!empty($filters['id_produit'])) $this->db->where('m.id_produit', $filters['id_produit']);
         if (!empty($filters['type'])) $this->db->where('m.type', $filters['type']);
-        if (!empty($filters['date_from'])) $this->db->where('m.date_mouvement >=', $filters['date_from']);
-        if (!empty($filters['date_to'])) $this->db->where('m.date_mouvement <=', $filters['date_to']);
+        if (!empty($filters['date_from'])) $this->db->where('m.date_mvt >=', $filters['date_from']);
+        if (!empty($filters['date_to'])) $this->db->where('m.date_mvt <=', $filters['date_to']);
         $this->db->order_by('m.id_mouvement', 'DESC');
         $q = $this->db->get();
         if ($q === false) return array();
@@ -102,7 +101,7 @@ class Produits_model extends Model
             }
         }
         $data['uuid'] = generate_uuid();
-        $data['date_mouvement'] = $data['date_mouvement'] ?? date('Y-m-d H:i:s');
+        $data['date_mvt'] = $data['date_mvt'] ?? date('Y-m-d H:i:s');
         if ($this->db->insert('mouvements_stock', $data)) {
             // Mettre à jour stock produit
             $produit = $this->readOne('produits', ['id_produit' => $data['id_produit']]);

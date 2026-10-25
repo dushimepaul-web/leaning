@@ -298,8 +298,8 @@ async function loadData() {
     var eleve = m.etudiant_nom || '-';
     rows += '<tr><td>' + (i+1) + '</td><td>' + d + '</td><td class="fw-semibold">' + (m.produit_libelle||'-') + '</td><td>' + badge + '</td><td>' + m.quantite + '</td><td>' + parseFloat(m.prix_unitaire||0).toLocaleString() + '</td><td>' + eleve + '</td><td>' + (m.motif||'-') + '</td><td>' + (m.utilisateur||'-') + '</td></tr>';
   });
-  document.getElementById('dataBody').innerHTML = rows;
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  document.getElementById('dataBody').innerHTML = rows;
   $('#dataTable').DataTable({ pageLength:10, scrollX:true, lengthMenu:[[5,10,25,50,100],[5,10,25,50,100]], language:{search:'',searchPlaceholder:'Rechercher...',lengthMenu:'Lignes par page: _MENU_',info:'',zeroRecords:'Aucun mouvement',infoEmpty:'',infoFiltered:''}, dom:'t<"d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-top border-neutral-200"<"d-flex align-items-center gap-8 text-secondary-light"i><"d-flex align-items-center gap-2"p>>' });
 }
 

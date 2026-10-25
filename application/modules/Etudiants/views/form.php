@@ -94,6 +94,13 @@
                 <input type="date" class="form-control" id="date_naissance" value="<?= $etudiant['date_naissance'] ?? '' ?>">
               </div>
               <div class="col-sm-6">
+                <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Régime</label>
+                <select id="is_interne" class="form-control form-select">
+                  <option value="1" <?= ($etudiant['is_interne'] ?? 1) == 1 ? 'selected' : '' ?>>Interne (400 000 BIF)</option>
+                  <option value="0" <?= ($etudiant['is_interne'] ?? 1) == 0 ? 'selected' : '' ?>>Externe (25 000 FBU)</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
                 <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Téléphone</label>
                 <input type="text" class="form-control" id="telephone" value="<?= $etudiant['telephone'] ?? '' ?>" placeholder="Téléphone">
               </div>
@@ -236,6 +243,7 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
     nom: document.getElementById('nom').value,
     date_naissance: document.getElementById('date_naissance').value,
     sexe: document.getElementById('sexe').value,
+    is_interne: document.getElementById('is_interne').value,
     telephone: document.getElementById('telephone').value,
     email: document.getElementById('email').value,
     adresse: document.getElementById('adresse').value,

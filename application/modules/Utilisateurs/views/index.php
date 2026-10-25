@@ -197,8 +197,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],

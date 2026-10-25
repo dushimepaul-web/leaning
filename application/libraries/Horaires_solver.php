@@ -363,8 +363,8 @@ class Horaires_solver {
 
         // Variations d'ordre : les classes difficiles doivent être traitées
         // en premier, mais l'ordre exact conditionne fortement le résultat.
-        if ($seed < 12) {
-            $k = $seed % 6;
+        if ($seed < 12 && count($edgeOrder) > 0) {
+            $k = $seed % min(6, count($edgeOrder));
             $first = $edgeOrder[$k];
             $rest = array_values(array_diff($edgeOrder, [$first]));
             if (intdiv($seed, 6) === 1) $rest = array_reverse($rest);

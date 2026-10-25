@@ -1,4 +1,35 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
 RewriteEngine On
+
+# --- Securite : bloquer dotfiles (.env, .git, ...) et dossiers sensibles ---
+RewriteRule (^|/)\. - [F,L]
+RewriteRule ^(DB|tools|backups|vendor|node_modules|python)/ - [F,L]
+
+# --- Routage CodeIgniter ---
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [PT,L]
+</IfModule>
+
+# --- Securite : extensions et fichiers de debug interdits ---
+<FilesMatch "(^\.|~$|\.(env|sql|bak|old|orig|log|ini|sh|yml|yaml)$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<FilesMatch "^(test_.*|check_.*|composer\.(json|lock)|package(-lock)?\.json)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

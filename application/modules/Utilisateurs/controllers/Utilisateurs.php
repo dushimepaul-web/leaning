@@ -22,6 +22,7 @@ class Utilisateurs extends MY_Controller {
 
         foreach ($users as &$u) {
             $u['role_libelle'] = $roles_map[$u['id_role']] ?? '';
+            unset($u['mot_de_passe']);
         }
         $this->json_success($users);
     }
@@ -31,6 +32,7 @@ class Utilisateurs extends MY_Controller {
         if ($user) {
             $role = $this->Model->readOne('roles', ['id_role' => $user['id_role']]);
             $user['role_libelle'] = $role ? $role['libelle'] : '';
+            unset($user['mot_de_passe']);
             $this->json_success($user);
         } else {
             $this->json_error('Utilisateur non trouvé', 404);
@@ -55,10 +57,14 @@ class Utilisateurs extends MY_Controller {
             $this->json_error('Cet email est déjà utilisé');
             return;
         }
-        $allowed = ['nom_complet', 'email', 'mot_de_passe', 'id_role', 'actif'];
+        $allowed = ['nom_complet', 'email', 'telephone', 'mot_de_passe', 'id_role', 'actif'];
         $insert = array_intersect_key($data, array_flip($allowed));
         if (empty($insert['id_role'])) { $this->json_error('Rôle requis'); return; }
         if (!$this->Model->readOne('roles', ['id_role' => $insert['id_role']])) { $this->json_error('Rôle introuvable'); return; }
+        if ((int)$insert['id_role'] === 1 && (int)$this->session->userdata('id_role') !== 1) {
+            $this->json_error('Seul un super-administrateur peut attribuer ce rôle', 403);
+            return;
+        }
         $insert['mot_de_passe'] = password_hash($data['mot_de_passe'], PASSWORD_DEFAULT);
         if (array_key_exists('actif', $insert) && $insert['actif'] !== null && $insert['actif'] !== '') {
             $insert['actif'] = $insert['actif'] ? 1 : 0;
@@ -98,10 +104,22 @@ class Utilisateurs extends MY_Controller {
         } else {
             unset($data['mot_de_passe']);
         }
-        $allowed = ['nom_complet', 'email', 'mot_de_passe', 'id_role', 'actif'];
+        $allowed = ['nom_complet', 'email', 'telephone', 'mot_de_passe', 'id_role', 'actif'];
         $update = array_intersect_key($data, array_flip($allowed));
         if (isset($update['id_role']) && !$this->Model->readOne('roles', ['id_role' => $update['id_role']])) {
             $this->json_error('Rôle introuvable'); return;
+        }
+        $current_role = (int)$this->session->userdata('id_role');
+        if ((int)$user['id_role'] === 1 && $current_role !== 1) {
+            $this->json_error('Action réservée au super-administrateur', 403); return;
+        }
+        if (isset($update['id_role'])) {
+            if ($current_role !== 1) {
+                $this->json_error('Seul un super-administrateur peut modifier le rôle', 403); return;
+            }
+            if ((int)$user['id_utilisateur'] === (int)$this->session->userdata('id_utilisateur')) {
+                $this->json_error('Vous ne pouvez pas modifier votre propre rôle', 403); return;
+            }
         }
         if (array_key_exists('actif', $update)) {
             $update['actif'] = ($update['actif'] !== null && $update['actif'] !== '' && $update['actif']) ? 1 : 0;
@@ -120,6 +138,12 @@ class Utilisateurs extends MY_Controller {
         if (!$user) {
             $this->json_error('Utilisateur non trouvé', 404);
             return;
+        }
+        if ((int)$user['id_utilisateur'] === (int)$this->session->userdata('id_utilisateur')) {
+            $this->json_error('Vous ne pouvez pas supprimer votre propre compte', 403); return;
+        }
+        if ((int)$user['id_role'] === 1 && (int)$this->session->userdata('id_role') !== 1) {
+            $this->json_error('Action réservée au super-administrateur', 403); return;
         }
         if ($this->Model->update('utilisateurs', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')])) {
             $this->Model->Set_History($this->session->userdata('id_utilisateur'), 'delete', 'Suppression utilisateur #'.$id, 'utilisateurs', $id, $user, ['deleted_at' => date('Y-m-d H:i:s')]);

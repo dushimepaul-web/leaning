@@ -103,8 +103,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#recusBody').html(rows);
   if ($.fn.DataTable.isDataTable('#recusTable')) $('#recusTable').DataTable().destroy();
+  $('#recusBody').html(rows);
   $('#recusTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],

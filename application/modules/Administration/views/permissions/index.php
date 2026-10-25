@@ -32,6 +32,20 @@
 <script>
 let allMenus = <?= json_encode($menus) ?>;
 
+document.addEventListener('change', function (e) {
+  if (!e.target.classList.contains('perm-cb')) return;
+  const row = e.target.closest('tr');
+  if (!row) return;
+  if (e.target.dataset.field === 'can_view_all' && e.target.checked) {
+    const view = row.querySelector('[data-field="can_view"]');
+    if (view) view.checked = true;
+  }
+  if (e.target.dataset.field === 'can_view' && !e.target.checked) {
+    const viewAll = row.querySelector('[data-field="can_view_all"]');
+    if (viewAll) viewAll.checked = false;
+  }
+});
+
 async function loadPermissions() {
   const idRole = document.getElementById('roleSelect').value;
   if (!idRole) { document.getElementById('permsContainer').innerHTML = ''; return; }
@@ -40,12 +54,13 @@ async function loadPermissions() {
   const permMap = {};
   rolePerms.forEach(p => { permMap[p.id_menu] = p; });
 
-  let html = '<div class="table-responsive"><table class="table bordered-table"><thead><tr><th>Menu</th><th>Voir</th><th>Ajouter</th><th>Modifier</th><th>Supprimer</th><th>Exporter</th><th>Imprimer</th></tr></thead><tbody>';
+  let html = '<div class="table-responsive"><table class="table bordered-table"><thead><tr><th>Menu</th><th>Voir</th><th>Voir tout</th><th>Ajouter</th><th>Modifier</th><th>Supprimer</th><th>Exporter</th><th>Imprimer</th></tr></thead><tbody>';
   allMenus.forEach(m => {
     const p = permMap[m.id_menu] || {};
     html += `<tr>
       <td>${m.libelle}</td>
       <td><input type="checkbox" class="form-check-input perm-cb" data-menu="${m.id_menu}" data-field="can_view" ${p.can_view ? 'checked' : ''}></td>
+      <td><input type="checkbox" class="form-check-input perm-cb" data-menu="${m.id_menu}" data-field="can_view_all" ${p.can_view_all ? 'checked' : ''}></td>
       <td><input type="checkbox" class="form-check-input perm-cb" data-menu="${m.id_menu}" data-field="can_add" ${p.can_add ? 'checked' : ''}></td>
       <td><input type="checkbox" class="form-check-input perm-cb" data-menu="${m.id_menu}" data-field="can_edit" ${p.can_edit ? 'checked' : ''}></td>
       <td><input type="checkbox" class="form-check-input perm-cb" data-menu="${m.id_menu}" data-field="can_delete" ${p.can_delete ? 'checked' : ''}></td>

@@ -232,8 +232,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
@@ -290,6 +290,23 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
   }
   deleteId = null;
 });
+
+function exportCSV() {
+  var table = $('#dataTable').DataTable();
+  var rows = table.rows({ search: 'applied' }).nodes();
+  var lines = ['N°;Code;Libellé;Section;Niveau;Statut'];
+  $(rows).each(function() {
+    var tds = $(this).find('td');
+    var get = function(i) { return $.trim($(tds[i]).text()).replace(/;/g, ',').replace(/\s*\n\s*/g, ' '); };
+    lines.push([get(0), get(1), get(2), get(3), get(4), get(5)].join(';'));
+  });
+  var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'classes_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
 
 (function() {
   var wait = setInterval(function() {

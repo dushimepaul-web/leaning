@@ -77,6 +77,7 @@ class Periodes extends MY_Controller {
         }
         $allowed = ['libelle', 'id_annee', 'date_debut', 'date_fin', 'est_en_cours'];
         $update = array_intersect_key($data, array_flip($allowed));
+        if (empty($update)) { $this->json_error('Aucune donnée à modifier'); return; }
         if (isset($update['id_annee'])) {
             $annee = $this->Model->readOne('annees_scolaires', ['id_annee' => $update['id_annee'], 'deleted_at' => null]);
             if (!$annee) { $this->json_error('Année scolaire introuvable'); return; }
@@ -102,7 +103,8 @@ class Periodes extends MY_Controller {
         $children = [
             'evaluations' => 'évaluations',
             'bulletins' => 'bulletins',
-            'points_conduite' => 'points de conduite'
+            'points_conduite' => 'points de conduite',
+            'frais' => 'barèmes de frais'
         ];
         foreach ($children as $table => $libelle) {
             $count = $this->db->where('id_periode', $periode['id_periode'])->where('deleted_at', null)->count_all_results($table);

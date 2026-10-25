@@ -145,8 +145,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: +$('#dtLength').val(),
     scrollX: true,

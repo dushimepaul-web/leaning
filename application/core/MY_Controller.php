@@ -11,6 +11,10 @@ class MY_Controller extends MX_Controller
     public $id_annee_active = 0;
     public $id_periode_active = 0;
     public $menus_data = array();
+    public $est_enseignant = false;
+    public $id_enseignant = null;
+    public $peut_voir_tout_notes = false;
+    public $peut_voir_tout_bulletins = false;
 
     /**
      * Mapping module (contrôleur) -> code menu pour le contrôle d'accès
@@ -36,6 +40,11 @@ class MY_Controller extends MX_Controller
         'Echeance' => 'echeances',
         'Type_frais' => 'paiements',
         'Frais' => 'paiements',
+        'Minervale' => 'paiements',
+        'Dettes' => 'paiements',
+        'Soldes' => 'paiements',
+        'Exonerations' => 'paiements',
+        'Remboursements' => 'paiements',
         'Paiement_recu' => 'recus',
         'Rapports' => 'rapports',
         'Parametres' => 'parametres',
@@ -53,6 +62,16 @@ class MY_Controller extends MX_Controller
         'Stock_Categories' => 'stock',
         'Stock_Mouvements' => 'stock',
         'Librairie' => 'produits_livres',
+        'Library' => 'library_dashboard',
+        'Library_suppliers' => 'library_suppliers',
+        'Library_purchases' => 'library_purchases',
+        'Library_sales' => 'library_sales',
+        'Library_payments' => 'library_payments',
+        'Library_stock' => 'library_stock',
+        'Library_returns' => 'library_returns',
+        'Library_expenses' => 'library_expenses',
+        'Library_price_history' => 'library_price_history',
+        'Library_reports' => 'library_reports',
         'Commandes' => 'produits',
         'Conduite' => 'bulletins',
         'Administration' => 'parametres',
@@ -86,6 +105,20 @@ class MY_Controller extends MX_Controller
                     if (!empty($this->permission)) {
                         $this->menus_data = $this->Role_permission_model->get_role_menus($user_data['id_role']);
                         $this->permission_codes = array_column($this->menus_data, 'code');
+                    }
+                    $this->peut_voir_tout_notes = $this->Role_permission_model->check_permission($user_data['id_role'], 'points', 'can_view_all');
+                    $this->peut_voir_tout_bulletins = $this->Role_permission_model->check_permission($user_data['id_role'], 'bulletins', 'can_view_all');
+                    if ((int)$user_data['id_role'] === 1) {
+                        $this->peut_voir_tout_notes = true;
+                        $this->peut_voir_tout_bulletins = true;
+                    }
+                    if ($role_data && $role_data['code'] === 'enseignant') {
+                        $this->est_enseignant = true;
+                        $enseignant = $this->Model->readOne('enseignants', [
+                            'id_utilisateur' => $user_data['id_utilisateur'],
+                            'deleted_at' => null
+                        ]);
+                        $this->id_enseignant = $enseignant ? (int)$enseignant['id_enseignant'] : 0;
                     }
                 }
             }
@@ -140,6 +173,111 @@ class MY_Controller extends MX_Controller
         }
 
         $this->_check_auth();
+    }
+
+    /**
+     * Code menu utilisé par le module courant pour la portée des données.
+     */
+    protected function _teacher_menu_code()
+    {
+        $map = array(
+            'Notes' => 'points',
+            'Evaluations' => 'points',
+            'Bulletins' => 'bulletins',
+            'Fiches' => 'bulletins',
+            'Conduite' => 'bulletins',
+        );
+        $class = get_class($this);
+        return isset($map[$class]) ? $map[$class] : 'points';
+    }
+
+    /**
+     * L'utilisateur connecté a-t-il la permission « Voir tout » sur le menu courant ?
+     */
+    protected function _teacher_view_all()
+    {
+        if ($this->_teacher_menu_code() === 'bulletins') return $this->peut_voir_tout_bulletins;
+        return $this->peut_voir_tout_notes;
+    }
+
+    /**
+     * Classes autorisées pour l'enseignant connecté.
+     * Retourne null si l'utilisateur n'est pas enseignant.
+     */
+    protected function _teacher_classes($write = false)
+    {
+        if (!$this->est_enseignant) return null;
+        if ($this->_teacher_view_all() && !$write) {
+            $rows = $this->db
+                ->distinct()
+                ->select('id_classe')
+                ->from('classes')
+                ->where('deleted_at', null)
+                ->get()->result_array();
+            return array_map('intval', array_column($rows, 'id_classe'));
+        }
+        if (!$this->id_enseignant) return array();
+        $rows = $this->db
+            ->distinct()
+            ->select('id_classe')
+            ->from('matieres_classes')
+            ->where('id_enseignant', $this->id_enseignant)
+            ->where('deleted_at', null)
+            ->get()->result_array();
+        return array_map('intval', array_column($rows, 'id_classe'));
+    }
+
+    /**
+     * Matières autorisées pour l'enseignant connecté (éventuellement dans une classe).
+     * Retourne null si l'utilisateur n'est pas enseignant.
+     */
+    protected function _teacher_matieres($id_classe = null)
+    {
+        if (!$this->est_enseignant) return null;
+        if ($this->_teacher_view_all()) {
+            $rows = $this->db
+                ->distinct()
+                ->select('id_matiere')
+                ->from('matieres')
+                ->where('deleted_at', null)
+                ->get()->result_array();
+            return array_map('intval', array_column($rows, 'id_matiere'));
+        }
+        if (!$this->id_enseignant) return array();
+        $this->db
+            ->distinct()
+            ->select('id_matiere')
+            ->from('matieres_classes')
+            ->where('id_enseignant', $this->id_enseignant)
+            ->where('deleted_at', null);
+        if ($id_classe !== null) $this->db->where('id_classe', $id_classe);
+        $rows = $this->db->get()->result_array();
+        return array_map('intval', array_column($rows, 'id_matiere'));
+    }
+
+    /**
+     * Vérifie qu'un couple classe/matière appartient bien à l'enseignant connecté.
+     * Sans id_matiere, vérifie seulement que la classe est enseignée.
+     */
+    protected function _teacher_can_access($id_classe, $id_matiere = null, $write = false)
+    {
+        if (!$this->est_enseignant) return true;
+        if (!$write && $this->_teacher_view_all()) return true;
+        if (!$this->id_enseignant || !$id_classe) return false;
+        $this->db
+            ->where('id_enseignant', $this->id_enseignant)
+            ->where('id_classe', $id_classe)
+            ->where('deleted_at', null);
+        if ($id_matiere !== null) $this->db->where('id_matiere', $id_matiere);
+        return $this->db->count_all_results('matieres_classes') > 0;
+    }
+
+    protected function _teacher_deny()
+    {
+        $this->json_response(array(
+            'success' => false,
+            'message' => 'Accès refusé : cette classe ou ce cours ne vous est pas attribué.'
+        ), 403);
     }
 
     /**
@@ -198,12 +336,13 @@ class MY_Controller extends MX_Controller
         $required = 'can_view';
         if ($is_api) {
             if (strpos($method, 'delete') !== false || strpos($method, 'deactivate') !== false
-                || strpos($method, 'remove') !== false) {
+                || strpos($method, 'remove') !== false || strpos($method, 'annuler') !== false) {
                 $required = 'can_delete';
             } elseif ($this->_is_write_method($method)) {
                 $required = 'can_add';
             } elseif (strpos($method, 'update') !== false || strpos($method, 'activate') !== false
-                || strpos($method, 'set_active') !== false || strpos($method, 'generer') !== false) {
+                || strpos($method, 'set_active') !== false || strpos($method, 'generer') !== false
+                || strpos($method, 'recalculer') !== false) {
                 $required = 'can_edit';
             }
         }
@@ -223,7 +362,7 @@ class MY_Controller extends MX_Controller
         $keywords = array('create', 'initialiser', 'import', 'batch', 'upload', 'clotur',
             'approvisionn', 'payer', 'vendre', 'depens', 'transferer', 'valider',
             'archiver', 'restaur', 'sauvegarder', 'submit', 'marquer', 'activer',
-            'deactiver', 'toggle', 'enregistrer');
+            'deactiver', 'toggle', 'enregistrer', 'approuver', 'refuser', 'ventiler');
         foreach ($keywords as $kw) {
             if (stripos($method, $kw) !== false) return true;
         }
@@ -425,7 +564,38 @@ class MY_Controller extends MX_Controller
     protected function get_json_input()
     {
         $input = file_get_contents('php://input');
-        return $input ? json_decode($input, true) : null;
+        if (!$input) {
+            return [];
+        }
+        $data = json_decode($input, true);
+        return is_array($data) ? $data : [];
+    }
+
+    protected function _generer_dettes_etudiant($id_etudiant, $id_annee = null)
+    {
+        $id_etudiant = (int)$id_etudiant;
+        if ($id_etudiant <= 0) {
+            return null;
+        }
+        if (!$this->db->table_exists('dettes') || !$this->db->table_exists('inscriptions')) {
+            return null;
+        }
+
+        $fichier = APPPATH . 'libraries/Minervale/Dette.php';
+        if (!is_file($fichier)) {
+            return null;
+        }
+
+        require_once APPPATH . 'libraries/Minervale/Base.php';
+        require_once $fichier;
+
+        try {
+            $service = new Minervale_dette($this->db, $this);
+            return $service->genererPourEtudiant($id_etudiant, $id_annee);
+        } catch (Throwable $e) {
+            log_message('error', 'Generation des dettes etudiant #' . $id_etudiant . ' : ' . $e->getMessage());
+            return null;
+        }
     }
 
     protected function _create_linked_user($table, $record_id, $data, $role_code = 'lecture')

@@ -68,8 +68,11 @@ window.API = {
    periodes: { list: (p) => API.get('api/periodes', p), get: (id) => API.get('api/periodes/' + id), create: (d) => API.post('api/periodes/create', d), update: (id, d) => API.post('api/periodes/' + id + '/update', d), delete: (id) => API.get('api/periodes/' + id + '/delete'), activate: (id) => API.get('api/periodes/' + id + '/activate'), deactivate: (id) => API.get('api/periodes/' + id + '/deactivate'), setActive: (id) => API.get('api/periodes/' + id + '/active') },
    matieres_classes: { list: () => API.get('api/matieres_classes'), get: (id) => API.get('api/matieres_classes/' + id), create: (d) => API.post('api/matieres_classes/create', d), update: (id, d) => API.post('api/matieres_classes/' + id + '/update', d), delete: (id) => API.get('api/matieres_classes/' + id + '/delete'), teacher_capacity: () => API.get('Enseignants/Programmes/api_teacher_capacity') },
   enseignements: { list: () => API.get('api/enseignements'), get: (id) => API.get('api/enseignements/' + id), create: (d) => API.post('api/enseignements/create', d), update: (id, d) => API.post('api/enseignements/' + id + '/update', d), delete: (id) => API.get('api/enseignements/' + id + '/delete') },
-  frais: { list: () => API.get('api/frais'), get: (id) => API.get('api/frais/' + id), create: (d) => API.post('api/frais/create', d), update: (id, d) => API.post('api/frais/' + id + '/update', d), delete: (id) => API.get('api/frais/' + id + '/delete') },
+  frais: { list: (p) => API.get('api/frais', p), get: (id) => API.get('api/frais/' + id), create: (d) => API.post('api/frais/create', d), update: (id, d) => API.post('api/frais/' + id + '/update', d), delete: (id) => API.get('api/frais/' + id + '/delete') },
    paiements: { list: () => API.get('api/paiements_data'), get: (id) => API.get('api/paiements_data/' + id), create: (d) => API.post('api/paiements_data/create', d), update: (id, d) => API.post('api/paiements_data/' + id + '/update', d), delete: (id) => API.get('api/paiements_data/' + id + '/delete') },
+   exonerations: { list: (etudiant) => API.get('api/exonerations' + (etudiant ? '?id_etudiant=' + etudiant : '')), create: (d) => API.post('api/exonerations/create', d), update: (id, d) => API.post('api/exonerations/' + id + '/update', d), delete: (id) => API.get('api/exonerations/' + id + '/delete') },
+   releve: (etudiant) => API.get('api/releve/' + etudiant),
+   impayes: () => API.get('api/impayes'),
     notes: {
         list: () => API.get('api/notes'),
         create: (d) => API.post('api/notes/create', d),
@@ -91,7 +94,7 @@ window.API = {
    produits: { list: () => API.get('api/produits'), get: (id) => API.get('api/produits/' + id), create: (d) => API.post('api/produits/create', d), update: (id, d) => API.post('api/produits/' + id + '/update', d), delete: (id) => API.get('api/produits/' + id + '/delete') },
    categories: { list: () => API.get('api/categories'), get: (id) => API.get('api/categories/' + id), create: (d) => API.post('api/categories/create', d), update: (id, d) => API.post('api/categories/' + id + '/update', d), delete: (id) => API.get('api/categories/' + id + '/delete') },
    mouvements: { list: () => API.get('api/mouvements'), create: (d) => API.post('api/mouvements/create', d) },
-   commandes: { list: () => API.get('api/commandes'), get: (id) => API.get('api/commandes/' + id), create: (d) => API.post('api/commandes/create', d), update: (id, d) => API.post('api/commandes/' + id + '/update', d), delete: (id) => API.get('api/commandes/' + id + '/delete') },
+   commandes: { list: (p) => API.get('api/commandes', p), get: (id) => API.get('api/commandes/' + id), create: (d) => API.post('api/commandes/create', d), update: (id, d) => API.post('api/commandes/' + id + '/update', d), delete: (id) => API.get('api/commandes/' + id + '/delete') },
    horaires: { list: () => API.get('api/horaires'), create: (d) => API.post('api/horaires/create', d), update: (id, d) => API.post('api/horaires/' + id + '/update', d), delete: (id) => API.get('api/horaires/' + id + '/delete'), generer: () => API.post('api/horaires/generer'), diagnostiquer: () => API.post('api/horaires/diagnostiquer'), fixes: { list: () => API.get('api/horaires/fixes'), create: (d) => API.post('api/horaires/fixes/create', d), delete: (id) => API.get('api/horaires/fixes/' + id + '/delete'), clear: () => API.post('api/horaires/fixes/clear') } },
 
   parametres: { list: () => API.get('api/parametres'), update: (d) => API.post('api/parametres/update', d) },
@@ -124,9 +127,8 @@ window.API = {
     operations: { tables: () => API.get('api/operations/tables'), export: (t) => API.get('api/operations/export/' + t), preview: (t) => API.get('api/operations/preview/' + t) },
 
    recus: { list: () => API.get('api/recus'), get: (id) => API.get('api/recus/' + id), create: (d) => API.post('api/recus/create', d), update: (id, d) => API.post('api/recus/' + id + '/update', d), delete: (id) => API.get('api/recus/' + id + '/delete') },
-   echeances: { list: () => API.get('api/echeances'), get: (id) => API.get('api/echeances/' + id), create: (d) => API.post('api/echeances/create', d), update: (id, d) => API.post('api/echeances/' + id + '/update', d), delete: (id) => API.get('api/echeances/' + id + '/delete') },
+   echeances: { list: () => API.get('api/echeances'), get: (id) => API.get('api/echeances/' + id), create: (d) => API.post('api/echeances/create', d), generer: (d) => API.post('api/echeances/generer', d), update: (id, d) => API.post('api/echeances/' + id + '/update', d), delete: (id) => API.get('api/echeances/' + id + '/delete') },
    types_frais: { list: () => API.get('api/types_frais'), get: (id) => API.get('api/types_frais/' + id), create: (d) => API.post('api/types_frais/create', d), update: (id, d) => API.post('api/types_frais/' + id + '/update', d), delete: (id) => API.get('api/types_frais/' + id + '/delete') },
-   commandes_details: { list: () => API.get('api/commandes_details'), get: (id) => API.get('api/commandes_details/' + id), create: (d) => API.post('api/commandes_details/create', d), update: (id, d) => API.post('api/commandes_details/' + id + '/update', d), delete: (id) => API.get('api/commandes_details/' + id + '/delete') },
    paiements_recus: { list: () => API.get('api/paiements_recus'), create: (d) => API.post('api/paiements_recus/create', d), delete: (id) => API.get('api/paiements_recus/' + id + '/delete') },
    librairie: { 
     list: (cat) => API.get('api/librairie' + (cat ? '?categorie=' + cat : '')), 

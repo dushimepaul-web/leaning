@@ -50,7 +50,6 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Code</th>
               <th>Libellé</th>
               <th>Actions</th>
             </tr>
@@ -72,10 +71,6 @@
   <form id="mainForm" class="d-flex flex-column p-20">
     <input type="hidden" id="recordId">
     <div class="row g-3">
-      <div class="col-sm-12">
-        <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Code *</label>
-        <input type="text" class="form-control" id="code" placeholder="Ex: UNIFORME, LIVRE">
-      </div>
       <div class="col-sm-12">
         <label class="text-sm fw-semibold text-primary-light d-inline-block mb-8">Libellé *</label>
         <input type="text" class="form-control" id="libelle" placeholder="Ex: Uniformes">
@@ -115,13 +110,12 @@ let deleteId = null;
 
 async function loadData() {
   const res = await API.categories.list();
-  if (!res.success) { $('#dataBody').html('<tr><td colspan="4" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
+  if (!res.success) { $('#dataBody').html('<tr><td colspan="3" class="text-center text-danger">Erreur de chargement</td></tr>'); return; }
   let rows = '';
   res.data.forEach((c, i) => {
     rows += `<tr>
       <td>${i + 1}</td>
-      <td><span class="fw-semibold">${c.code || '-'}</span></td>
-      <td>${c.libelle}</td>
+      <td><span class="fw-semibold">${c.libelle}</span></td>
       <td>
         <div class="d-flex align-items-center gap-8">
           <button type="button" class="text-primary-light text-xl" onclick="editRecord('${c.uuid}')"><i class="ri-edit-2-line"></i></button>
@@ -130,8 +124,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
@@ -153,7 +147,6 @@ function openEditSidebar(data) {
   editingId = data.uuid;
   document.getElementById('sidebarTitle').textContent = 'Modifier la catégorie';
   document.getElementById('recordId').value = data.uuid;
-  document.getElementById('code').value = data.code || '';
   document.getElementById('libelle').value = data.libelle || '';
   document.getElementById('addSidebar').classList.add('active');
   document.getElementById('sidebarOverlay').classList.add('active');
@@ -172,11 +165,10 @@ async function editRecord(id) {
 document.getElementById('mainForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const data = {
-    code: document.getElementById('code').value,
     libelle: document.getElementById('libelle').value
   };
-  if (!data.code || !data.libelle) {
-    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Le code et le libellé sont obligatoires' });
+  if (!data.libelle) {
+    Swal.fire({ icon: 'warning', title: 'Validation', text: 'Le libellé est obligatoire' });
     return;
   }
   let res;
@@ -214,11 +206,10 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 function exportCSV() {
   const table = $('#dataTable').DataTable();
   const data = table.rows({ filter: 'applied' }).data();
-  let csv = '\uFEFFCode,Libellé\n';
+  let csv = '\uFEFFLibellé\n';
   data.each(function(row) {
-    const code = $(row[1]).text().trim();
-    const libelle = row[2];
-    csv += `"${code.replace(/"/g, '""')}","${String(libelle).replace(/"/g, '""')}"\n`;
+    const libelle = row[1];
+    csv += `"${String(libelle).replace(/"/g, '""')}"\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -234,6 +225,7 @@ function exportCSV() {
       loadData();
       $('#dtSearch').on('keyup', function() { $('#dataTable').DataTable().search(this.value).draw(); });
       $('#dtLength').on('change', function() { $('#dataTable').DataTable().page.len(+this.value).draw(); });
+      if (new URLSearchParams(window.location.search).get('add') === '1') setTimeout(openAddSidebar, 400);
     }
   }, 50);
 })();

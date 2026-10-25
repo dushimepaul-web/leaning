@@ -82,8 +82,8 @@ async function loadData() {
       <td><span class="text-xs text-secondary-light">${details}</span></td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],

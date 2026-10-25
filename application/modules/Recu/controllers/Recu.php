@@ -72,7 +72,16 @@ class Recu extends MY_Controller {
     }
 
     public function api_delete($id) {
-        if ($this->Model->update('recus', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')]))
+        $recu = $this->Model->readOne('recus', ['uuid' => $id, 'deleted_at' => null]);
+        if (!$recu) { $this->json_error('Reçu introuvable', 404); return; }
+        $this->db->trans_start();
+        $links = $this->db->get_where('paiements_recus', ['id_recu' => $recu['id_recu']])->result_array();
+        foreach ($links as $l) {
+            $this->db->delete('paiements_recus', ['id_paiement_recu' => $l['id_paiement_recu']]);
+        }
+        $ok = $this->Model->update('recus', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')]);
+        $this->db->trans_complete();
+        if ($ok && $this->db->trans_status() !== false)
             $this->json_success(null, 'Reçu supprimé');
         else $this->json_error('Erreur de suppression');
     }

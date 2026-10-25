@@ -10,6 +10,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 if (!function_exists('can_view')) {
     /** Vérifie si l'utilisateur peut voir un module. */
     function can_view($slug) { return has_perm($slug, 'can_view'); }
+
+    /** Vérifie si l'utilisateur peut voir toutes les données d'un module. */
+    function can_view_all($slug) { return has_perm($slug, 'can_view_all'); }
     
     /** Vérifie si l'utilisateur peut créer un enregistrement dans un module. */
     function can_create($slug) { return has_perm($slug, 'can_add'); }

@@ -158,7 +158,7 @@ async function loadData() {
           </div>
         </div>
       </td>
-      <td>${e.classe_libelle || '-'}</td>
+      <td>${e.classe_libelle || '-'} <span class="${Number(e.is_interne) === 1 ? 'bg-success-100 text-success-600' : 'bg-info-100 text-info-600'} px-12 py-2 radius-4 fw-medium text-xs">${Number(e.is_interne) === 1 ? 'Interne' : 'Externe'}</span></td>
       <td>${formatDate(e.date_naissance)}</td>
       <td>${e.sexe === 'M' ? 'Male' : e.sexe === 'F' ? 'Female' : '-'}</td>
       <td>${e.telephone || '-'}</td>
@@ -172,8 +172,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: 10,
     scrollX: true,

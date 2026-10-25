@@ -202,6 +202,50 @@ $route['api/paiements_data/upload_preuve'] = 'Paiements/Paiements/api_upload_pre
 $route['api/paiements_data/(:any)/delete'] = 'Paiements/Paiements/api_delete/$1';
 $route['api/paiements_data/(:any)'] = 'Paiements/Paiements/api_get/$1';
 
+// API - Relevé de compte & impayés
+$route['api/releve/(:num)'] = 'Paiements/Paiements/api_releve/$1';
+$route['api/impayes'] = 'Paiements/Paiements/api_impayes';
+
+// API - Exonérations / bourses
+$route['api/exonerations'] = 'Paiements/Paiements/api_exonerations_list';
+$route['api/exonerations/create'] = 'Paiements/Paiements/api_exonerations_create';
+$route['api/exonerations/(:any)/update'] = 'Paiements/Paiements/api_exonerations_update/$1';
+$route['api/exonerations/(:any)/delete'] = 'Paiements/Paiements/api_exonerations_delete/$1';
+
+// API - Minervale (ledger de dettes)
+$route['api/minervale/dettes/generer'] = 'Minervale/Dettes/api_generer';
+$route['api/minervale/dettes/recalculer'] = 'Minervale/Dettes/api_recalculer';
+$route['api/minervale/dettes/(:any)/annuler'] = 'Minervale/Dettes/api_annuler/$1';
+$route['api/minervale/dettes/(:any)'] = 'Minervale/Dettes/api_get/$1';
+$route['api/minervale/dettes'] = 'Minervale/Dettes/api_list';
+
+$route['api/minervale/soldes/synthese'] = 'Minervale/Soldes/api_synthese';
+$route['api/minervale/soldes/recalculer'] = 'Minervale/Soldes/api_recalculer';
+$route['api/minervale/soldes/classe/(:num)'] = 'Minervale/Soldes/api_classe/$1';
+$route['api/minervale/soldes/releve/(:num)'] = 'Minervale/Soldes/api_releve/$1';
+$route['api/minervale/soldes'] = 'Minervale/Soldes/api_list';
+
+$route['api/minervale/exonerations/collective'] = 'Minervale/Exonerations/api_collective';
+$route['api/minervale/exonerations/create'] = 'Minervale/Exonerations/api_create';
+$route['api/minervale/exonerations/(:any)/approuver'] = 'Minervale/Exonerations/api_approuver/$1';
+$route['api/minervale/exonerations/(:any)/refuser'] = 'Minervale/Exonerations/api_refuser/$1';
+$route['api/minervale/exonerations/(:any)/annuler'] = 'Minervale/Exonerations/api_annuler/$1';
+$route['api/minervale/exonerations/(:any)'] = 'Minervale/Exonerations/api_get/$1';
+$route['api/minervale/exonerations'] = 'Minervale/Exonerations/api_list';
+
+$route['api/minervale/paiements/create'] = 'Minervale/Paiements/api_create';
+$route['api/minervale/paiements/(:any)/annuler'] = 'Minervale/Paiements/api_annuler/$1';
+$route['api/minervale/paiements/(:any)/affectations'] = 'Minervale/Paiements/api_affectations/$1';
+$route['api/minervale/paiements/(:any)/ventiler'] = 'Minervale/Paiements/api_ventiler/$1';
+$route['api/minervale/paiements/(:any)'] = 'Minervale/Paiements/api_get/$1';
+$route['api/minervale/paiements'] = 'Minervale/Paiements/api_list';
+
+$route['api/minervale/remboursements/paiements'] = 'Minervale/Remboursements/api_paiements';
+$route['api/minervale/remboursements/create'] = 'Minervale/Remboursements/api_create';
+$route['api/minervale/remboursements/(:any)/annuler'] = 'Minervale/Remboursements/api_annuler/$1';
+$route['api/minervale/remboursements/(:any)'] = 'Minervale/Remboursements/api_get/$1';
+$route['api/minervale/remboursements'] = 'Minervale/Remboursements/api_list';
+
 // API - Reçus
 $route['api/recus'] = 'Recu/Recu/api_list';
 $route['api/recus/create'] = 'Recu/Recu/api_create';
@@ -213,6 +257,7 @@ $route['api/recus/(:any)/imprimer'] = 'Recu/Recu/imprimer/$1';
 // API - Échéances
 $route['api/echeances'] = 'Echeance/Echeance/api_list';
 $route['api/echeances/create'] = 'Echeance/Echeance/api_create';
+$route['api/echeances/generer'] = 'Echeance/Echeance/api_generer';
 $route['api/echeances/(:any)/update'] = 'Echeance/Echeance/api_update/$1';
 $route['api/echeances/(:any)/delete'] = 'Echeance/Echeance/api_delete/$1';
 $route['api/echeances/(:any)'] = 'Echeance/Echeance/api_get/$1';
@@ -231,6 +276,7 @@ $route['api/types_frais/(:any)'] = 'Type_frais/Type_frais/api_get/$1';
 $route['api/paiements_recus'] = 'Paiement_recu/Paiement_recu/api_list';
 $route['api/paiements_recus/create'] = 'Paiement_recu/Paiement_recu/api_create';
 $route['api/paiements_recus/(:any)/delete'] = 'Paiement_recu/Paiement_recu/api_delete/$1';
+$route['api/paiements_recus/(:any)'] = 'Paiement_recu/Paiement_recu/api_get/$1';
 
 
 // API - Uniformes
@@ -337,10 +383,81 @@ $route['Echeance'] = 'Echeance/Echeance/index';
 $route['Echeances'] = 'Echeance/Echeance/index';
 $route['Types_frais'] = 'Type_frais/Type_frais/index';
 
+// Module Minervale
+$route['Minervale'] = 'Minervale/Minervale/index';
+$route['Minervale/Dettes'] = 'Minervale/Dettes/index';
+$route['Minervale/Soldes'] = 'Minervale/Soldes/index';
+$route['Minervale/Exonerations'] = 'Minervale/Exonerations/index';
+$route['Minervale/Remboursements'] = 'Minervale/Remboursements/index';
+$route['Minervale/Paiements'] = 'Minervale/Paiements/index';
+
 $route['Paiement_recus'] = 'Paiement_recu/Paiement_recu/index';
 $route['Recus/imprimer/(:any)'] = 'Recu/Recu/imprimer/$1';
 // $route['Toilettes'] = 'Toilettes/Toilettes/index'; // Module inexistant
 $route['Librairie'] = 'Librairie/Librairie/index';
+
+// Module Library (librairie commerciale)
+$route['Library'] = 'Library/Library/index';
+$route['Library_suppliers'] = 'Library/Library_suppliers/index';
+$route['Library_purchases'] = 'Library/Library_purchases/index';
+$route['Library_sales'] = 'Library/Library_sales/index';
+$route['Library_payments'] = 'Library/Library_payments/index';
+$route['Library_stock'] = 'Library/Library_stock/index';
+$route['Library_returns'] = 'Library/Library_returns/index';
+$route['Library_expenses'] = 'Library/Library_expenses/index';
+$route['Library_price_history'] = 'Library/Library_price_history/index';
+$route['Library_reports'] = 'Library/Library_reports/index';
+
+// API - Library
+$route['api/library/dashboard'] = 'Library/Library/api_stats';
+
+$route['api/library/suppliers'] = 'Library/Library_suppliers/api_list';
+$route['api/library/suppliers/create'] = 'Library/Library_suppliers/api_create';
+$route['api/library/suppliers/(:any)/update'] = 'Library/Library_suppliers/api_update/$1';
+$route['api/library/suppliers/(:any)/delete'] = 'Library/Library_suppliers/api_delete/$1';
+$route['api/library/suppliers/(:any)'] = 'Library/Library_suppliers/api_get/$1';
+
+$route['api/library/purchases'] = 'Library/Library_purchases/api_list';
+$route['api/library/purchases/create'] = 'Library/Library_purchases/api_create';
+$route['api/library/purchases/(:any)/update'] = 'Library/Library_purchases/api_update/$1';
+$route['api/library/purchases/(:any)/delete'] = 'Library/Library_purchases/api_delete/$1';
+$route['api/library/purchases/(:any)'] = 'Library/Library_purchases/api_get/$1';
+
+$route['api/library/sales'] = 'Library/Library_sales/api_list';
+$route['api/library/sales/create'] = 'Library/Library_sales/api_create';
+$route['api/library/sales/(:any)/update'] = 'Library/Library_sales/api_update/$1';
+$route['api/library/sales/(:any)/delete'] = 'Library/Library_sales/api_delete/$1';
+$route['api/library/sales/(:any)'] = 'Library/Library_sales/api_get/$1';
+
+$route['api/library/payments'] = 'Library/Library_payments/api_list';
+$route['api/library/payments/sales'] = 'Library/Library_payments/api_sales';
+$route['api/library/payments/create'] = 'Library/Library_payments/api_create';
+$route['api/library/payments/(:any)/delete'] = 'Library/Library_payments/api_delete/$1';
+
+$route['api/library/stock'] = 'Library/Library_stock/api_list';
+$route['api/library/stock/movements'] = 'Library/Library_stock/api_movements';
+$route['api/library/stock/inventories'] = 'Library/Library_stock/api_inventories';
+$route['api/library/stock/inventories/(:any)'] = 'Library/Library_stock/api_get_inventory/$1';
+$route['api/library/stock/create'] = 'Library/Library_stock/api_create';
+$route['api/library/stock/(:any)/update'] = 'Library/Library_stock/api_update/$1';
+$route['api/library/stock/(:any)/delete'] = 'Library/Library_stock/api_delete/$1';
+
+$route['api/library/returns'] = 'Library/Library_returns/api_list';
+$route['api/library/returns/sales'] = 'Library/Library_returns/api_sales';
+$route['api/library/returns/sales/(:any)/items'] = 'Library/Library_returns/api_sale_items/$1';
+$route['api/library/returns/create'] = 'Library/Library_returns/api_create';
+$route['api/library/returns/(:any)/update'] = 'Library/Library_returns/api_update/$1';
+$route['api/library/returns/(:any)/delete'] = 'Library/Library_returns/api_delete/$1';
+$route['api/library/returns/(:any)'] = 'Library/Library_returns/api_get/$1';
+
+$route['api/library/expenses'] = 'Library/Library_expenses/api_list';
+$route['api/library/expenses/create'] = 'Library/Library_expenses/api_create';
+$route['api/library/expenses/(:any)/update'] = 'Library/Library_expenses/api_update/$1';
+$route['api/library/expenses/(:any)/delete'] = 'Library/Library_expenses/api_delete/$1';
+$route['api/library/expenses/(:any)'] = 'Library/Library_expenses/api_get/$1';
+
+$route['api/library/price-history'] = 'Library/Library_price_history/api_list';
+$route['api/library/reports'] = 'Library/Library_reports/api_summary';
 
 // Sub-module pages for sidebar route_map
 $route['Etudiants/Inscriptions'] = 'Etudiants/Inscriptions/index';

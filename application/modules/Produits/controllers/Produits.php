@@ -55,7 +55,9 @@ class Produits extends MY_Controller {
             $this->json_error('Catégorie introuvable'); return;
         }
         if (isset($clean['stock_actuel']) && intval($clean['stock_actuel']) < 0) { $this->json_error('Stock invalide'); return; }
+        if (isset($clean['stock_mini']) && intval($clean['stock_mini']) < 0) { $this->json_error('Stock minimum invalide'); return; }
         if (isset($clean['prix_unitaire']) && floatval($clean['prix_unitaire']) < 0) { $this->json_error('Prix invalide'); return; }
+        if (isset($clean['prix_achat']) && $clean['prix_achat'] !== '' && floatval($clean['prix_achat']) < 0) { $this->json_error('Prix d\'achat invalide'); return; }
         $id = $this->Model->createLastId('produits', $clean);
         if ($id) {
             $stock_initial = intval($data['stock_actuel'] ?? $data['stock_initial'] ?? 0);
@@ -118,6 +120,16 @@ class Produits extends MY_Controller {
     }
 
     public function api_delete($id) {
+        $p = $this->Model->readOne('produits', ['uuid' => $id, 'deleted_at' => null]);
+        if (!$p) { $this->json_error('Produit non trouvé', 404); return; }
+        $linked = $this->db->select('cd.id_commande')
+            ->from('commandes_details cd')
+            ->join('commandes c', 'c.id_commande = cd.id_commande')
+            ->where('cd.id_produit', $p['id_produit'])
+            ->where('c.statut !=', 'annulee')
+            ->where('c.deleted_at IS NULL', null, false)
+            ->limit(1)->get()->row_array();
+        if ($linked) { $this->json_error('Suppression impossible : ce produit est utilisé dans une commande active.'); return; }
         if ($this->Model->update('produits', ['uuid' => $id], ['deleted_at' => date('Y-m-d H:i:s')]))
             $this->json_success(null, 'Produit supprimé');
         else $this->json_error('Erreur');

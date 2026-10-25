@@ -61,7 +61,7 @@ class Roles extends MY_Controller {
         $input = $this->get_json_input();
         $items = $input['permissions'] ?? [];
         if (empty($items)) { $this->json_error('Aucune permission fournie'); return; }
-        $permFields = ['can_view', 'can_add', 'can_edit', 'can_delete', 'can_export', 'can_imprimer'];
+        $permFields = ['can_view', 'can_view_all', 'can_add', 'can_edit', 'can_delete', 'can_export', 'can_imprimer'];
         $grouped = [];
         foreach ($items as $item) {
             $menuId = (int)$item['id_menu'];
@@ -99,7 +99,7 @@ class Roles extends MY_Controller {
         if (empty($permissions)) {
             $this->json_error('Aucune permission fournie'); return;
         }
-        $permFields = ['can_view', 'can_add', 'can_edit', 'can_delete', 'can_export', 'can_imprimer'];
+        $permFields = ['can_view', 'can_view_all', 'can_add', 'can_edit', 'can_delete', 'can_export', 'can_imprimer'];
         $this->db->trans_start();
         foreach ($permissions as $menuId => $perms) {
             if (!$this->Model->readOne('menus', ['id_menu' => (int)$menuId])) continue;

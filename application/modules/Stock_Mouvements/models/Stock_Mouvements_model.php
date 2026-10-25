@@ -7,13 +7,12 @@ class Stock_Mouvements_model extends Model
 
     public function get_all($filters = [])
     {
-        $this->db->where('m.deleted_at', null);
         $this->db->select('m.*, p.libelle as produit_libelle');
         $this->db->from('mouvements_stock m');
         $this->db->join('produits p', 'm.id_produit = p.id_produit', 'left');
         if (!empty($filters['id_produit'])) $this->db->where('m.id_produit', $filters['id_produit']);
         if (!empty($filters['type'])) $this->db->where('m.type', $filters['type']);
-        $this->db->order_by('m.date_mouvement', 'DESC');
+        $this->db->order_by('m.date_mvt', 'DESC');
         $q = $this->db->get();
         if ($q === false) return array();
         return $q->result_array();
@@ -22,7 +21,7 @@ class Stock_Mouvements_model extends Model
     public function create_record($data)
     {
         $data['uuid'] = generate_uuid();
-        $data['date_mouvement'] = $data['date_mouvement'] ?? date('Y-m-d H:i:s');
+        $data['date_mvt'] = $data['date_mvt'] ?? date('Y-m-d H:i:s');
         if ($this->db->insert('mouvements_stock', $data)) {
             $this->update_stock($data['id_produit'], $data['type'], $data['quantite']);
             return ['success' => true];

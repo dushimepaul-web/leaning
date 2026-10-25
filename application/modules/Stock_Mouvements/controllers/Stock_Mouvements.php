@@ -59,7 +59,7 @@ class Stock_Mouvements extends MY_Controller {
             $nouveau_stock = intval($produit['stock_actuel']) - $qty;
         }
         $this->Model->update('produits', ['id_produit' => $data['id_produit']], ['stock_actuel' => $nouveau_stock]);
-        $id = $this->Model->create('mouvements_stock', $mouvement);
+        $id = $this->Model->createLastId('mouvements_stock', $mouvement);
         $this->db->trans_complete();
 
         if ($id && $this->db->trans_status() !== false) {

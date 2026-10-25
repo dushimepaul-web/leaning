@@ -11,6 +11,20 @@ class Evaluations extends MY_Controller {
         $data['title'] = 'Évaluations';
         $data['classes'] = $this->Model->read('classes', ['deleted_at' => null]);
         $data['matieres'] = $this->Model->read('matieres', ['deleted_at' => null]);
+        if ($this->est_enseignant) {
+            $teacher_classes = $this->_teacher_classes();
+            $teacher_matieres = $this->_teacher_matieres();
+            $data['classes'] = empty($teacher_classes) ? array() : $this->db
+                ->where_in('id_classe', $teacher_classes)
+                ->where('deleted_at', null)
+                ->order_by('libelle')
+                ->get('classes')->result_array();
+            $data['matieres'] = empty($teacher_matieres) ? array() : $this->db
+                ->where_in('id_matiere', $teacher_matieres)
+                ->where('deleted_at', null)
+                ->order_by('libelle')
+                ->get('matieres')->result_array();
+        }
         $data['periodes'] = $this->Model->read('periodes', ['id_annee' => $this->id_annee_active, 'deleted_at' => null]);
         $this->load->view('index', $data);
     }
@@ -22,6 +36,13 @@ class Evaluations extends MY_Controller {
         $this->db->join('matieres m', 'ev.id_matiere = m.id_matiere', 'left');
         $this->db->join('classes c', 'ev.id_classe = c.id_classe', 'left');
         $this->db->join('periodes p', 'ev.id_periode = p.id_periode', 'left');
+        if ($this->est_enseignant && !$this->_teacher_view_all()) {
+            if (!$this->id_enseignant) { $this->json_success(array()); return; }
+            $this->db->distinct();
+            $this->db->join('matieres_classes mc', 'mc.id_classe = ev.id_classe AND mc.id_matiere = ev.id_matiere', 'inner');
+            $this->db->where('mc.id_enseignant', $this->id_enseignant);
+            $this->db->where('mc.deleted_at', null);
+        }
         $this->db->order_by('ev.date_eval', 'DESC');
         $q = $this->db->get();
         $this->json_success($q !== false ? $q->result_array() : array());
@@ -38,6 +59,9 @@ class Evaluations extends MY_Controller {
         $q = $this->db->get();
         $d = $q !== false ? $q->row_array() : null;
         if (!$d) { $this->json_error('Évaluation introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($d['id_classe'], $d['id_matiere'])) {
+            $this->_teacher_deny(); return;
+        }
         $this->json_success($d);
     }
 
@@ -45,6 +69,9 @@ class Evaluations extends MY_Controller {
         $data = $this->get_json_input();
         if (empty($data['id_classe']) || empty($data['id_matiere']) || empty($data['id_periode']) || empty($data['libelle'])) {
             $this->json_error('Classe, matière, période et libellé obligatoires'); return;
+        }
+        if ($this->est_enseignant && !$this->_teacher_can_access($data['id_classe'], $data['id_matiere'], true)) {
+            $this->_teacher_deny(); return;
         }
         $classe = $this->Model->readOne('classes', ['id_classe' => $data['id_classe'], 'deleted_at' => null]);
         if (!$classe) { $this->json_error('Classe introuvable'); return; }
@@ -112,7 +139,7 @@ class Evaluations extends MY_Controller {
             'id_matiere' => $data['id_matiere'],
             'id_periode' => $data['id_periode'],
             'id_annee' => $periode['id_annee'],
-            'date_eval' => $data['date_evaluation'] ?? date('Y-m-d'),
+            'date_eval' => !empty($data['date_eval']) ? $data['date_eval'] : (!empty($data['date_evaluation']) ? $data['date_evaluation'] : date('Y-m-d')),
             'type' => in_array($data['type'] ?? '', $types_valides) ? $data['type'] : 'devoir',
             'ponderee_sur' => $sur,
             'cree_le' => date('Y-m-d H:i:s'),
@@ -129,6 +156,9 @@ class Evaluations extends MY_Controller {
         $data = $this->get_json_input();
         $existing = $this->Model->readOne('evaluations', ['uuid' => $id, 'deleted_at' => null]);
         if (!$existing) { $this->json_error('Évaluation introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($existing['id_classe'], $existing['id_matiere'], true)) {
+            $this->_teacher_deny(); return;
+        }
         $allowed = ['libelle','id_classe','id_matiere','id_periode','date_eval','ponderee_sur','type'];
         $update = ['modifie_le' => date('Y-m-d H:i:s')];
         if (isset($data['id_classe']) && $data['id_classe'] !== '') {
@@ -148,7 +178,8 @@ class Evaluations extends MY_Controller {
             if ($sur <= 0 || $sur > 1000) { $this->json_error('Note maximale invalide'); return; }
             $update['ponderee_sur'] = $sur;
         }
-        if (!empty($data['date_evaluation'])) $update['date_eval'] = $data['date_evaluation'];
+        if (!empty($data['date_eval'])) $update['date_eval'] = $data['date_eval'];
+        elseif (!empty($data['date_evaluation'])) $update['date_eval'] = $data['date_evaluation'];
         foreach ($allowed as $col) {
             if (isset($data[$col]) && $data[$col] !== '') $update[$col] = $data[$col];
         }
@@ -163,6 +194,9 @@ class Evaluations extends MY_Controller {
         $check_periode = $update['id_periode'] ?? $existing['id_periode'];
         $check_sur = $update['ponderee_sur'] ?? $existing['ponderee_sur'];
         $check_type = $update['type'] ?? $existing['type'];
+        if ($this->est_enseignant && !$this->_teacher_can_access($check_classe, $check_matiere, true)) {
+            $this->_teacher_deny(); return;
+        }
         $mc = $this->Model->readOne('matieres_classes', [
             'id_classe' => $check_classe,
             'id_matiere' => $check_matiere,
@@ -213,6 +247,9 @@ class Evaluations extends MY_Controller {
     public function api_delete($id) {
         $ev = $this->Model->readOne('evaluations', ['uuid' => $id]);
         if (!$ev) { $this->json_error('Évaluation introuvable', 404); return; }
+        if ($this->est_enseignant && !$this->_teacher_can_access($ev['id_classe'], $ev['id_matiere'], true)) {
+            $this->_teacher_deny(); return;
+        }
         $now = date('Y-m-d H:i:s');
         $count = (int)$this->db->where('id_evaluation', $ev['id_evaluation'])->where('deleted_at', null)->count_all_results('notes');
         $this->db->where('id_evaluation', $ev['id_evaluation'])->where('deleted_at', null);

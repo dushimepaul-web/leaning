@@ -34,12 +34,14 @@ class Menus extends MY_Controller {
     public function api_update($id) {
         $data = $this->get_json_input();
         $data = $this->_sanitize($data);
+        if (empty($data)) { $this->json_error('Aucune donnée à modifier'); return; }
         if ($this->Model->update('menus', ['uuid' => $id], $data))
             $this->json_success(null, 'Menu mis à jour');
         else $this->json_error('Erreur');
     }
 
     private function _sanitize($data) {
+        if (isset($data['url']) && !isset($data['route'])) $data['route'] = $data['url'];
         $allowed = ['code', 'libelle', 'icon', 'route', 'ordre'];
         $out = [];
         foreach ($allowed as $f) {

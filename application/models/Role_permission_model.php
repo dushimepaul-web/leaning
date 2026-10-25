@@ -18,7 +18,7 @@ class Role_permission_model extends CI_Model
 
     public function get_role_menus($id_role)
     {
-        $this->db->select('m.*, rm.can_view, rm.can_add, rm.can_edit, rm.can_delete, rm.can_export, rm.can_imprimer');
+        $this->db->select('m.*, rm.can_view, rm.can_view_all, rm.can_add, rm.can_edit, rm.can_delete, rm.can_export, rm.can_imprimer');
         $this->db->from('roles_menus rm');
         $this->db->join('menus m', 'rm.id_menu = m.id_menu');
         $this->db->where('rm.id_role', $id_role);

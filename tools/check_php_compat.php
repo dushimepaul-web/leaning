@@ -137,12 +137,10 @@ function pc_mask_non_php($content)
         $open = strpos($content, '<?', $pos);
         if ($open === false) {
             $blank($pos, $len);
-            $pos = $len;
             break;
         }
         $blank($pos, $open);
-        $prefix = substr($content, $open, 5);
-        if ($prefix === '<?php') {
+        if (substr($content, $open, 5) === '<?php') {
             $tagEnd = $open + 5;
         } elseif (substr($content, $open, 3) === '<?=') {
             $tagEnd = $open + 3;
@@ -152,13 +150,73 @@ function pc_mask_non_php($content)
         $close = strpos($content, '?>', $tagEnd);
         if ($close === false) {
             // balise ouvrante non fermee : tout le reste est du PHP
-            $pos = $len;
+            pc_blank_php_comments($out, $tagEnd, $len);
             break;
         }
+        pc_blank_php_comments($out, $tagEnd, $close);
         $pos = $close + 2;
     }
 
     return $out;
+}
+
+/**
+ * Efface les commentaires PHP (//, #, /* ... *\/) dans [from, to[ en conservant
+ * les retours a la ligne : un motif cite dans un commentaire n'est pas du code.
+ *
+ * Le lexeur est minimal (guillemets simples/doubles + echappements), il ignore
+ * les heredoc — largement suffisant pour une verification statique.
+ */
+function pc_blank_php_comments(&$out, $from, $to)
+{
+    $i = $from;
+    $len = strlen($out);
+    if ($to > $len) { $to = $len; }
+
+    $toEOL = function ($at) use (&$out, $to) {
+        $j = strpos($out, "\n", $at);
+        if ($j === false || $j > $to) { $j = $to; }
+        for ($k = $at; $k < $j; $k++) { $out[$k] = ' '; }
+        return $j;
+    };
+
+    while ($i < $to) {
+        $c = $out[$i];
+
+        if ($c === "'" || $c === '"') {
+            $q = $c;
+            $i++;
+            while ($i < $to) {
+                if ($out[$i] === '\\') { $i += 2; continue; }
+                if ($out[$i] === $q) { $i++; break; }
+                $i++;
+            }
+            continue;
+        }
+
+        if ($c === '/' && $i + 1 < $to && $out[$i + 1] === '/') {
+            $i = $toEOL($i);
+            continue;
+        }
+
+        // "#[...]" est un attribut PHP 8, pas un commentaire
+        if ($c === '#' && !($i + 1 < $to && $out[$i + 1] === '[')) {
+            $i = $toEOL($i);
+            continue;
+        }
+
+        if ($c === '/' && $i + 1 < $to && $out[$i + 1] === '*') {
+            $j = strpos($out, '*/', $i + 2);
+            $end = ($j === false || $j + 2 > $to) ? $to : $j + 2;
+            for ($k = $i; $k < $end; $k++) {
+                if ($out[$k] !== "\n") { $out[$k] = ' '; }
+            }
+            $i = $end;
+            continue;
+        }
+
+        $i++;
+    }
 }
 
 /**
@@ -262,6 +320,10 @@ $readErrors = [];
 $scanned = 0;
 
 foreach ($files as $file) {
+    // l'outil ne se signale pas lui-meme (ses motifs matcheraient ses motifs)
+    if (realpath($file) === realpath(__FILE__)) {
+        continue;
+    }
     $raw = @file_get_contents($file);
     if ($raw === false) {
         $readErrors[] = $file;
@@ -271,6 +333,7 @@ foreach ($files as $file) {
     $rel = ltrim(str_replace('\\', '/', substr($file, strlen($ROOT))), '/');
     $lines = explode("\n", str_replace("\r\n", "\n", $raw));
     $content = str_replace("\r\n", "\n", $raw);
+    $scan = pc_mask_non_php($content);   // PHP uniquement, longueur inchangee
 
     $push = function ($ruleId, $offset, $excerpt) use (&$findings, $RULES, $rel, $content, $lines) {
         foreach ($RULES as $r) {
@@ -302,25 +365,18 @@ foreach ($files as $file) {
 
     foreach ($RULES as $r) {
         if ($r[4] === '') { continue; }
-        if (preg_match_all($r[4], $content, $m, PREG_OFFSET_CAPTURE)) {
+        if (preg_match_all($r[4], $scan, $m, PREG_OFFSET_CAPTURE)) {
             foreach ($m[0] as $hit) {
-                // exclut les occurrences qui ne sont que des commentaires
-                $before = substr($content, max(0, $hit[1] - 200), 200);
-                if (preg_match('/\*\//', $before) === 1
-                    && substr_count($before, '*/') > substr_count($before, '/*')) {
-                    continue;
-                }
                 $push($r[0], $hit[1], $hit[0]);
             }
         }
     }
 
     // regles "signature"
-    foreach (pc_signatures($content) as $sig) {
+    foreach (pc_signatures($scan) as $sig) {
         $text = $sig['text'];
         if (preg_match_all('/(function\s+&?[A-Za-z_]\w*\s*\()([^)]*)\)/s', $text, $pm, PREG_OFFSET_CAPTURE)) {
             $params = $pm[2][0][0];
-            $off = $sig['offset'] + $pm[2][0][1];
             // parametre implicite nullable : "Type $x = null" sans "?"
             if (preg_match('/(^|,)\s*((?:readonly\s+)?)([A-Za-z_][\w\\\\]*)\s+(&?\s*\$[A-Za-z_]\w*)\s*=\s*null\b/', $params, $im, PREG_OFFSET_CAPTURE)) {
                 $type = $im[3][0];
@@ -343,7 +399,7 @@ foreach ($files as $file) {
     }
 
     // comparateurs de tri
-    foreach (pc_sort_comparators($content) as $cmp) {
+    foreach (pc_sort_comparators($scan) as $cmp) {
         $push('sort_comparator', $cmp['offset'], $cmp['text']);
     }
 }

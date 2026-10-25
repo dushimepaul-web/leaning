@@ -76,6 +76,7 @@ class Inscriptions extends MY_Controller {
         if ($id) {
             $this->_ensure_conduite_points($data['id_etudiant'], $data['id_annee']);
             $this->Model->recalculer_numero_ordre($this->id_annee_active);
+            $this->_generer_dettes_etudiant((int)$data['id_etudiant'], (int)$data['id_annee']);
             $this->json_success(['id_inscription' => $id], 'Inscription créée');
         } else $this->json_error('Erreur');
     }

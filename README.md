@@ -364,3 +364,7 @@ Test avec les données réelles de la base (240 sessions, 6 classes, ~15 enseign
 - **Optimisation** : Python 3.14, Google OR-Tools (CP-SAT solver)
 - **Export** : SheetJS (Excel), impression CSS
 - **Serveur** : WampServer 3.x (Apache 2.4)
+
+
+
+il faut que Date limite indicative soit la date de in de cette trimetre  sont indike dans la table des trimetre voir la ou est stock

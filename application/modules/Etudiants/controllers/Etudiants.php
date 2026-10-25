@@ -128,7 +128,10 @@ class Etudiants extends MY_Controller {
         $annee_existe = $this->Model->readOne('annees_scolaires', ['id_annee' => $id_annee]);
         if (!$annee_existe) { $this->json_error('Année scolaire introuvable'); return; }
         $data['fullname'] = $data['nom'] ?? '';
-        $cols_etudiant = ['fullname','date_naissance','sexe','telephone','email','adresse','adresse_permanente','photo','matricule','lieu_naissance','pere_nom','pere_telephone','pere_profession','pere_adresse','mere_nom','mere_telephone','mere_profession','mere_adresse'];
+        if (array_key_exists('is_interne', $data)) {
+            $data['is_interne'] = (!empty($data['is_interne']) && $data['is_interne'] !== '0') ? 1 : 0;
+        }
+        $cols_etudiant = ['fullname','date_naissance','sexe','is_interne','telephone','email','adresse','adresse_permanente','photo','matricule','lieu_naissance','pere_nom','pere_telephone','pere_profession','pere_adresse','mere_nom','mere_telephone','mere_profession','mere_adresse'];
         $clean = [];
         foreach ($cols_etudiant as $col) {
             if (isset($data[$col]) && $data[$col] !== '') {
@@ -163,6 +166,9 @@ class Etudiants extends MY_Controller {
         $this->db->trans_complete();
 
         if ($id && $this->db->trans_status() !== false) {
+            if (!empty($id_classe)) {
+                $this->_generer_dettes_etudiant((int)$id, (int)$id_annee);
+            }
             $this->Model->Set_History($id_user_log, 'create', 'Création étudiant #' . $id, 'etudiants', $id, null, $clean);
             if (!empty($id_classe)) {
                 $this->Model->Set_History($id_user_log, 'create', 'Inscription étudiant #' . $id, 'inscriptions', $id);
@@ -198,7 +204,10 @@ class Etudiants extends MY_Controller {
             unset($updateData['nom']);
         }
         unset($updateData['id_classe'], $updateData['id_section'], $updateData['id_annee'], $updateData['parents'], $updateData['parent_nom_old']);
-        $cols_etudiant = ['fullname','matricule','numero_ordre','date_naissance','lieu_naissance','sexe','adresse','adresse_permanente','telephone','email','parent_nom','parent_telephone','parent_profession','parent_adresse','pere_nom','pere_telephone','pere_profession','pere_adresse','mere_nom','mere_telephone','mere_profession','mere_adresse','tuteur_nom','tuteur_telephone','actif'];
+        if (array_key_exists('is_interne', $updateData)) {
+            $updateData['is_interne'] = (!empty($updateData['is_interne']) && $updateData['is_interne'] !== '0') ? 1 : 0;
+        }
+        $cols_etudiant = ['fullname','matricule','numero_ordre','date_naissance','lieu_naissance','sexe','is_interne','adresse','adresse_permanente','telephone','email','parent_nom','parent_telephone','parent_profession','parent_adresse','pere_nom','pere_telephone','pere_profession','pere_adresse','mere_nom','mere_telephone','mere_profession','mere_adresse','tuteur_nom','tuteur_telephone','actif'];
         $clean = [];
         foreach ($cols_etudiant as $col) {
             if (isset($updateData[$col])) {
@@ -207,6 +216,7 @@ class Etudiants extends MY_Controller {
         }
         $id_user_log = $this->session->userdata('id_utilisateur');
 
+        $inscription_creee = false;
         $this->db->trans_start();
         $etudiant_ok = empty($clean) ? true : $this->Model->update('etudiants', ['uuid' => $id], $clean);
         if ($etudiant_ok) {
@@ -243,6 +253,7 @@ class Etudiants extends MY_Controller {
                     $this->_ensure_conduite_points($etudiant['id_etudiant'], $nouvelle_annee);
                 } else {
                     $nouvelle_annee = $data['id_annee'] ?? $this->id_annee_active;
+                    $inscription_creee = true;
                     $this->Model->create('inscriptions', [
                         'id_etudiant' => $etudiant['id_etudiant'], 'id_classe' => $data['id_classe'],
                         'id_section' => $data['id_section'] ?? null,
@@ -264,6 +275,9 @@ class Etudiants extends MY_Controller {
             $this->db->trans_complete();
 
             if ($this->db->trans_status() !== false) {
+                if ($inscription_creee) {
+                    $this->_generer_dettes_etudiant((int)$etudiant['id_etudiant'], (int)$nouvelle_annee);
+                }
                 $this->Model->Set_History($id_user_log, 'update', 'Modification étudiant #' . $etudiant['id_etudiant'], 'etudiants', $etudiant['id_etudiant'], $etudiant, $clean);
                 $this->json_success(null, 'Étudiant mis à jour');
             } else {

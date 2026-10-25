@@ -41,6 +41,7 @@
             <div class="mt-16 d-flex flex-column gap-8">
               <div class="d-flex gap-4"><span class="fw-semibold text-sm text-primary-light w-140-px">Classe</span><span class="fw-normal text-sm text-secondary-light">: <?= $etudiant['classe_libelle'] ?? '-' ?></span></div>
               <div class="d-flex gap-4"><span class="fw-semibold text-sm text-primary-light w-140-px">Section</span><span class="fw-normal text-sm text-secondary-light">: <?= $etudiant['section_libelle'] ?? '-' ?></span></div>
+              <div class="d-flex gap-4"><span class="fw-semibold text-sm text-primary-light w-140-px">Régime</span><span class="fw-normal text-sm text-secondary-light">: <?= ((int)($etudiant['is_interne'] ?? 1) === 1) ? 'Interne' : 'Externe' ?></span></div>
               <div class="d-flex gap-4"><span class="fw-semibold text-sm text-primary-light w-140-px">Genre</span><span class="fw-normal text-sm text-secondary-light">: <?= $etudiant['sexe'] === 'M' ? 'Masculin' : ($etudiant['sexe'] === 'F' ? 'Féminin' : '-') ?></span></div>
               <div class="d-flex gap-4"><span class="fw-semibold text-sm text-primary-light w-140-px">Date de naissance</span><span class="fw-normal text-sm text-secondary-light">: <?= $etudiant['date_naissance'] ? date('d/m/Y', strtotime($etudiant['date_naissance'])) : '-' ?></span></div>
               <div class="d-flex gap-4"><span class="fw-semibold text-sm text-primary-light w-140-px">Année scolaire</span><span class="fw-normal text-sm text-secondary-light">: <?= $etudiant['annee_libelle'] ?? '-' ?></span></div>

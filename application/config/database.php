@@ -96,9 +96,9 @@ if (ENVIRONMENT === 'production' || (isset($_SERVER['HTTP_HOST']) && strpos($_SE
     $db['default'] = array(
 	'dsn'	=> '',
 	'hostname' => 'localhost',
-	'username' => getenv('DB_REMOTE_USERNAME') ?: 'abemarket_vipschool',
-	'password' => getenv('DB_REMOTE_PASSWORD') ?: 'Abe@@2028',
-	'database' => getenv('DB_REMOTE_DATABASE') ?: 'abemarket_vipschool',
+	'username' => getenv('DB_REMOTE_USERNAME') ?: '',
+	'password' => getenv('DB_REMOTE_PASSWORD') ?: '',
+	'database' => getenv('DB_REMOTE_DATABASE') ?: '',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,

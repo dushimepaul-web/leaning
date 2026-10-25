@@ -176,7 +176,7 @@ async function loadCategories() {
     if (r.success && r.data) {
       const prev = document.getElementById('id_categorie').value;
       let opts = '<option value="">Sélectionner</option>';
-      r.data.forEach(c => { opts += `<option value="${c.id_categorie}">${c.libelle} (${c.code})</option>`; });
+      r.data.forEach(c => { opts += `<option value="${c.id_categorie}">${c.libelle}</option>`; });
       document.getElementById('id_categorie').innerHTML = opts;
       document.getElementById('id_categorie').value = prev;
     }
@@ -209,8 +209,8 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
@@ -336,6 +336,7 @@ function exportCSV() {
       loadData();
       $('#dtSearch').on('keyup', function() { $('#dataTable').DataTable().search(this.value).draw(); });
       $('#dtLength').on('change', function() { $('#dataTable').DataTable().page.len(+this.value).draw(); });
+      if (new URLSearchParams(window.location.search).get('add') === '1') setTimeout(openAddSidebar, 400);
     }
   }, 50);
 })();

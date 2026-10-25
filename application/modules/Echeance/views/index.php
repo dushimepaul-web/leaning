@@ -8,8 +8,12 @@
         <a href="<?= base_url('Dashboard') ?>" class="text-secondary-light hover-text-primary hover-underline">Dashboard</a>
         <span class="text-secondary-light"> / Échéances</span>
       </div>
+      <div class="text-secondary-light text-sm mt-4">Échéancier individuel par étudiant. La date limite du frais sert de date par défaut.</div>
     </div>
     <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-primary-600 d-flex align-items-center gap-6" onclick="openGenerer()">
+        <span class="d-flex text-md"><i class="ri-calendar-2-line"></i></span> Générer un échéancier
+      </button>
       <button type="button" class="btn btn-primary-600 d-flex align-items-center gap-6" onclick="openSidebar()">
         <span class="d-flex text-md"><i class="ri-add-line"></i></span> Nouvelle échéance
       </button>
@@ -47,6 +51,46 @@
         </thead>
         <tbody id="dataBody"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="genererModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content radius-16 bg-base">
+      <div class="modal-header border-bottom py-12 px-20">
+        <h6 class="text-lg fw-semibold text-primary-light mb-0">Générer un échéancier</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-20">
+        <div class="mb-3">
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-4">Frais *</label>
+          <select id="genFrais" class="form-control form-select"><option value="">Sélectionner...</option></select>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <label class="text-sm fw-semibold text-primary-light d-inline-block mb-4">Nombre d'échéances *</label>
+            <input type="number" id="genNb" class="form-control" min="1" max="24" value="3">
+          </div>
+          <div class="col-6">
+            <label class="text-sm fw-semibold text-primary-light d-inline-block mb-4">Intervalle (mois)</label>
+            <input type="number" id="genIntervalle" class="form-control" min="1" max="12" value="1">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="text-sm fw-semibold text-primary-light d-inline-block mb-4">Date de la 1ère échéance *</label>
+          <input type="date" id="genDate" class="form-control">
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="genRemplacer">
+          <label class="form-check-label" for="genRemplacer">Remplacer les échéances existantes (si aucun paiement)</label>
+        </div>
+        <small class="text-secondary-light">Pour un frais global, tous les étudiants inscrits sont concernés. Le montant est calculé selon le régime (interne/externe) et diminué des exonérations. La date peut être préremplie depuis la date limite du frais.</small>
+      </div>
+      <div class="modal-footer border-top py-12 px-20">
+        <button type="button" class="btn btn-primary-600" onclick="genererEcheancier()">Générer</button>
+        <button type="button" class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-24 py-11 radius-8" data-bs-dismiss="modal">Annuler</button>
+      </div>
     </div>
   </div>
 </div>
@@ -118,14 +162,61 @@ async function loadData() {
       </td>
     </tr>`;
   });
-  $('#dataBody').html(rows);
   if ($.fn.DataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();
+  $('#dataBody').html(rows);
   $('#dataTable').DataTable({
     pageLength: 10, scrollX: true,
     lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
     language: { search: '', searchPlaceholder: 'Rechercher...', lengthMenu: 'Lignes par page: _MENU_', info: '', zeroRecords: 'Aucune échéance trouvée', infoEmpty: '', infoFiltered: '' },
     dom: 't<"d-flex align-items-center justify-content-between flex-wrap gap-16 px-20 py-12 border-top border-neutral-200"<"d-flex align-items-center gap-8 text-secondary-light"i><"d-flex align-items-center gap-2"p>>'
   });
+}
+
+async function openGenerer() {
+  var sel = document.getElementById('genFrais');
+  var fraisMap = {};
+  sel.innerHTML = '<option value="">Sélectionner...</option>';
+  var r = await API.frais.list({ id_annee: <?= (int)$id_annee_active ?>, id_periode: <?= (int)$id_periode_active ?> });
+  if (r.success) {
+    r.data.forEach(function(f) {
+      var o = document.createElement('option');
+      var classe = f.classe_libelle || 'Toutes les classes';
+      var externe = parseFloat(f.montant || 0).toLocaleString();
+      var interne = (f.montant_interne !== null && f.montant_interne !== undefined && f.montant_interne !== '')
+        ? parseFloat(f.montant_interne).toLocaleString() : null;
+      o.value = f.id_frais;
+      o.textContent = (f.type_libelle || '') + ' - ' + classe + ' - ' + (f.periode_libelle || '') + ' - Ext: ' + externe + (interne !== null ? ' / Int: ' + interne : '');
+      sel.appendChild(o);
+      fraisMap[f.id_frais] = f;
+    });
+  }
+  sel.onchange = function() {
+    var f = fraisMap[this.value];
+    document.getElementById('genDate').value = (f && f.echeance) ? String(f.echeance).substring(0, 10) : '';
+  };
+  document.getElementById('genNb').value = 3;
+  document.getElementById('genDate').value = '';
+  document.getElementById('genIntervalle').value = 1;
+  document.getElementById('genRemplacer').checked = false;
+  new bootstrap.Modal(document.getElementById('genererModal')).show();
+}
+
+async function genererEcheancier() {
+  var d = {
+    id_frais: document.getElementById('genFrais').value,
+    nb_echeances: document.getElementById('genNb').value,
+    date_premiere: document.getElementById('genDate').value,
+    intervalle_mois: document.getElementById('genIntervalle').value,
+    remplacer: document.getElementById('genRemplacer').checked ? 1 : 0
+  };
+  if (!d.id_frais) { Swal.fire({ icon: 'warning', title: 'Validation', text: 'Frais obligatoire' }); return; }
+  var r = await API.echeances.generer(d);
+  if (r.success) {
+    var m = bootstrap.Modal.getInstance(document.getElementById('genererModal'));
+    if (m) m.hide();
+    Toast.fire({ icon: 'success', title: r.message });
+    loadData();
+  } else { Swal.fire({ icon: 'error', title: 'Erreur', text: r.message }); }
 }
 
 function openSidebar() {
@@ -182,7 +273,7 @@ document.getElementById('dtLength').addEventListener('change', function() { if (
     if (typeof $ === 'undefined' || typeof API === 'undefined' || typeof autoSetup === 'undefined') { setTimeout(_f, 50); return; }
     loadData();
     var fraisOptions = [];
-    API.frais.list().then(function(r) { if (r.success) fraisOptions = r.data; });
+    API.frais.list({ id_annee: <?= (int)$id_annee_active ?>, id_periode: <?= (int)$id_periode_active ?> }).then(function(r) { if (r.success) fraisOptions = r.data; });
     var fillFrais = function(classeId) {
       var sel = document.getElementById('fFrais');
       sel.innerHTML = '<option value="">Sélectionner...</option>';

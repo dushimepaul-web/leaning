@@ -10,3 +10,8 @@ attachments_bak/
 Thumbs.db
 *.log
 node_modules/
+
+# Sauvegardes / exports base de donnees
+DB/*.sql
+backups/
+*.sql.gz
